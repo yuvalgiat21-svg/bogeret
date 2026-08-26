@@ -409,7 +409,7 @@ const USERS = [
   {id:'ido', email:'idonissan7@gmail.com',     n:'עידו ניסן',    r:'שינשין שחף',           mode:'view',  scope:'ya'},
   {id:'ami', email:'amigreengrass@gmail.com',     n:'עמי גרינגרס',  r:'מדריך אקדמיה לכדורסל', mode:'edit',  scope:'academy'},
 ];
-const SCOPE_GROUPS = { all:null, ya:['שלדג','שחף','שיר'], yb:['yb'], academy:[] };
+const SCOPE_GROUPS = { all:null, ya:['שלדג','שחף','שיר'], yb:['yb'], academy:['academy'] };
 
 var ME=null;
 async function sha(s){
@@ -614,13 +614,6 @@ function applyPerms(){
     const first=gn.querySelector('button');
     if(first){ first.click(); }
   }
-  // אקדמיה — אין קבוצה מתאימה
-  if(ME.scope==='academy' && gn){
-    gn.querySelectorAll('button').forEach(b=>b.remove());
-    const sec=document.getElementById('sec-groups');
-    if(sec) sec.innerHTML = info('🏀','אקדמיה לכדורסל',
-      'טרם הוגדרה קבוצת אקדמיה בפורטל. פנה ליובל להקמת הקבוצה.');
-  }
   // לשוניות ראשיות שאינן רלוונטיות
   ['graduates','prof'].forEach(k=>{
     const b=document.getElementById('tab-'+k); if(b && ME.mode==='view') b.remove();
@@ -738,7 +731,7 @@ const EDU_PLAN_YB = [
 
 /* ═══════════════ ארגון מחדש: 14 לשוניות → 5 ═══════════════ */
 const GROUPS_YA = ['שלדג','שחף','שיר'];
-const GRP_CLR = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','חוף':'#0891b2','צוק':'#65a30d'};
+const GRP_CLR = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','חוף':'#0891b2','צוק':'#65a30d','אקדמיה':'#c2410c'};
 
 const NEW_TABS = [
   {id:'overview', icon:'📊', label:'סקירה'},
@@ -1484,6 +1477,149 @@ function viewFiles(){
       <div class="panel-b" id="filesBody"></div></div>`;
 }
 
+/* ═══════════ סידורי עבודה ═══════════ */
+const SH_DAYS=['ראשון','שני','שלישי','רביעי','חמישי'];
+const SH_YB={
+  rows:[
+    {t:'07:15 - 09:00', s:'השכמה ונוהל בוקר', c:['ערן, איתי','ערן','איתי','שרון וערן','איתי ושרון']},
+    {t:'09:00 - 14:00', s:'בוקר — זמינות לבית ספר וצהריים', c:['כולם','ערן','איתי','שרון','שרון']},
+    {t:'14:00 - 16:00', s:'צהריים וחפיפה', c:['שרון','ערן','איתי','שרון','כולם']},
+    {t:'16:00 - 23:00', s:'ערב', c:['ערן, איתי','שרון','שרון','איתי','']},
+    {t:'17:00 - 00:00', s:'ערב מאוחר', c:['איתי','איתי','ערן','ערן','']},
+  ],
+  free:['שרון','ערן','איתי','שרון','']
+};
+const SH_YA={
+  rows:[
+    {t:'אחראי בוקר', s:'', c:['עילי','ארבל','עילי','אודי','עילי']},
+    {t:'07:00 - 09:00', s:'בוקר', c:['כולם (אודי, ארבל, עילי)','ארבל + ש"ש','אודי + ארבל','עילי + אודי','עילי + ש"ש']},
+    {t:'09:00 - 16:00', s:'צהריים / כונן', c:['עילי','ארבל','עילי','אודי','כולם']},
+    {t:'16:00 - 23:00', s:'ערב', c:['כולם (אודי, ארבל, עילי)','אודי + עילי + ש"ש','עילי + ארבל','אודי + ארבל + ש"ש','יציאה לסופ"ש']},
+    {t:'תורנות לילה', s:'', c:['עילי','ארבל','עילי','אודי','']},
+  ],
+  free:['','ארבל (חופש)','אודי (+ ש"ש חופש)','עילי (חופש)','']
+};
+const SH_KEY='bogeret_shifts_v1';
+function shLoad(l){ try{const r=localStorage.getItem(SH_KEY+'_'+l); if(r) return JSON.parse(r);}catch(e){}
+  return JSON.parse(JSON.stringify(l==='ya'?SH_YA:SH_YB)); }
+function shSave(l,o){ try{localStorage.setItem(SH_KEY+'_'+l,JSON.stringify(o));}catch(e){} }
+window.shSet=function(l,ri,ci,v){ const d=shLoad(l);
+  if(ri==='free') d.free[ci]=v; else d.rows[ri].c[ci]=v; shSave(l,d); };
+function shTable(l){
+  const d=shLoad(l);
+  const cell=(txt,ri,ci)=>{
+    const all=/כולם/.test(txt), off=/חופש|יציאה/.test(txt);
+    const bg=all?'#e0ecfd':off?'#fce4e8':'#fff';
+    const fg=all?'#1e40af':off?'#9f1239':'var(--text)';
+    return `<td style="padding:3px;background:${bg};"><input value="${(txt||'').replace(/"/g,'&quot;')}" oninput="shSet('${l}','${ri}',${ci},this.value)" placeholder="—"
+      style="width:100%;min-width:112px;border:1px solid transparent;border-radius:6px;padding:6px 7px;font-family:'Heebo';font-size:12.5px;font-weight:${all||off?'700':'500'};color:${fg};text-align:center;background:transparent;outline:none;"
+      onfocus="this.style.borderColor='var(--blue)';this.style.background='#fff'" onblur="this.style.borderColor='transparent';this.style.background='transparent'"></td>`;
+  };
+  return `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+    <thead><tr style="background:var(--text);color:#fff;">
+      <th style="padding:9px 11px;text-align:right;min-width:186px;background:#0a1620;">משמרת / שעות</th>
+      ${SH_DAYS.map(d=>`<th style="padding:9px 6px;font-family:'Rubik';">יום ${d}</th>`).join('')}
+    </tr></thead>
+    <tbody>${d.rows.map((r,ri)=>`<tr style="border-bottom:1px solid #eef2f7;">
+      <td style="padding:7px 11px;background:#fff7ed;">
+        <span style="display:block;font-family:'Rubik';font-weight:700;font-size:12.5px;color:var(--orange);direction:ltr;text-align:right;">${r.t}</span>
+        ${r.s?`<span style="display:block;font-size:11px;font-weight:600;color:var(--text2);margin-top:2px;">${r.s}</span>`:''}</td>
+      ${r.c.map((c,ci)=>cell(c,ri,ci)).join('')}</tr>`).join('')}
+      <tr style="border-top:2px solid var(--border);background:#fdf1d6;">
+        <td style="padding:8px 11px;font-family:'Rubik';font-weight:800;color:#92400e;">ערב חופשי</td>
+        ${d.free.map((c,ci)=>cell(c,'free',ci)).join('')}</tr>
+    </tbody></table></div>`;
+}
+function viewShifts(l,title){
+  const extra = l==='ya' ? `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+      <div style="background:#fff;border:1px solid var(--border);border-right:5px solid var(--red);border-radius:12px;padding:13px 15px;">
+        <div style="font-family:'Rubik';font-weight:700;font-size:13.5px;color:var(--red);margin-bottom:7px;">📌 עקרונות עבודה מנחים</div>
+        <div style="font-size:12.5px;line-height:1.7;color:var(--text2);">
+          <b style="color:var(--text);">ערב חופשי:</b> ערב חופשי אחד מוגדר לכל מדריך בשבוע (שני: ארבל, שלישי: אודי, רביעי: עילי).<br>
+          <b style="color:var(--text);">כוננות יום:</b> מדריך מוגדר וזמין באופן רציף בין השעות 09:00–16:00.</div></div>
+      <div style="background:#fff;border:1px solid var(--border);border-right:5px solid var(--cyan);border-radius:12px;padding:13px 15px;">
+        <div style="font-family:'Rubik';font-weight:700;font-size:13.5px;color:var(--cyan);margin-bottom:7px;">⏱️ מפתח שעות נוספות (6 ש"ש למדריך)</div>
+        <div style="font-size:12.5px;line-height:1.9;color:var(--text2);">
+          <b style="color:var(--text);">2 שעות:</b> בית ספר<br>
+          <b style="color:var(--text);">2 שעות:</b> ישיבת צוות + מח"מ<br>
+          <b style="color:var(--text);">2 שעות:</b> תורנות לילה</div></div>
+    </div>` : '';
+  return info('👥',`סידור עבודה שבועי — ${title}`,
+    'לחיצה על תא פותחת אותו לעריכה. השינויים נשמרים אוטומטית ומסתנכרנים לכל הצוות.')
+   + `<div class="panel"><div class="panel-h"><h2>👥 סידור עבודה — ${title}</h2></div>
+      <div class="panel-b" style="padding:12px;">${shTable(l)}${extra}</div></div>`;
+}
+
+/* ═══════════ אקדמיה לכדורסל ═══════════ */
+const ACADEMY_ROOMS = [
+  {r:1, m:[{n:'נווה סילונים',l:"ט'"},{n:'גיא בן גורן',l:"ט'"},{n:'בן קופרמן',l:"ט'"}]},
+  {r:2, m:[{n:'דניאל ביטון',l:"ט'"},{n:'אורי הרכבי',l:"י'"},{n:'יהל ברנר',l:"י'"}]},
+  {r:3, m:[{n:'יהונתן יעקובוב',l:"י'"},{n:'לב אורלוב',l:"י'"},{n:'אביתר מליק',l:"יא'"}]},
+  {r:4, m:[{n:'ניב אופיר',l:"י'"},{n:'עמית קליין',l:"יא'"},{n:'עמית הרפז',l:"י'"}]},
+  {r:5, m:[{n:'עומר צבי',l:"יא'"},{n:'יוני שפיצר',l:"יא'"},{n:'רותם בן דוד',l:"יא'"}]},
+  {r:6, m:[{n:'הראל ניר',l:"יב'"},{n:'איילון',l:"יב'"},{n:'נועם עולה',l:"יא'"}]},
+  {r:7, m:[{n:'עידו סוכר',l:"ח'"},{n:'תום כהנא',l:"ט'"}]},
+];
+const LAY_CLR={"ח'":'#9d174d',"ט'":'#6d28d9',"י'":'#0e7490',"יא'":'#b45309',"יב'":'#047857'};
+const ACAD_KEY='bogeret_academy_v1';
+function acadLoad(){ try{const r=localStorage.getItem(ACAD_KEY); if(r) return JSON.parse(r);}catch(e){} return {}; }
+function acadSave(o){ try{localStorage.setItem(ACAD_KEY,JSON.stringify(o));}catch(e){} }
+window.acadSet=function(n,f,v){ const st=acadLoad(); st[n]=st[n]||{}; st[n][f]=v; acadSave(st); };
+const acadAll = () => ACADEMY_ROOMS.flatMap(r=>r.m.map(x=>({...x, room:r.r})));
+
+
+/* ── האקדמיה כקבוצה בשכבה הבוגרת ── */
+const ACAD_STUDENTS = ACADEMY_ROOMS.flatMap(r=>r.m.map(x=>({
+  n:x.n, g:'אקדמיה', l:x.l, cls:'', city:'', ph:'', p:'', room:r.r, acad:true
+})));
+(function(){
+  ACAD_STUDENTS.forEach(s=>{
+    if(!RAMZOR_DATA_NEW.some(r=>r.n===s.n)){
+      const blank={}, notes={};
+      MONTHS9.forEach(m=>{blank[m]='none'; notes[m]='';});
+      RAMZOR_DATA_NEW.push({n:s.n, g:'אקדמיה', p:'', s:blank, nt:notes});
+    }
+  });
+})();
+
+function viewAcademyRooms(){
+  return info('🏀','אקדמיה לכדורסל — שיבוץ חדרים',
+    `${acadAll().length} שחקנים ב-${ACADEMY_ROOMS.length} חדרים, משכבות ח׳ עד יב׳.`)
+   + `<div class="cards" style="margin-bottom:14px;">
+      <div class="card" style="border-right:6px solid var(--blue);"><div class="icon">🏀</div><div class="val" style="color:var(--blue)">${acadAll().length}</div><div class="lbl">שחקנים</div></div>
+      <div class="card" style="border-right:6px solid var(--purple);"><div class="icon">🏠</div><div class="val" style="color:var(--purple)">${ACADEMY_ROOMS.length}</div><div class="lbl">חדרים</div></div>
+      ${["ט'","י'","יא'"].map(l=>`<div class="card" style="border-right:6px solid ${LAY_CLR[l]};"><div class="icon">🎓</div><div class="val" style="color:${LAY_CLR[l]}">${acadAll().filter(x=>x.l===l).length}</div><div class="lbl">שכבה ${l}</div></div>`).join('')}
+    </div>
+    <div class="panel"><div class="panel-h"><h2>🏠 שיבוץ חדרים</h2></div><div class="panel-b">
+      <div class="rm-grid">${ACADEMY_ROOMS.map(r=>{
+        const ls=[...new Set(r.m.map(x=>x.l))];
+        const c=ls.length>1?'linear-gradient(90deg,'+LAY_CLR[ls[0]]+','+LAY_CLR[ls[ls.length-1]]+')':LAY_CLR[ls[0]];
+        return `<div class="rm">
+          <div class="hd" style="background:${c}"><span>חדר ${r.r}</span><span class="cap">${r.m.length}</span></div>
+          <div class="bd">${r.m.map(x=>`<div class="mb"><span class="gd" style="background:${LAY_CLR[x.l]||'#8496ab'}"></span><span>${x.n}</span><span style="margin-right:auto;font-size:10.5px;color:var(--text3);">${x.l}</span></div>`).join('')}</div>
+        </div>`;}).join('')}</div>
+      <div class="info-box" style="margin-top:14px;background:#fdf1d6;border-color:#f0c674;"><div class="icon">📋</div><div>
+        הרשימה נבנתה משני עמודים מתוך שלושה. ייתכן שחסרים חדרים נוספים — שלח את העמוד השלישי ואשלים.</div></div>
+    </div></div>`;
+}
+function viewAcademyRoster(){
+  const st=acadLoad(); const all=acadAll();
+  return info('👥','שחקני האקדמיה','רשימת השחקנים לפי חדר ושכבה. אפשר להוסיף טלפון והערה לכל שחקן.')
+   + `<div class="panel"><div class="panel-h"><h2>👥 שחקנים (${all.length})</h2></div><div class="panel-b">
+      <table class="tbl"><thead><tr><th>#</th><th>שם</th><th>שכבה</th><th>חדר</th><th>טלפון</th><th>הערה</th></tr></thead>
+      <tbody>${all.map((x,i)=>{const e=st[x.n]||{}; const q=x.n.replace(/'/g,"\\'");
+        return `<tr style="background:#fff;">
+          <td style="padding:6px 9px;color:var(--text3);">${i+1}</td>
+          <td style="padding:6px 9px;font-weight:700;white-space:nowrap;">${x.n}</td>
+          <td style="padding:6px 9px;"><span class="pill" style="background:${LAY_CLR[x.l]}18;border-color:${LAY_CLR[x.l]}55;color:${LAY_CLR[x.l]};">${x.l}</span></td>
+          <td style="padding:6px 9px;font-weight:600;">חדר ${x.room}</td>
+          <td style="padding:5px 6px;"><input value="${(e.ph||'').replace(/"/g,'&quot;')}" oninput="acadSet('${q}','ph',this.value)" placeholder="—" style="width:118px;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-family:'Heebo';font-size:12px;direction:ltr;text-align:right;"></td>
+          <td style="padding:5px 6px;"><input value="${(e.note||'').replace(/"/g,'&quot;')}" oninput="acadSet('${q}','note',this.value)" placeholder="—" style="width:100%;min-width:150px;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-family:'Heebo';font-size:12px;"></td>
+        </tr>`;}).join('')}</tbody></table>
+    </div></div>`;
+}
+
 /* ═══════════ שיבוץ חדרים ═══════════ */
 function roomCard(r){
   const gs=[...new Set(r.m.map(m=>m.g).filter(Boolean))];
@@ -1724,12 +1860,12 @@ function reorganize(){
     if(cb) cb.remove(); }
   shInner.appendChild(dLuz);
 
-  [['ya','סידור עבודה - יא'],['yb','סידור עבודה - יב'],['social','עו"ס']].forEach(([k,txt])=>{
-    const d=mkSub('tmsh-'+k);
-    const p=[...old.info.querySelectorAll('.panel')].find(x=>x.querySelector('h2')&&x.querySelector('h2').textContent.includes(txt));
-    if(p) d.appendChild(p);
-    shInner.appendChild(d);
-  });
+  const dYA=mkSub('tmsh-ya'); dYA.innerHTML=viewShifts('ya',"שכבת יא'"); shInner.appendChild(dYA);
+  const dYB=mkSub('tmsh-yb'); dYB.innerHTML=viewShifts('yb',"קהילת יב'"); shInner.appendChild(dYB);
+  const dSoc=mkSub('tmsh-social');
+  const ps=[...old.info.querySelectorAll('.panel')].find(x=>x.querySelector('h2')&&x.querySelector('h2').textContent.includes('עו"ס'));
+  if(ps) dSoc.appendChild(ps);
+  shInner.appendChild(dSoc);
   tSh.appendChild(shInner);
 
   const tNight=mkSub('tm-nights'); tNight.innerHTML=viewNights();
@@ -1739,7 +1875,8 @@ function reorganize(){
   /* ---------- 3. חניכים ---------- */
   const gr=mkSec('groups');
   const grItems = GROUPS_YA.map(g=>({k:g,label:`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${GRP_CLR[g]};margin-left:6px;"></span>${g} (${stuOf(g).length})`}))
-    .concat([{k:'yb',label:`🌊 קהילת יב' (${stuOfLayer("יב'").length})`}]);
+    .concat([{k:'yb',label:`🌊 קהילת יב' (${stuOfLayer("יב'").length})`},
+             {k:'academy',label:`🏀 אקדמיה (${ACAD_STUDENTS.length})`}]);
   gr.appendChild(mkNav('gr',grItems,pickIn(gr,'gr')));
 
   GROUPS_YA.forEach((g,i)=>{
@@ -1786,6 +1923,25 @@ function reorganize(){
   const dSiyum=mkSub('gryb-siyum'); while(old.siyum.firstChild) dSiyum.appendChild(old.siyum.firstChild);
   innerYB.appendChild(dSiyum);
   secYB.appendChild(innerYB); gr.appendChild(secYB); knWire('yb');
+
+  // אקדמיה לכדורסל — קבוצה רב-גילאית
+  const acN=ACAD_STUDENTS; const secAc=mkSub('gr-academy');
+  const innerAc=document.createElement('div');
+  secAc.innerHTML = info('🏀','אקדמיה לכדורסל — קבוצה רב-גילאית',
+    `${acN.length} שחקנים משכבות ח׳–יב׳. הקבוצה מנוהלת כמו כל קבוצה אחרת בשכבה הבוגרת, והנתונים מתגלגלים לסקירה השכבתית.`);
+  const acItems=[{k:'roster',label:'👥 שחקני הקבוצה'},{k:'rooms',label:'🏠 שיבוץ חדרים'},
+    {k:'ramzor',label:'🚦 רמזור נשירה'},{k:'visits',label:'🏡 ביקורי בית'},
+    {k:'pocket',label:'💰 דמי כיס'},{k:'med',label:'🏥 רפואי'},
+    {k:'diet',label:'🥗 תזונה'},{k:'kn',label:'📝 שימור ידע'}];
+  secAc.appendChild(mkNav('grac',acItems,pickIn(innerAc,'grac'),{grid:true}));
+  const acSubs={roster:viewAcademyRoster(), rooms:viewAcademyRooms(),
+    ramzor:viewRamzor(acN,'אקדמיה לכדורסל'), visits:viewVisits(acN,'vis-acad',VIS_PHASES_YB),
+    pocket:viewPocket(acN,'pm-acad'), med:viewMed(acN,'med-acad'),
+    diet:viewDiet(acN,'diet-acad'), kn:viewKnowledge('acad','אקדמיה לכדורסל')};
+  Object.entries(acSubs).forEach(([k,html],n)=>{
+    const d=mkSub('grac-'+k,n===0); d.innerHTML=html; innerAc.appendChild(d); });
+  window.aggViews['grac-ramzor']={names:acN,title:'אקדמיה לכדורסל'};
+  secAc.appendChild(innerAc); gr.appendChild(secAc); knWire('acad');
 
 
   main.appendChild(gr);
@@ -2613,7 +2769,7 @@ function buildAllSections() {
   </div>`;
 
   // 9. ALPHON - עם תמונות
-  const groupColors = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','חוף':'#0891b2','צוק':'#65a30d'};
+  const groupColors = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','חוף':'#0891b2','צוק':'#65a30d','אקדמיה':'#c2410c'};
   const groupedStudents = {};
   STUDENTS_DATA.forEach(s => {
     if (!groupedStudents[s.g]) groupedStudents[s.g] = [];
@@ -4246,7 +4402,7 @@ window.showStudentDetails = function(idx) {
   if (!s) return;
   const modal = document.getElementById('student-modal');
   const body = document.getElementById('student-modal-body');
-  const groupColors = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','חוף':'#0891b2','צוק':'#65a30d'};
+  const groupColors = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','חוף':'#0891b2','צוק':'#65a30d','אקדמיה':'#c2410c'};
   const color = groupColors[s.g] || '#94a3b8';
   
   body.innerHTML = `
