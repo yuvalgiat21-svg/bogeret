@@ -2835,32 +2835,52 @@ const FB_CONFIG = {
 };
 
 const SYNC = (() => {
-  const USER_KEY  = 'bogeret_user';
-  const VERS_KEY  = 'bogeret_versions';
-  const RETAIN_DAYS = 14;
-  const MAX_LOCAL   = 30;
-  const ROOT = 'portal/bogeret';
-
-  let rdb=null, fb=null, ready=false, applying=false, timer=null, lastPush=0;
+  const USER_KEY='bogeret_user', VERS_KEY='bogeret_versions', META_KEY='bogeret_meta';
+  const RETAIN_DAYS=14, MAX_LOCAL=30, ROOT='portal/bogeret';
+  let rdb=null, fb=null, ready=false, applying=false, timer=null, lastTouch=0;
+  let lastSent={}, meta={};
 
   const isOurKey = k => k && (k.startsWith('bogeret_') || k.startsWith('kn_') ||
-                              k.startsWith('knowledge_') || k==='emergency_url')
-                     && k!==USER_KEY && k!==VERS_KEY;
+      k.startsWith('knowledge_') || k==='emergency_url')
+    && k!==USER_KEY && k!==VERS_KEY && k!==META_KEY;
+
+  /* ── קידוד בטוח למפתחות Firebase ── */
+  const enc = s => encodeURIComponent(String(s)).replace(/\./g,'%2E').replace(/\$/g,'%24');
+  const dec = s => { try{ return decodeURIComponent(s); }catch(e){ return s; } };
+
+  /* ── פיצול מפתח אחסון לרשומות בודדות ── */
+  function split(raw){
+    if(raw==null) return {};
+    try{ const o=JSON.parse(raw);
+      if(o && typeof o==='object' && !Array.isArray(o)) return o;
+    }catch(e){}
+    return {__all: raw};
+  }
+  function join(recs){
+    const ks=Object.keys(recs);
+    if(ks.length===1 && ks[0]==='__all') return recs.__all;
+    return JSON.stringify(recs);
+  }
+  const sig = v => JSON.stringify(v===undefined?null:v);
 
   function snapshot(){
     const o={};
     for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(isOurKey(k)) o[k]=localStorage.getItem(k); }
     return o;
   }
-  function restoreState(o){
-    applying=true;
-    try{
-      for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(isOurKey(k)) localStorage.removeItem(k); }
-      Object.entries(o||{}).forEach(([k,v])=>localStorage.setItem(k,v));
-    } finally { applying=false; }
-  }
   const user = () => localStorage.getItem(USER_KEY) || 'לא ידוע';
   const setUser = n => localStorage.setItem(USER_KEY, n);
+  function metaSave(){ try{ localStorage.setItem(META_KEY, JSON.stringify(meta)); }catch(e){} }
+  function metaLoad(){ try{ meta=JSON.parse(localStorage.getItem(META_KEY)||'{}'); }catch(e){ meta={}; } }
+
+  /* ── סימון בסיס: מה שיש עכשיו נחשב "כבר מסונכרן" ── */
+  function baseline(){
+    lastSent={};
+    const st=snapshot();
+    Object.entries(st).forEach(([k,raw])=>{
+      Object.entries(split(raw)).forEach(([rk,v])=>{ lastSent[k+'\u0000'+rk]=sig(v); });
+    });
+  }
 
   /* ── גרסאות מקומיות ── */
   function localVersions(){ try{return JSON.parse(localStorage.getItem(VERS_KEY)||'[]');}catch(e){return [];} }
@@ -2873,7 +2893,6 @@ const SYNC = (() => {
     catch(e){ try{ localStorage.setItem(VERS_KEY, JSON.stringify(v.slice(0,8))); }catch(e2){} }
   }
 
-  /* ── Firebase Realtime Database ── */
   async function connect(){
     if(ready) return true;
     try{
@@ -2881,51 +2900,81 @@ const SYNC = (() => {
       fb = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
       const app = appMod.getApps().length ? appMod.getApp() : appMod.initializeApp(FB_CONFIG);
       rdb = fb.getDatabase(app);
-      await pull();
+      const s = await fb.get(fb.ref(rdb, ROOT+'/m'));
+      if(s.exists()) mergeCloud(s.val());
       ready = true;
+      baseline();
       listen();
       cleanupCloud();
       return true;
-    }catch(e){ console.warn('Firebase:',e); ready=false; status('ענן לא זמין — נשמר מקומית'); return false; }
+    }catch(e){ console.warn('Firebase:',e); ready=false; return false; }
   }
 
-  async function pull(){
+  /* ── מיזוג: רשומה־רשומה, האחרון בזמן מנצח ── */
+  function mergeCloud(m){
+    if(!m) return false;
+    let changed=0;
+    applying=true;
     try{
-      const s = await fb.get(fb.ref(rdb, ROOT+'/state'));
-      if(s.exists()){ const d=s.val(); if(d && d.state){ restoreState(JSON.parse(d.state)); return d; } }
-    }catch(e){ console.warn('pull:',e); }
-    return null;
+      Object.entries(m).forEach(([ek,recs])=>{
+        const k=dec(ek); if(!isOurKey(k) || !recs) return;
+        const cur=split(localStorage.getItem(k));
+        const out={...cur}; let dirty=false;
+        Object.entries(recs).forEach(([erk,cell])=>{
+          if(!cell || typeof cell!=='object' || cell.v===undefined) return;
+          const rk=dec(erk), mk=k+'\u0000'+rk;
+          const localAt=meta[mk]||0;
+          if((cell.at||0) >= localAt && sig(out[rk])!==sig(cell.v)){
+            out[rk]=cell.v; meta[mk]=cell.at||0; dirty=true; changed++;
+          }
+        });
+        if(dirty) localStorage.setItem(k, join(out));
+      });
+    } finally { applying=false; }
+    if(changed) metaSave();
+    return changed>0;
   }
 
   function listen(){
-    fb.onValue(fb.ref(rdb, ROOT+'/state'), s=>{
+    fb.onValue(fb.ref(rdb, ROOT+'/m'), s=>{
       if(!s.exists()) return;
-      const d=s.val();
-      if(!d || !d.state) return;
-      if(Date.now()-lastPush < 5000) return;
-      restoreState(JSON.parse(d.state));
-      if(d.by && d.by!==user()) banner(`הפורטל עודכן על ידי ${d.by}`, true);
+      if(mergeCloud(s.val())){
+        baseline();
+        if(Date.now()-lastTouch > 15000){ location.reload(); }
+        else banner('הפורטל עודכן על ידי מדריך אחר', true);
+      }
     });
   }
 
+  /* ── דחיפה: רק רשומות שהשתנו ── */
   async function push(note){
     const st=snapshot();
     pushLocal(st, note);
-    if(!ready){ status('נשמר מקומית'); return; }
-    const payload={ state: JSON.stringify(st), by: user(), at: Date.now() };
-    lastPush=Date.now();
+    if(!ready){ status('לא מחובר'); return; }
+    const now=Date.now(), upd={}, sent={};
+    Object.entries(st).forEach(([k,raw])=>{
+      Object.entries(split(raw)).forEach(([rk,v])=>{
+        const mk=k+'\u0000'+rk, s2=sig(v);
+        if(lastSent[mk]===s2) return;
+        upd['m/'+enc(k)+'/'+enc(rk)]={v:v, at:now, by:user()};
+        sent[mk]=s2; meta[mk]=now;
+      });
+    });
+    const n=Object.keys(upd).length;
+    if(!n){ status(); return; }
     try{
-      await fb.set(fb.ref(rdb, ROOT+'/state'), payload);
-      await fb.set(fb.ref(rdb, ROOT+'/versions/'+payload.at), { ...payload, note: note||'שמירה אוטומטית' });
-      status('נשמר בענן ✓');
-      setTimeout(()=>status(), 2500);
-    }catch(e){ status('שמירה בענן נכשלה'); console.warn(e); }
+      await fb.update(fb.ref(rdb, ROOT), upd);
+      await fb.set(fb.ref(rdb, ROOT+'/versions/'+now),
+        { state: JSON.stringify(st), by:user(), at:now, note: note||'שמירה אוטומטית' });
+      Object.assign(lastSent, sent); metaSave();
+      status('נשמר ✓ ('+n+')'); setTimeout(()=>status(), 2500);
+    }catch(e){ status('השמירה נכשלה'); console.warn(e); }
   }
 
   async function cloudVersions(){
     if(!ready) return [];
     try{
-      const s = await fb.get(fb.query(fb.ref(rdb, ROOT+'/versions'), fb.limitToLast(40)));
+      const s = await fb.get(fb.query(fb.ref(rdb, ROOT+'/versions'), fb.limitToLast(60)));
       if(!s.exists()) return [];
       return Object.entries(s.val()).map(([id,v])=>({id, ...v})).sort((a,b)=>b.at-a.at);
     }catch(e){ return []; }
@@ -2935,16 +2984,53 @@ const SYNC = (() => {
       const cut=Date.now()-RETAIN_DAYS*864e5;
       const s = await fb.get(fb.ref(rdb, ROOT+'/versions'));
       if(!s.exists()) return;
-      for(const [id,v] of Object.entries(s.val())){
+      for(const [id,v] of Object.entries(s.val()))
         if((v.at||0) < cut) await fb.remove(fb.ref(rdb, ROOT+'/versions/'+id));
-      }
     }catch(e){}
   }
 
-  /* ── מעקב שינויים ── */
+  /* ── שחזור ומיזוג: אוסף כל הגרסאות ומשלב ── */
+  async function recoverMerge(){
+    const cloud=await cloudVersions();
+    const all=[...cloud.map(v=>({at:v.at, by:v.by, s:(()=>{try{return JSON.parse(v.state);}catch(e){return null;}})()})),
+               ...localVersions()].filter(x=>x.s).sort((a,b)=>a.at-b.at);
+    if(!all.length) return {n:0, src:0};
+    const merged={};
+    all.forEach(v=>{
+      Object.entries(v.s).forEach(([k,raw])=>{
+        if(!isOurKey(k)) return;
+        merged[k]=merged[k]||{};
+        Object.entries(split(raw)).forEach(([rk,val])=>{
+          const cur=merged[k][rk];
+          const empty = val==null || sig(val)==='{}' || sig(val)==='""';
+          if(!cur || !empty) merged[k][rk]={v:val, at:v.at};
+        });
+      });
+    });
+    // המצב הנוכחי גובר אם הוא חדש יותר
+    Object.entries(snapshot()).forEach(([k,raw])=>{
+      merged[k]=merged[k]||{};
+      Object.entries(split(raw)).forEach(([rk,val])=>{
+        const mk=k+'\u0000'+rk, localAt=meta[mk]||0, cur=merged[k][rk];
+        if(!cur || localAt>=cur.at) merged[k][rk]={v:val, at:localAt||Date.now()};
+      });
+    });
+    let n=0;
+    applying=true;
+    try{
+      Object.entries(merged).forEach(([k,recs])=>{
+        const out={}; Object.entries(recs).forEach(([rk,c])=>{ out[rk]=c.v; meta[k+'\u0000'+rk]=c.at; n++; });
+        if(Object.keys(out).length) localStorage.setItem(k, join(out));
+      });
+    } finally { applying=false; }
+    metaSave(); baseline();
+    await push('שחזור ומיזוג גרסאות');
+    return {n, src:all.length};
+  }
+
   function hook(){
     const orig = localStorage.setItem.bind(localStorage);
-    localStorage.setItem = function(k,v){ orig(k,v); if(!applying && isOurKey(k)) schedule(); };
+    localStorage.setItem = function(k,v){ orig(k,v); if(!applying && isOurKey(k)){ lastTouch=Date.now(); schedule(); } };
   }
   function schedule(){
     clearTimeout(timer);
@@ -2952,14 +3038,26 @@ const SYNC = (() => {
     timer=setTimeout(()=>{ timer=null; push(); }, 2500);
   }
 
-  /* ── ממשק ── */
   function status(msg){
     const el=document.getElementById('syncDot'); if(!el) return;
-    el.style.background = ready ? '#047857' : '#b45309';
+    el.style.background = ready ? '#047857' : '#b91c1c';
     const lb=document.getElementById('syncLbl');
-    if(lb) lb.textContent = msg || (ready ? 'מסונכרן' : 'מקומי');
-    el.title = msg || (ready ? 'מסונכרן בענן' : 'שמירה מקומית בלבד');
+    if(lb) lb.textContent = msg || (ready ? 'מסונכרן' : '⚠ לא מחובר');
+    const btn=document.getElementById('syncBtn');
+    if(btn && !ready){ btn.style.borderColor='#b91c1c'; btn.style.color='#b91c1c'; }
+    el.title = msg || (ready ? 'מסונכרן בענן' : 'לא מחובר — השינויים שלך לא מגיעים לצוות');
   }
+  function offlineWarn(){
+    if(document.getElementById('offBar')) return;
+    const d=document.createElement('div'); d.id='offBar';
+    d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:10000;background:#b91c1c;color:#fff;'+
+      'padding:11px 18px;font-family:Heebo;font-size:14px;font-weight:700;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.3);';
+    d.innerHTML='⚠ אין חיבור לענן — <u>מה שתמלא כאן לא יגיע לצוות</u>. ודא שנכנסת דרך הקישור הרשמי של הפורטל ולא מקובץ שהורדת. '+
+      '<button onclick="SYNC.retry()" style="background:#fff;color:#b91c1c;border:none;border-radius:7px;padding:4px 13px;margin-right:10px;cursor:pointer;font-family:Heebo;font-weight:800;">נסה שוב</button>';
+    document.body.appendChild(d);
+    document.body.style.paddingTop='44px';
+  }
+  function offlineClear(){ const d=document.getElementById('offBar'); if(d){ d.remove(); document.body.style.paddingTop=''; } }
   function banner(txt, reload){
     let b=document.getElementById('syncBanner');
     if(!b){ b=document.createElement('div'); b.id='syncBanner';
@@ -2970,20 +3068,37 @@ const SYNC = (() => {
     if(!reload) setTimeout(()=>{ if(b) b.remove(); }, 3500);
   }
 
+  async function retry(){ status('מתחבר…'); const ok=await connect(); status(); if(ok){ offlineClear(); banner('החיבור הצליח ✓'); setTimeout(()=>location.reload(),900);} else offlineWarn(); }
+
   async function init(){
-    if(!window.FBUSER) { status('לא מזוהה'); return; }
-    hook();
+    metaLoad();
     if(window.ME && ME.n) setUser(ME.n);
     else if(!localStorage.getItem(USER_KEY)) setUser('מדריך');
     status('מתחבר…');
-    await connect();
+    const ok=await connect();
+    if(!ok){ baseline(); offlineWarn(); }
+    hook();
     status();
     window.addEventListener('beforeunload', ()=>{ if(timer){ clearTimeout(timer); push(); } });
   }
 
-  return { init, push, pull, connect, user, setUser, localVersions, cloudVersions,
-           restoreState, snapshot, isReady:()=>ready, status, banner };
+  return { init, push, connect, retry, user, setUser, localVersions, cloudVersions,
+           recoverMerge, snapshot, isReady:()=>ready, status, banner,
+           restoreState:(o)=>{ applying=true; try{
+             for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i); if(isOurKey(k)) localStorage.removeItem(k);}
+             Object.entries(o||{}).forEach(([k,v])=>localStorage.setItem(k,v));
+           } finally{applying=false;} meta={}; metaSave(); } };
 })();
+
+window.recoverAll = async function(){
+  if(!confirm('לאסוף את כל הגרסאות מהענן ומהמחשב הזה, ולמזג אותן יחד?\n\nכל סימון שמישהו הזין אי־פעם יחזור. שום דבר לא יימחק.')) return;
+  const el=document.getElementById('recBtn'); if(el){ el.disabled=true; el.textContent='ממזג…'; }
+  try{
+    const r=await SYNC.recoverMerge();
+    alert(`הושלם.\n\nנסרקו ${r.src} גרסאות ושוחזרו ${r.n} רשומות.\nהדף ייטען מחדש.`);
+    location.reload();
+  }catch(e){ alert('המיזוג נכשל: '+e.message); if(el){ el.disabled=false; el.textContent='🔧 שחזר ומזג הכל'; } }
+};
 
 /* ── פאנל הסנכרון ── */
 window.openSync = async function(){
@@ -3013,6 +3128,19 @@ window.openSync = async function(){
 
     <div class="info-box" style="margin-bottom:14px;"><div class="icon">👤</div><div>
       מחובר כ<b>${SYNC.user()}</b> — כל שינוי שתעשה יישמר בשמך.</div></div>
+    ${SYNC.isReady()?'':`<div class="info-box" style="background:#fdeaea;border-color:#e8a0a0;border-right-color:#b91c1c;margin-bottom:14px;"><div class="icon">⚠️</div><div>
+      <b style="color:#b91c1c;">אין חיבור לענן.</b> מה שתמלא כאן נשמר רק בדפדפן הזה ולא מגיע לצוות.<br>
+      <span style="font-size:12px;">ודא שנכנסת דרך הקישור הרשמי ולא מקובץ שהורדת למחשב.</span>
+      <button class="btn" onclick="SYNC.retry()" style="margin-top:8px;">נסה להתחבר שוב</button></div></div>`}
+
+    <div class="panel" style="margin-bottom:14px;border-top:4px solid #b45309;"><div class="panel-h" style="background:rgba(180,83,9,.07);">
+      <h2 style="color:#b45309;">🔧 שחזור ומיזוג</h2></div><div class="panel-b">
+      <div style="font-size:12.5px;color:var(--text2);line-height:1.7;margin-bottom:10px;">
+        חסרים סימונים שמדריך מילא? הכלי אוסף את <b>כל</b> הגרסאות מהענן ומהמחשב הזה וממזג אותן יחד —
+        כל סימון שהוזן אי־פעם חוזר, ושום דבר קיים לא נמחק.</div>
+      <button id="recBtn" class="btn" onclick="recoverAll()" style="background:#b45309;">🔧 שחזר ומזג הכל</button>
+    </div></div>
+
     <div class="panel"><div class="panel-h"><h2>🕘 היסטוריית גרסאות</h2>
       <button onclick="SYNC.push('גיבוי ידני').then(()=>openSync())" class="btn">📌 צור גיבוי עכשיו</button></div>
       <div class="panel-b">
