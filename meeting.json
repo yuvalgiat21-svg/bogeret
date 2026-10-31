@@ -1,0 +1,20 @@
+{
+  "updated": "31.10.2026",
+  "current": {
+    "title": "ישיבת בוגרת תשפ\"ז 1.11.26",
+    "date": "1.11.2026",
+    "view": "https://www.canva.com/d/i7XFZPdGMuqLXyy",
+    "edit": "https://www.canva.com/d/azT958bo7jEyK2z"
+  },
+  "previous": [
+    {"title": "ישיבת בוגרת תשפ\"ז 18.10.26", "view": "https://www.canva.com/d/Cmhg0XrjzGz57HG"},
+    {"title": "ישיבת בוגרת תשפ\"ז 11.10.26", "view": "https://www.canva.com/d/8OLCGUpwjjmvFTE"},
+    {"title": "ישיבת בוגרת תשפ\"ז 4.10.26", "view": "https://www.canva.com/d/SdncxPFp7lsMMsz"}
+  ],
+  "fixed": [
+    {"icon": "📌", "title": "דגשים קבועים בוגרת", "desc": "הדגשים שחוזרים בכל ישיבה", "url": "https://www.canva.com/d/dX22YgI8dJx2HpO"},
+    {"icon": "🧭", "title": "הכשרת צוות בוגרת תשפ\"ז", "desc": "חומרי ההכשרה של השנה", "url": "https://www.canva.com/d/msO3vLOWggylXpR"},
+    {"icon": "💡", "title": "בנק השראה ולמידת עמיתים", "desc": "רעיונות לפתיחת ישיבה", "url": "https://claude.ai/artifact/RCAobWMdAt1yJ62WVjxTzc"}
+  ],
+  "folder": "https://www.canva.com/folder/FAHYQJUG8ts"
+}

@@ -1697,6 +1697,23 @@ function medMainTable(){
       : '<tr><td colspan="7" style="padding:22px;text-align:center;color:var(--text3);">אין מידע רפואי מוזן.</td></tr>'}
     </tbody></table>`;
 }
+/* ===== ישיבת בוגרת שבועית — קישורים קבועים. meeting.json מתעדכן אוטומטית ע"י Claude אחרי סידור הקנבה ===== */
+async function loadMeetingLinks(){
+  const el=document.getElementById('mtBody'); if(!el) return;
+  let M=null; try{ const r=await fetch('meeting.json?v='+Date.now(),{cache:'no-store'}); if(r.ok) M=await r.json(); }catch(e){}
+  if(!M||!M.current){ el.innerHTML='<div style="color:var(--text2);font-size:13px;">הקישור לישיבה הקרובה יופיע כאן.</div>'; return; }
+  const esc=t=>String(t||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+  const card=(ic,t,d,u)=>`<a href="${esc(u)}" target="_blank" class="link-card" style="margin-bottom:0;"><div class="ic">${ic}</div><div class="info"><h4>${esc(t)}</h4><p>${esc(d)}</p></div></a>`;
+  const isAdmin=(typeof ME!=='undefined'&&ME&&ME.mode==='admin');
+  el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">
+      ${card('📽️','מצגת הישיבה הקרובה',M.current.title,M.current.view)}
+      ${(M.fixed||[]).map(f=>card(f.icon||'🔗',f.title,f.desc,f.url)).join('')}
+      ${isAdmin&&M.current.edit?card('✏️','עריכת המצגת (יובל)',M.current.title,M.current.edit):''}
+      ${isAdmin&&M.folder?card('🗂️','תיקיית הישיבות בקנבה (יובל)','כל מצגות תשפ"ז',M.folder):''}
+    </div>
+    ${(M.previous||[]).length?`<div style="margin-top:10px;font-size:12.5px;color:var(--text2);">ישיבות קודמות: ${M.previous.map(x=>`<a href="${esc(x.view)}" target="_blank" style="color:var(--blue);">${esc(x.title)}</a>`).join(' · ')}</div>`:''}
+    <div style="margin-top:6px;font-size:11px;color:var(--text3);">עודכן ${esc(M.updated)}</div>`;
+}
 /* ===== סיכום שבועי ותובנות — נכתב ע"י Claude בכל חמישי לקובץ insights.json ===== */
 let WI=null;
 async function loadWeeklyInsights(){
@@ -2748,6 +2765,11 @@ function reorganize(){
     <div class="panel-b" id="wiBody"><div style="color:var(--text2);font-size:13px;">טוען…</div></div></div>`;
   sGen.insertBefore(wk, sGen.firstChild);
   loadWeeklyInsights();
+  const mt=document.createElement('div'); mt.id='meetingLinks';
+  mt.innerHTML=`<div class="panel" style="border:2px solid #93c5fd;margin-bottom:16px;"><div class="panel-h" style="background:linear-gradient(90deg,#eff6ff,#fff);"><h2>📽️ ישיבת בוגרת השבועית — קישורים קבועים</h2></div>
+    <div class="panel-b" id="mtBody"><div style="color:var(--text2);font-size:13px;">טוען…</div></div></div>`;
+  sGen.insertBefore(mt, sGen.firstChild);
+  loadMeetingLinks();
   [sGen,sAlph,sGoals,sRam,sMed,sDiet,sRooms].forEach(x=>ov.appendChild(x));
   main.appendChild(ov);
 
