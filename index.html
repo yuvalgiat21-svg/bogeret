@@ -1488,6 +1488,17 @@ function eduSave(o){ try{localStorage.setItem(EDU_KEY,JSON.stringify(o));}catch(
 function eduItems(layer){
   try{ return (typeof EDU_DEFAULT_DATA!=='undefined'?EDU_DEFAULT_DATA:[]).filter(x=>x.layer===layer); }catch(e){ return []; }
 }
+/* ── קטגוריות התכנון החודשי (קהילת יב') ── */
+const EDU_CATS={
+ 'תאריכים ואירועי עוגן':{ic:'📅',c:'#1d4ed8'},
+ 'פרויקטים ויוזמות שכבתיות':{ic:'🚀',c:'#6d28d9'},
+ 'מתווה התהליך החינוכי':{ic:'🎓',c:'#047857'},
+ 'משימות ותחומי אחריות לצוות החינוכי':{ic:'👥',c:'#b45309'}
+};
+/* פריט שיש לו plan מגיע מתוכנית חודשית מוגדרת — משבצת אחת, לא ארבעה שבועות */
+function eduWeeks(x){ return (x && x.plan) ? [1] : [1,2,3,4]; }
+function eduIsMonthly(items){ return items.length>0 && items.every(x=>!!x.plan); }
+function eduEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 window.eduSet=function(scope,id,wk,f,v){
   const st=eduLoad(); const k=scope+'|'+id+'|'+wk;
   st[k]=st[k]||{}; st[k][f]=v; eduSave(st);
@@ -1498,7 +1509,7 @@ window.eduCfg={};
 function eduStats(scope){
   const st=eduLoad(); const {layer}=window.eduCfg[scope];
   let plan=0,done=0,part=0,miss=0;
-  eduItems(layer).forEach(x=>{ [1,2,3,4].forEach(wk=>{
+  eduItems(layer).forEach(x=>{ eduWeeks(x).forEach(wk=>{
     const e=st[scope+'|'+x.id+'|'+wk];
     if(e && e.status){ plan++; if(e.status==='בוצע')done++; else if(e.status==='בוצע חלקית')part++; else if(e.status==='לא בוצע')miss++; }
   });});
@@ -1506,6 +1517,7 @@ function eduStats(scope){
 }
 function eduTable(scope){
   const st=eduLoad(); const cfg=window.eduCfg[scope]; const items=eduItems(cfg.layer);
+  if(eduIsMonthly(items)) return eduMonthlyTable(scope,items);
   const s=eduStats(scope);
   const byM={}; items.forEach(x=>{ (byM[x.month]=byM[x.month]||[]).push(x); });
   const cards=`<div class="cards" style="margin-bottom:14px;">
@@ -1538,11 +1550,59 @@ function eduTable(scope){
       <th style="padding:8px 6px;">ביצוע בפועל</th><th style="padding:8px 6px;">תאריך</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--text3);">אין נושאים לשכבה זו.</td></tr>'}</tbody></table></div>`;
 }
+/* ── תצוגה חודשית: התכנון כבר כתוב, מסמנים ביצוע ── */
+function eduMonthlyTable(scope,items){
+  const st=eduLoad();
+  let tot=0,done=0,part=0,miss=0,post=0,ex=0;
+  items.forEach(x=>{ const e=st[scope+'|'+x.id+'|1']||{}; tot++;
+    if(e.exec) ex++;
+    if(e.status==='בוצע')done++; else if(e.status==='בוצע חלקית')part++;
+    else if(e.status==='לא בוצע')miss++; else if(e.status==='נדחה')post++; });
+  const pct = tot? Math.round((done+part*0.5)/tot*100):0;
+  const pill=(ic,n,lbl,col)=>`<span style="display:inline-flex;align-items:center;gap:5px;background:${col}14;color:${col};border:1px solid ${col}33;border-radius:99px;padding:4px 11px;font-size:12px;font-weight:800;white-space:nowrap;">${ic} ${n}<span style="font-weight:500;opacity:.8;">${lbl}</span></span>`;
+  const cards=`<div style="background:#fff;border:1px solid var(--border);border-radius:11px;padding:11px 13px;margin-bottom:14px;">
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;">
+      ${pill('📋',tot,'משימות','#1d4ed8')}${pill('✅',done,'בוצעו','#047857')}${pill('🟠',part,'חלקית','#b45309')}${pill('🔴',miss,'לא בוצעו','#b91c1c')}${pill('⏭️',post,'נדחו','#6d28d9')}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;margin-bottom:5px;">
+      <span style="color:var(--text2);">שיעור ביצוע התוכנית</span><span style="color:var(--blue);">${pct}%</span></div>
+    <div style="height:8px;background:#eef2f7;border-radius:99px;overflow:hidden;">
+      <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#047857,#0891b2);border-radius:99px;"></div></div>
+  </div>`;
+  const byM={}; items.forEach(x=>{(byM[x.month]=byM[x.month]||[]).push(x);});
+  const rows=EDU_MONTHS.map((m,mi)=>{
+    const its=byM[m]; if(!its||!its.length) return '';
+    const c=EDU_MCLR[mi%EDU_MCLR.length];
+    const mDone=its.filter(x=>(st[scope+'|'+x.id+'|1']||{}).status==='בוצע').length;
+    let out=`<tr style="background:${c}1a;"><td colspan="4" style="padding:9px 12px;font-family:'Rubik';font-weight:800;font-size:14px;color:${c};border-right:6px solid ${c};">${m}<span style="font-weight:500;font-size:11.5px;color:var(--text3);margin-right:9px;">${its.length} משימות · ${mDone} בוצעו</span></td></tr>`;
+    let lastCat='';
+    its.forEach(x=>{
+      const e=st[scope+'|'+x.id+'|1']||{};
+      if(x.category!==lastCat){ lastCat=x.category; const cc=EDU_CATS[x.category]||{};
+        out+=`<tr><td colspan="4" style="padding:5px 12px 5px 26px;background:${(cc.c||'#64748b')}12;font-size:11.5px;font-weight:800;color:${cc.c||'#64748b'};border-right:6px solid ${c};">${cc.ic||'•'} ${x.category}</td></tr>`; }
+      out+=`<tr style="border-bottom:1px solid #eef2f7;">
+        <td style="padding:7px 12px;font-size:12.5px;line-height:1.45;border-right:6px solid ${c};min-width:230px;">${x.plan}</td>
+        <td style="padding:4px 5px;"><select onchange="eduSet('${scope}','${x.id}',1,'status',this.value)" style="width:106px;border:1px solid var(--border);border-radius:5px;padding:4px 5px;font-family:'Heebo';font-size:11px;font-weight:700;color:${EDU_STC[e.status||'']};">
+          ${EDU_ST.map(o=>`<option value="${o}" ${o===(e.status||'')?'selected':''}>${o||'—'}</option>`).join('')}</select></td>
+        <td style="padding:4px 5px;"><input value="${eduEsc(e.exec)}" oninput="eduSet('${scope}','${x.id}',1,'exec',this.value)" placeholder="מה בוצע / מי אחראי…" style="width:100%;min-width:160px;border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-family:'Heebo';font-size:11.5px;"></td>
+        <td style="padding:4px 5px;"><input type="date" value="${eduEsc(e.date)}" onchange="eduSet('${scope}','${x.id}',1,'date',this.value)" style="width:104px;border:1px solid var(--border);border-radius:5px;padding:4px 5px;font-family:'Heebo';font-size:10.5px;"></td>
+      </tr>`;
+    });
+    return out;
+  }).filter(Boolean).join('');
+  return cards + `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead><tr style="background:var(--text);color:#fff;">
+      <th style="padding:9px 12px;text-align:right;">מה מתוכנן</th><th style="padding:9px 6px;">סטטוס</th>
+      <th style="padding:9px 6px;">ביצוע בפועל / אחראי</th><th style="padding:9px 6px;">תאריך</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
 function viewEdu(layer, title, scope){
   window.eduCfg[scope]={layer:layer,title:title};
-  return info('🎓',`תוכנית חינוכית — ${title}`,
-    `לכל נושא חודשי יש ארבעה שבועות. מלא מה <b>מתוכנן</b>, סמן <b>סטטוס</b> ורשום מה <b>בוצע בפועל</b>. הנתונים מתגלגלים אוטומטית לתוכנית החינוכית הראשית.`)
-   + `<div class="panel"><div class="panel-h"><h2>🎓 תכנון מול ביצוע — ${title}</h2></div>
+  const monthly = eduIsMonthly(eduItems(layer));
+  return info('🎓',`תוכנית חינוכית — ${title}`, monthly
+    ? `התוכנית החודשית של השכבה <b>כבר מוזנת כאן</b> — לפי חודש ולפי ארבעה תחומים: 📅 אירועי עוגן, 🚀 פרויקטים, 🎓 מתווה חינוכי, 👥 משימות צוות.<br>לכל משימה בחרו <b>סטטוס</b>, רשמו מה <b>בוצע בפועל / מי אחראי</b> וסמנו <b>תאריך</b>. הנתונים נשמרים אוטומטית ומתגלגלים לתוכנית החינוכית הראשית.`
+    : `לכל נושא חודשי יש ארבעה שבועות. מלא מה <b>מתוכנן</b>, סמן <b>סטטוס</b> ורשום מה <b>בוצע בפועל</b>. הנתונים מתגלגלים אוטומטית לתוכנית החינוכית הראשית.`)
+    + `<div class="panel"><div class="panel-h"><h2>🎓 תכנון מול ביצוע — ${title}</h2></div>
       <div class="panel-b" id="edu-${scope}">${eduTable(scope)}</div></div>`;
 }
 
@@ -1552,7 +1612,7 @@ function eduMainTable(){
   const scopes=[['שלדג',"יא'"],['שחף',"יא'"],['שיר',"יא'"],['קהילת יב',"יב'"],['אקדמיה',"יא'"]];
   const agg=scopes.map(([sc,layer])=>{
     let plan=0,done=0,part=0,miss=0,post=0;
-    eduItems(layer).forEach(x=>[1,2,3,4].forEach(wk=>{
+    eduItems(layer).forEach(x=>eduWeeks(x).forEach(wk=>{
       const e=st[sc+'|'+x.id+'|'+wk];
       if(e&&(e.plan||e.status)) plan++;
       if(e&&e.status==='בוצע')done++; else if(e&&e.status==='בוצע חלקית')part++;
@@ -4073,897 +4133,143 @@ window.addEventListener('load', () => { const e=document.getElementById('fbEmail
 
 // ============ EDU PLAN - תוכנית חינוכית עם drag & drop ============
 const EDU_DEFAULT_DATA = [
-{
-"layer": "יא'",
-"month": "אוקטובר",
-"order": 1,
-"topic": "תרבות",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_001"
-},
-{
-"layer": "יא'",
-"month": "נובמבר",
-"order": 1,
-"topic": "תרבות - למידה",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_002"
-},
-{
-"layer": "יא'",
-"month": "דצמבר",
-"order": 1,
-"topic": "ניהול עצמי- כלים פרקטים",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_003"
-},
-{
-"layer": "יא'",
-"month": "ינואר",
-"order": 1,
-"topic": "ניהול זמן",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_004"
-},
-{
-"layer": "יא'",
-"month": "פברואר",
-"order": 1,
-"topic": "פורים",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_005"
-},
-{
-"layer": "יא'",
-"month": "מרץ",
-"order": 1,
-"topic": "חברה",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_006"
-},
-{
-"layer": "יא'",
-"month": "אפריל",
-"order": 1,
-"topic": "פסח",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_007"
-},
-{
-"layer": "יא'",
-"month": "מאי",
-"order": 1,
-"topic": "הטמעת המושג קהילה",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_008"
-},
-{
-"layer": "יא'",
-"month": "יוני",
-"order": 1,
-"topic": "בניית זהות קהילתית",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_009"
-},
-{
-"layer": "יא'",
-"month": "אוקטובר",
-"order": 2,
-"topic": "תרבות שיח",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_010"
-},
-{
-"layer": "יא'",
-"month": "נובמבר",
-"order": 2,
-"topic": "שיחות אישיות",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_011"
-},
-{
-"layer": "יא'",
-"month": "דצמבר",
-"order": 2,
-"topic": "איך לבנות לו\"ז אישי",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_012"
-},
-{
-"layer": "יא'",
-"month": "ינואר",
-"order": 2,
-"topic": "העברת האחריות לחניכים",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_013"
-},
-{
-"layer": "יא'",
-"month": "פברואר",
-"order": 2,
-"topic": "עבודה על פורים",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_014"
-},
-{
-"layer": "יא'",
-"month": "מרץ",
-"order": 2,
-"topic": "פעילות בנושא בחירה אישית",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_015"
-},
-{
-"layer": "יא'",
-"month": "מאי",
-"order": 2,
-"topic": "הכנה לפולין?",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_016"
-},
-{
-"layer": "יא'",
-"month": "יוני",
-"order": 2,
-"topic": "הכנה לפולין?",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_017"
-},
-{
-"layer": "יא'",
-"month": "אוקטובר",
-"order": 3,
-"topic": "הנהגת שכבה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_018"
-},
-{
-"layer": "יא'",
-"month": "נובמבר",
-"order": 3,
-"topic": "הכנה לחנוכה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_019"
-},
-{
-"layer": "יא'",
-"month": "דצמבר",
-"order": 3,
-"topic": "מהי דחיינות וכיצד להתגבר עליה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_020"
-},
-{
-"layer": "יא'",
-"month": "ינואר",
-"order": 3,
-"topic": "תחילת עבודה על השבת",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_021"
-},
-{
-"layer": "יא'",
-"month": "מרץ",
-"order": 3,
-"topic": "פעילות בנושא התמכרויות",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_022"
-},
-{
-"layer": "יא'",
-"month": "מאי",
-"order": 3,
-"topic": "פעילות בנושא הקהילה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_023"
-},
-{
-"layer": "יא'",
-"month": "אוקטובר",
-"order": 4,
-"topic": "תחילת מרכז למידה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_024"
-},
-{
-"layer": "יא'",
-"month": "דצמבר",
-"order": 4,
-"topic": "מהו מקור המוטיבציה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_025"
-},
-{
-"layer": "יא'",
-"month": "אוקטובר",
-"order": 5,
-"topic": "שיחות אישיות",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_026"
-},
-{
-"layer": "יא'",
-"month": "אוקטובר",
-"order": 6,
-"topic": "הגדרת גבולות ברורים",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_027"
-},
-{
-"layer": "יא'",
-"month": "דצמבר",
-"order": 5,
-"topic": "עבודה על חנוכיות",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_028"
-},
-{
-"layer": "יא'",
-"month": "ינואר",
-"order": 4,
-"topic": "יציאה להצגה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_029"
-},
-{
-"layer": "יא'",
-"month": "פברואר",
-"order": 3,
-"topic": "פורים",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_030"
-},
-{
-"layer": "יא'",
-"month": "אוקטובר",
-"order": 7,
-"topic": "קוליסות",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_031"
-},
-{
-"layer": "יא'",
-"month": "נובמבר",
-"order": 4,
-"topic": "עבודה על חנוכה",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_032"
-},
-{
-"layer": "יא'",
-"month": "דצמבר",
-"order": 6,
-"topic": "חנוכה",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_033"
-},
-{
-"layer": "יא'",
-"month": "ינואר",
-"order": 5,
-"topic": "תעודות?",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_034"
-},
-{
-"layer": "יא'",
-"month": "פברואר",
-"order": 4,
-"topic": "תעודות?",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_035"
-},
-{
-"layer": "יא'",
-"month": "מרץ",
-"order": 4,
-"topic": "יציאה למרחב החברתי",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_036"
-},
-{
-"layer": "יא'",
-"month": "אפריל",
-"order": 2,
-"topic": "יום השואה",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_037"
-},
-{
-"layer": "יא'",
-"month": "אוקטובר",
-"order": 8,
-"topic": "שיח על חזרת החטופים",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_038"
-},
-{
-"layer": "יא'",
-"month": "נובמבר",
-"order": 5,
-"topic": "טיול שנתי",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_039"
-},
-{
-"layer": "יא'",
-"month": "דצמבר",
-"order": 7,
-"topic": "העלאת רעיונות לפורים",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_040"
-},
-{
-"layer": "יא'",
-"month": "מרץ",
-"order": 5,
-"topic": "חינוך פיננסי",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_041"
-},
-{
-"layer": "יא'",
-"month": "אפריל",
-"order": 3,
-"topic": "טקס יום הזכרון",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_042"
-},
-{
-"layer": "יא'",
-"month": "מאי",
-"order": 4,
-"topic": "ל\"ג בעומר",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_043"
-},
-{
-"layer": "יא'",
-"month": "יוני",
-"order": 3,
-"topic": "שבת פנימייה אחרונה",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_044"
-},
-{
-"layer": "יא'",
-"month": "אוקטובר",
-"order": 9,
-"topic": "מיפוי לימודי - שיחה אצל רונן",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_045"
-},
-{
-"layer": "יא'",
-"month": "מרץ",
-"order": 6,
-"topic": "נודרת אחותי",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_046"
-},
-{
-"layer": "יא'",
-"month": "אפריל",
-"order": 4,
-"topic": "יום העצמאות",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_047"
-},
-{
-"layer": "יא'",
-"month": "מאי",
-"order": 5,
-"topic": "יום ירושלים",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_048"
-},
-{
-"layer": "יא'",
-"month": "אוקטובר",
-"order": 10,
-"topic": "תכנית מעלות",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_049"
-},
-{
-"layer": "יא'",
-"month": "מרץ",
-"order": 7,
-"topic": "הרצאה התמכרויות?",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_050"
-},
-{
-"layer": "יא'",
-"month": "מאי",
-"order": 6,
-"topic": "חג שבועות",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_051"
-},
-{
-"layer": "יא'",
-"month": "יוני",
-"order": 4,
-"topic": "תעודות סוף שנה בביהס",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_052"
-},
-{
-"layer": "יב'",
-"month": "ספטמבר- אוקטובר",
-"order": 1,
-"topic": "בניית קהילה / בגרות / היום שאחרי",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_053"
-},
-{
-"layer": "יב'",
-"month": "נובמבר",
-"order": 1,
-"topic": "בניית קהילה / בגרות / היום שאחרי",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_054"
-},
-{
-"layer": "יב'",
-"month": "דצמבר",
-"order": 1,
-"topic": "בניית קהילה / בגרות / היום שאחרי",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_055"
-},
-{
-"layer": "יב'",
-"month": "ינואר",
-"order": 1,
-"topic": "בניית קהילה / בגרות / היום שאחרי",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_056"
-},
-{
-"layer": "יב'",
-"month": "פברואר",
-"order": 1,
-"topic": "בניית קהילה / בגרות / היום שאחרי",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_057"
-},
-{
-"layer": "יב'",
-"month": "מרץ",
-"order": 1,
-"topic": "בניית קהילה                                   בגרות                                                   היום שאחרי",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_058"
-},
-{
-"layer": "יב'",
-"month": "אפריל",
-"order": 1,
-"topic": "בניית קהילה                                         בגרות                                                        היום שאחרי",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_059"
-},
-{
-"layer": "יב'",
-"month": "מאי",
-"order": 1,
-"topic": "בניית קהילה                                                                בגרות                                                                            היום שאחרי",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_060"
-},
-{
-"layer": "יב'",
-"month": "יוני",
-"order": 1,
-"topic": "בניית קהילה                                                    בגרות                                                                     היום שאחרי",
-"category": "נושא חודש",
-"status": "פעיל",
-"id": "edu_061"
-},
-{
-"layer": "יב'",
-"month": "ספטמבר- אוקטובר",
-"order": 2,
-"topic": "הצגת תהליך",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_062"
-},
-{
-"layer": "יב'",
-"month": "נובמבר",
-"order": 2,
-"topic": "צעדי בנייה ראשונים + סמינר",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_063"
-},
-{
-"layer": "יב'",
-"month": "ינואר",
-"order": 2,
-"topic": "תהליכי עומק בקהילה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_064"
-},
-{
-"layer": "יב'",
-"month": "מרץ",
-"order": 2,
-"topic": "סגירת ספקים",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_065"
-},
-{
-"layer": "יב'",
-"month": "מאי",
-"order": 2,
-"topic": "הוצאה לפועל של כל מכלול הסיום ואירועי סיום",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_066"
-},
-{
-"layer": "יב'",
-"month": "ספטמבר- אוקטובר",
-"order": 3,
-"topic": "הגדרת גבולות + סמינר",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_067"
-},
-{
-"layer": "יב'",
-"month": "נובמבר",
-"order": 3,
-"topic": "הקמת וועדות + ביאנלה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_068"
-},
-{
-"layer": "יב'",
-"month": "ינואר",
-"order": 3,
-"topic": "התנעת מכלול סיום בשיתוף הקהילה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_069"
-},
-{
-"layer": "יב'",
-"month": "מרץ",
-"order": 3,
-"topic": "תחילת תהליכי פרידה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_070"
-},
-{
-"layer": "יב'",
-"month": "ספטמבר- אוקטובר",
-"order": 4,
-"topic": "איסוף נתונים + מעורבות חברתית",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_071"
-},
-{
-"layer": "יב'",
-"month": "נובמבר",
-"order": 4,
-"topic": "בניית שפת קהילה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_072"
-},
-{
-"layer": "יב'",
-"month": "ינואר",
-"order": 4,
-"topic": "ישיבות הנהלה עם חברי הקהילה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_073"
-},
-{
-"layer": "יב'",
-"month": "מרץ",
-"order": 4,
-"topic": "הוצאת מסמכי משימות",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_074"
-},
-{
-"layer": "יב'",
-"month": "ספטמבר- אוקטובר",
-"order": 5,
-"topic": "סנכרון מול אלמוג, מרכז למידה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_075"
-},
-{
-"layer": "יב'",
-"month": "נובמבר",
-"order": 5,
-"topic": "בניית תוכניות אישיות - התאמות, הקמת קבוצות למידה",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_076"
-},
-{
-"layer": "יב'",
-"month": "ינואר",
-"order": 5,
-"topic": "מעקב קבוצות למידה ודיוק התאמות לחניכים ספציפיים",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_077"
-},
-{
-"layer": "יב'",
-"month": "מרץ",
-"order": 5,
-"topic": "מעקב בגרויות ומרכז למידה לספציפיים - מרתונים לקראת בגרויות",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_078"
-},
-{
-"layer": "יב'",
-"month": "ספטמבר- אוקטובר",
-"order": 6,
-"topic": "איסוף נתונים ראשוני על בסיס שיחות אישיות",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_079"
-},
-{
-"layer": "יב'",
-"month": "נובמבר",
-"order": 6,
-"topic": "חיבור לאלעד ורוני רובין לחניכים שעדיין מתקשים ליצור קשר עם מיטב או להבין מיקום שלהם בתהליך",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_080"
-},
-{
-"layer": "יב'",
-"month": "ינואר",
-"order": 6,
-"topic": "מעקב שוטף ואיתור מאתגרים",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_081"
-},
-{
-"layer": "יב'",
-"month": "מרץ",
-"order": 6,
-"topic": "איסוף נתונים אחרונים לתמונה סופית",
-"category": "נושא",
-"status": "פעיל",
-"id": "edu_082"
-},
-{
-"layer": "יב'",
-"month": "ספטמבר- אוקטובר",
-"order": 7,
-"topic": "חגי ישראל, שבת ראשונה",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_083"
-},
-{
-"layer": "יב'",
-"month": "נובמבר",
-"order": 7,
-"topic": "10-13.11 מסע ישראלי",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_084"
-},
-{
-"layer": "יב'",
-"month": "דצמבר",
-"order": 2,
-"topic": "חנוכה",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_085"
-},
-{
-"layer": "יב'",
-"month": "ינואר",
-"order": 7,
-"topic": "פורים-עבודה על הרונדו",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_086"
-},
-{
-"layer": "יב'",
-"month": "פברואר",
-"order": 2,
-"topic": "פורים",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_087"
-},
-{
-"layer": "יב'",
-"month": "מרץ",
-"order": 7,
-"topic": "פסח- סדר פסח קהילתי",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_088"
-},
-{
-"layer": "יב'",
-"month": "אפריל",
-"order": 2,
-"topic": "יום השואה",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_089"
-},
-{
-"layer": "יב'",
-"month": "מאי",
-"order": 3,
-"topic": "עבודה על טקס סיום",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_090"
-},
-{
-"layer": "יב'",
-"month": "נובמבר",
-"order": 8,
-"topic": "1.11 טקס רבין, פעילות בנושא דמוקרטיה וחופש הביטוי",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_091"
-},
-{
-"layer": "יב'",
-"month": "מרץ",
-"order": 8,
-"topic": "עבודה על יום הזיכרון",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_092"
-},
-{
-"layer": "יב'",
-"month": "אפריל",
-"order": 3,
-"topic": "יום הזיכרון",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_093"
-},
-{
-"layer": "יב'",
-"month": "מאי",
-"order": 4,
-"topic": "שבת פרידה",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_094"
-},
-{
-"layer": "יב'",
-"month": "אפריל",
-"order": 4,
-"topic": "יום העצמאות",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_095"
-},
-{
-"layer": "יב'",
-"month": "מאי",
-"order": 5,
-"topic": "טקס ביאנלה",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_096"
-},
-{
-"layer": "יב'",
-"month": "מרץ",
-"order": 9,
-"topic": "יום הפאי הבינלאומי",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_097"
-},
-{
-"layer": "יב'",
-"month": "אפריל",
-"order": 5,
-"topic": "עבודה על טקס סיום",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_098"
-},
-{
-"layer": "יב'",
-"month": "מאי",
-"order": 6,
-"topic": "סדנאות פרידה",
-"category": "אירוע",
-"status": "פעיל",
-"id": "edu_099"
-}
+{"layer":"יא'","month":"אוקטובר","order":1,"topic":"תרבות","category":"נושא חודש","status":"פעיל","id":"edu_001"},
+{"layer":"יא'","month":"נובמבר","order":1,"topic":"תרבות - למידה","category":"נושא חודש","status":"פעיל","id":"edu_002"},
+{"layer":"יא'","month":"דצמבר","order":1,"topic":"ניהול עצמי- כלים פרקטים","category":"נושא חודש","status":"פעיל","id":"edu_003"},
+{"layer":"יא'","month":"ינואר","order":1,"topic":"ניהול זמן","category":"נושא חודש","status":"פעיל","id":"edu_004"},
+{"layer":"יא'","month":"פברואר","order":1,"topic":"פורים","category":"נושא חודש","status":"פעיל","id":"edu_005"},
+{"layer":"יא'","month":"מרץ","order":1,"topic":"חברה","category":"נושא חודש","status":"פעיל","id":"edu_006"},
+{"layer":"יא'","month":"אפריל","order":1,"topic":"פסח","category":"נושא חודש","status":"פעיל","id":"edu_007"},
+{"layer":"יא'","month":"מאי","order":1,"topic":"הטמעת המושג קהילה","category":"נושא חודש","status":"פעיל","id":"edu_008"},
+{"layer":"יא'","month":"יוני","order":1,"topic":"בניית זהות קהילתית","category":"נושא חודש","status":"פעיל","id":"edu_009"},
+{"layer":"יא'","month":"אוקטובר","order":2,"topic":"תרבות שיח","category":"נושא","status":"פעיל","id":"edu_010"},
+{"layer":"יא'","month":"נובמבר","order":2,"topic":"שיחות אישיות","category":"נושא","status":"פעיל","id":"edu_011"},
+{"layer":"יא'","month":"דצמבר","order":2,"topic":"איך לבנות לו\"ז אישי","category":"נושא","status":"פעיל","id":"edu_012"},
+{"layer":"יא'","month":"ינואר","order":2,"topic":"העברת האחריות לחניכים","category":"נושא","status":"פעיל","id":"edu_013"},
+{"layer":"יא'","month":"פברואר","order":2,"topic":"עבודה על פורים","category":"נושא","status":"פעיל","id":"edu_014"},
+{"layer":"יא'","month":"מרץ","order":2,"topic":"פעילות בנושא בחירה אישית","category":"נושא","status":"פעיל","id":"edu_015"},
+{"layer":"יא'","month":"מאי","order":2,"topic":"הכנה לפולין?","category":"נושא","status":"פעיל","id":"edu_016"},
+{"layer":"יא'","month":"יוני","order":2,"topic":"הכנה לפולין?","category":"נושא","status":"פעיל","id":"edu_017"},
+{"layer":"יא'","month":"אוקטובר","order":3,"topic":"הנהגת שכבה","category":"נושא","status":"פעיל","id":"edu_018"},
+{"layer":"יא'","month":"נובמבר","order":3,"topic":"הכנה לחנוכה","category":"נושא","status":"פעיל","id":"edu_019"},
+{"layer":"יא'","month":"דצמבר","order":3,"topic":"מהי דחיינות וכיצד להתגבר עליה","category":"נושא","status":"פעיל","id":"edu_020"},
+{"layer":"יא'","month":"ינואר","order":3,"topic":"תחילת עבודה על השבת","category":"נושא","status":"פעיל","id":"edu_021"},
+{"layer":"יא'","month":"מרץ","order":3,"topic":"פעילות בנושא התמכרויות","category":"נושא","status":"פעיל","id":"edu_022"},
+{"layer":"יא'","month":"מאי","order":3,"topic":"פעילות בנושא הקהילה","category":"נושא","status":"פעיל","id":"edu_023"},
+{"layer":"יא'","month":"אוקטובר","order":4,"topic":"תחילת מרכז למידה","category":"נושא","status":"פעיל","id":"edu_024"},
+{"layer":"יא'","month":"דצמבר","order":4,"topic":"מהו מקור המוטיבציה","category":"נושא","status":"פעיל","id":"edu_025"},
+{"layer":"יא'","month":"אוקטובר","order":5,"topic":"שיחות אישיות","category":"נושא","status":"פעיל","id":"edu_026"},
+{"layer":"יא'","month":"אוקטובר","order":6,"topic":"הגדרת גבולות ברורים","category":"נושא","status":"פעיל","id":"edu_027"},
+{"layer":"יא'","month":"דצמבר","order":5,"topic":"עבודה על חנוכיות","category":"נושא","status":"פעיל","id":"edu_028"},
+{"layer":"יא'","month":"ינואר","order":4,"topic":"יציאה להצגה","category":"נושא","status":"פעיל","id":"edu_029"},
+{"layer":"יא'","month":"פברואר","order":3,"topic":"פורים","category":"נושא","status":"פעיל","id":"edu_030"},
+{"layer":"יא'","month":"אוקטובר","order":7,"topic":"קוליסות","category":"אירוע","status":"פעיל","id":"edu_031"},
+{"layer":"יא'","month":"נובמבר","order":4,"topic":"עבודה על חנוכה","category":"אירוע","status":"פעיל","id":"edu_032"},
+{"layer":"יא'","month":"דצמבר","order":6,"topic":"חנוכה","category":"אירוע","status":"פעיל","id":"edu_033"},
+{"layer":"יא'","month":"ינואר","order":5,"topic":"תעודות?","category":"אירוע","status":"פעיל","id":"edu_034"},
+{"layer":"יא'","month":"פברואר","order":4,"topic":"תעודות?","category":"אירוע","status":"פעיל","id":"edu_035"},
+{"layer":"יא'","month":"מרץ","order":4,"topic":"יציאה למרחב החברתי","category":"אירוע","status":"פעיל","id":"edu_036"},
+{"layer":"יא'","month":"אפריל","order":2,"topic":"יום השואה","category":"אירוע","status":"פעיל","id":"edu_037"},
+{"layer":"יא'","month":"אוקטובר","order":8,"topic":"שיח על חזרת החטופים","category":"אירוע","status":"פעיל","id":"edu_038"},
+{"layer":"יא'","month":"נובמבר","order":5,"topic":"טיול שנתי","category":"אירוע","status":"פעיל","id":"edu_039"},
+{"layer":"יא'","month":"דצמבר","order":7,"topic":"העלאת רעיונות לפורים","category":"אירוע","status":"פעיל","id":"edu_040"},
+{"layer":"יא'","month":"מרץ","order":5,"topic":"חינוך פיננסי","category":"אירוע","status":"פעיל","id":"edu_041"},
+{"layer":"יא'","month":"אפריל","order":3,"topic":"טקס יום הזכרון","category":"אירוע","status":"פעיל","id":"edu_042"},
+{"layer":"יא'","month":"מאי","order":4,"topic":"ל\"ג בעומר","category":"אירוע","status":"פעיל","id":"edu_043"},
+{"layer":"יא'","month":"יוני","order":3,"topic":"שבת פנימייה אחרונה","category":"אירוע","status":"פעיל","id":"edu_044"},
+{"layer":"יא'","month":"אוקטובר","order":9,"topic":"מיפוי לימודי - שיחה אצל רונן","category":"אירוע","status":"פעיל","id":"edu_045"},
+{"layer":"יא'","month":"מרץ","order":6,"topic":"נודרת אחותי","category":"אירוע","status":"פעיל","id":"edu_046"},
+{"layer":"יא'","month":"אפריל","order":4,"topic":"יום העצמאות","category":"אירוע","status":"פעיל","id":"edu_047"},
+{"layer":"יא'","month":"מאי","order":5,"topic":"יום ירושלים","category":"אירוע","status":"פעיל","id":"edu_048"},
+{"layer":"יא'","month":"אוקטובר","order":10,"topic":"תכנית מעלות","category":"אירוע","status":"פעיל","id":"edu_049"},
+{"layer":"יא'","month":"מרץ","order":7,"topic":"הרצאה התמכרויות?","category":"אירוע","status":"פעיל","id":"edu_050"},
+{"layer":"יא'","month":"מאי","order":6,"topic":"חג שבועות","category":"אירוע","status":"פעיל","id":"edu_051"},
+{"layer":"יא'","month":"יוני","order":4,"topic":"תעודות סוף שנה בביהס","category":"אירוע","status":"פעיל","id":"edu_052"},
+{"layer":"יב'","month":"נובמבר","order":1,"topic":"שבוע טיולים שנתיים שכבתי","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"שבוע טיולים שנתיים שכבתי","status":"פעיל","id":"yb_001"},
+{"layer":"יב'","month":"נובמבר","order":2,"topic":"15–19 בנובמבר: בחינת מתכונת בחינוך גופני","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"15–19 בנובמבר: בחינת מתכונת בחינוך גופני","status":"פעיל","id":"yb_002"},
+{"layer":"יב'","month":"נובמבר","order":3,"topic":"22–30 בנובמבר: מסע השכבה לפולין","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"22–30 בנובמבר: מסע השכבה לפולין","status":"פעיל","id":"yb_003"},
+{"layer":"יב'","month":"נובמבר","order":4,"topic":"26–28 בנובמבר: שבת פנימייה סגורה (השתתפות עד 10 חניכים)","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"26–28 בנובמבר: שבת פנימייה סגורה (השתתפות עד 10 חניכים)","status":"פעיל","id":"yb_004"},
+{"layer":"יב'","month":"נובמבר","order":5,"topic":"התנעת תהליכי עבודה על תערוכת הביאנלה","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"התנעת תהליכי עבודה על תערוכת הביאנלה","status":"פעיל","id":"yb_005"},
+{"layer":"יב'","month":"נובמבר","order":6,"topic":"איסוף תכנים וכתיבת ספר המחזור","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"איסוף תכנים וכתיבת ספר המחזור","status":"פעיל","id":"yb_006"},
+{"layer":"יב'","month":"נובמבר","order":7,"topic":"הקמת ועדת שגרות (מנגנון \"כרטיס ירוק\")","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"הקמת ועדת שגרות (מנגנון \"כרטיס ירוק\")","status":"פעיל","id":"yb_007"},
+{"layer":"יב'","month":"נובמבר","order":8,"topic":"מפגש דיאלוג מבוסס מגדר — קבוצת בנים: המשך תהליכי הכנה לשירות צבאי והגדרת יעדים אישיים","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"מפגש דיאלוג מבוסס מגדר — קבוצת בנים: המשך תהליכי הכנה לשירות צבאי והגדרת יעדים אישיים","status":"פעיל","id":"yb_008"},
+{"layer":"יב'","month":"נובמבר","order":9,"topic":"מפגש דיאלוג מבוסס מגדר — קבוצת בנות: ארגון מרחבי המגורים ודינמיקה קבוצתית","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"מפגש דיאלוג מבוסס מגדר — קבוצת בנות: ארגון מרחבי המגורים ודינמיקה קבוצתית","status":"פעיל","id":"yb_009"},
+{"layer":"יב'","month":"נובמבר","order":10,"topic":"ביסוס מנהיגות הקהילה והוועדות השכבתיות","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"ביסוס מנהיגות הקהילה והוועדות השכבתיות","status":"פעיל","id":"yb_010"},
+{"layer":"יב'","month":"נובמבר","order":11,"topic":"ליווי אישי לחניכים במסלול עתודה (רוזיליו, נועה גרנות, אורי)","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"ליווי אישי לחניכים במסלול עתודה (רוזיליו, נועה גרנות, אורי)","status":"פעיל","id":"yb_011"},
+{"layer":"יב'","month":"נובמבר","order":12,"topic":"ליווי מועמדים לשנת שירות ומכינות קדם-צבאיות (תוכנית \"מעלות\")","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"ליווי מועמדים לשנת שירות ומכינות קדם-צבאיות (תוכנית \"מעלות\")","status":"פעיל","id":"yb_012"},
+{"layer":"יב'","month":"נובמבר","order":13,"topic":"תיאום הגעת גופים חיצוניים (\"מגדלור\", \"תנועת תרבות\") להצגת מסלולים","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"תיאום הגעת גופים חיצוניים (\"מגדלור\", \"תנועת תרבות\") להצגת מסלולים","status":"פעיל","id":"yb_013"},
+{"layer":"יב'","month":"נובמבר","order":14,"topic":"הצטרפות אנשי צוות (איתי ועדן) למסע לפולין","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"הצטרפות אנשי צוות (איתי ועדן) למסע לפולין","status":"פעיל","id":"yb_014"},
+{"layer":"יב'","month":"דצמבר","order":15,"topic":"חזרה מחופשת חנוכה ושבת פנימייה","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"חזרה מחופשת חנוכה ושבת פנימייה","status":"פעיל","id":"yb_015"},
+{"layer":"יב'","month":"דצמבר","order":16,"topic":"18–19 בדצמבר: שבת פנימייה בהובלת גופי המנהיגות השכבתיים","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"18–19 בדצמבר: שבת פנימייה בהובלת גופי המנהיגות השכבתיים","status":"פעיל","id":"yb_016"},
+{"layer":"יב'","month":"דצמבר","order":17,"topic":"28 בדצמבר: סיום המחצית וחלוקת תעודות פנימייה","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"28 בדצמבר: סיום המחצית וחלוקת תעודות פנימייה","status":"פעיל","id":"yb_017"},
+{"layer":"יב'","month":"דצמבר","order":18,"topic":"מעבר לשלבי ביצוע בפועל של פרויקט הביאנלה","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"מעבר לשלבי ביצוע בפועל של פרויקט הביאנלה","status":"פעיל","id":"yb_018"},
+{"layer":"יב'","month":"דצמבר","order":19,"topic":"איסוף חומרים וסשן צילומים עבור ספר המחזור","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"איסוף חומרים וסשן צילומים עבור ספר המחזור","status":"פעיל","id":"yb_019"},
+{"layer":"יב'","month":"דצמבר","order":20,"topic":"הטמעת מנגנון \"כרטיס ירוק\" ושגרות הפנימייה והלימודים","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"הטמעת מנגנון \"כרטיס ירוק\" ושגרות הפנימייה והלימודים","status":"פעיל","id":"yb_020"},
+{"layer":"יב'","month":"דצמבר","order":21,"topic":"חשיפה לנושאי אזרחות, כלכלה ומבנה החברה הישראלית","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"חשיפה לנושאי אזרחות, כלכלה ומבנה החברה הישראלית","status":"פעיל","id":"yb_021"},
+{"layer":"יב'","month":"דצמבר","order":22,"topic":"קבוצת בנות: אזרחות פעילה, חוק השירות הצבאי ומערכות יחסים","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"קבוצת בנות: אזרחות פעילה, חוק השירות הצבאי ומערכות יחסים","status":"פעיל","id":"yb_022"},
+{"layer":"יב'","month":"דצמבר","order":23,"topic":"קבוצת בנים: הסכמה חופשית, תקשורת בינאישית, סמכות ומסגרות החוק","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"קבוצת בנים: הסכמה חופשית, תקשורת בינאישית, סמכות ומסגרות החוק","status":"פעיל","id":"yb_023"},
+{"layer":"יב'","month":"דצמבר","order":24,"topic":"קיום שני מפגשי גיבוש שכבתיים","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"קיום שני מפגשי גיבוש שכבתיים","status":"פעיל","id":"yb_024"},
+{"layer":"יב'","month":"דצמבר","order":25,"topic":"תגבור לימודי מרוכז לקראת בחינות בגרות החורף במתמטיקה ואנגלית","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"תגבור לימודי מרוכז לקראת בחינות בגרות החורף במתמטיקה ואנגלית","status":"פעיל","id":"yb_025"},
+{"layer":"יב'","month":"דצמבר","order":26,"topic":"סיום חובות לימודיות בספרות (כיתות י\"ב 4-5) ומטלה שנייה בהיסטוריה","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"סיום חובות לימודיות בספרות (כיתות י\"ב 4-5) ומטלה שנייה בהיסטוריה","status":"פעיל","id":"yb_026"},
+{"layer":"יב'","month":"דצמבר","order":27,"topic":"היערכות פדגוגית לשיחות תעודה וסיכום מחצית","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"היערכות פדגוגית לשיחות תעודה וסיכום מחצית","status":"פעיל","id":"yb_027"},
+{"layer":"יב'","month":"ינואר","order":28,"topic":"3 בינואר: מתכונת במתמטיקה","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"3 בינואר: מתכונת במתמטיקה","status":"פעיל","id":"yb_028"},
+{"layer":"יב'","month":"ינואר","order":29,"topic":"4, 6, 11, 19, 20–21 בינואר: מועדי בחינות בגרות חורף (לשון, אנגלית, מתמטיקה)","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"4, 6, 11, 19, 20–21 בינואר: מועדי בחינות בגרות חורף (לשון, אנגלית, מתמטיקה)","status":"פעיל","id":"yb_029"},
+{"layer":"יב'","month":"ינואר","order":30,"topic":"13–17 בינואר: סמינר מכינות י\"ב","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"13–17 בינואר: סמינר מכינות י\"ב","status":"פעיל","id":"yb_030"},
+{"layer":"יב'","month":"ינואר","order":31,"topic":"15–16 בינואר: שבת פנימייה","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"15–16 בינואר: שבת פנימייה","status":"פעיל","id":"yb_031"},
+{"layer":"יב'","month":"ינואר","order":32,"topic":"25–28 בינואר: מסע ישראלי שכבתי","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"25–28 בינואר: מסע ישראלי שכבתי","status":"פעיל","id":"yb_032"},
+{"layer":"יב'","month":"ינואר","order":33,"topic":"28 בינואר: יום המחצית וחלוקת תעודות בית-ספריות ופנימייתיות","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"28 בינואר: יום המחצית וחלוקת תעודות בית-ספריות ופנימייתיות","status":"פעיל","id":"yb_033"},
+{"layer":"יב'","month":"ינואר","order":34,"topic":"התנעת פרויקטי סיום השנה","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"התנעת פרויקטי סיום השנה","status":"פעיל","id":"yb_034"},
+{"layer":"יב'","month":"ינואר","order":35,"topic":"גיבוש תוכנית שבת פרידה, שי ומתנות סיום","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"גיבוש תוכנית שבת פרידה, שי ומתנות סיום","status":"פעיל","id":"yb_035"},
+{"layer":"יב'","month":"ינואר","order":36,"topic":"ריכוז חומרים ערוכים לספר המחזור","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"ריכוז חומרים ערוכים לספר המחזור","status":"פעיל","id":"yb_036"},
+{"layer":"יב'","month":"ינואר","order":37,"topic":"סיכום ותיקוף תוכניות חינוכיות","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"סיכום ותיקוף תוכניות חינוכיות","status":"פעיל","id":"yb_037"},
+{"layer":"יב'","month":"ינואר","order":38,"topic":"פתיחת סדנאות פרידה והכנה מנטלית למסע ישראלי","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"פתיחת סדנאות פרידה והכנה מנטלית למסע ישראלי","status":"פעיל","id":"yb_038"},
+{"layer":"יב'","month":"ינואר","order":39,"topic":"הובלת תהליך שינוי חדרים בניהול עצמי של החניכים","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"הובלת תהליך שינוי חדרים בניהול עצמי של החניכים","status":"פעיל","id":"yb_039"},
+{"layer":"יב'","month":"ינואר","order":40,"topic":"בקרת יישום מנגנון \"הכרטיס הירוק\"","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"בקרת יישום מנגנון \"הכרטיס הירוק\"","status":"פעיל","id":"yb_040"},
+{"layer":"יב'","month":"ינואר","order":41,"topic":"קיום שיחות מחצית וחלוקת תעודות","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"קיום שיחות מחצית וחלוקת תעודות","status":"פעיל","id":"yb_041"},
+{"layer":"יב'","month":"ינואר","order":42,"topic":"וידוא סופי של שיבוצים צבאיים, מכינות ושנת שירות (חלון הזדמנויות אחרון לשינויים)","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"וידוא סופי של שיבוצים צבאיים, מכינות ושנת שירות (חלון הזדמנויות אחרון לשינויים)","status":"פעיל","id":"yb_042"},
+{"layer":"יב'","month":"ינואר","order":43,"topic":"תכנון שבת מנהיגות ופרידה","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"תכנון שבת מנהיגות ופרידה","status":"פעיל","id":"yb_043"},
+{"layer":"יב'","month":"פברואר","order":44,"topic":"26–27 בפברואר: שבת פנימייה (מועד חלופי לחלוקת תעודות)","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"26–27 בפברואר: שבת פנימייה (מועד חלופי לחלוקת תעודות)","status":"פעיל","id":"yb_044"},
+{"layer":"יב'","month":"פברואר","order":45,"topic":"28.2–4.3: שבוע אמנויות ותערוכה שכבתי","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"28.2–4.3: שבוע אמנויות ותערוכה שכבתי","status":"פעיל","id":"yb_045"},
+{"layer":"יב'","month":"פברואר","order":46,"topic":"ריכוז מאמץ והתקדמות אינטנסיבית בפרויקטי הרונדו והביאנלה","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"ריכוז מאמץ והתקדמות אינטנסיבית בפרויקטי הרונדו והביאנלה","status":"פעיל","id":"yb_046"},
+{"layer":"יב'","month":"פברואר","order":47,"topic":"הקמת צוות היגוי לטקס הסיום וגיבוש קונספט ראשוני","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"הקמת צוות היגוי לטקס הסיום וגיבוש קונספט ראשוני","status":"פעיל","id":"yb_047"},
+{"layer":"יב'","month":"פברואר","order":48,"topic":"סדנאות פרידה שכבתיות","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"סדנאות פרידה שכבתיות","status":"פעיל","id":"yb_048"},
+{"layer":"יב'","month":"פברואר","order":49,"topic":"יציאה לצפייה בהצגת תיאטרון","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"יציאה לצפייה בהצגת תיאטרון","status":"פעיל","id":"yb_049"},
+{"layer":"יב'","month":"פברואר","order":50,"topic":"העמקה בחברה הישראלית והשלמת חובות מעורבות חברתית","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"העמקה בחברה הישראלית והשלמת חובות מעורבות חברתית","status":"פעיל","id":"yb_050"},
+{"layer":"יב'","month":"פברואר","order":51,"topic":"מפגשי שילוב עם תלמידים אקסטרניים","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"מפגשי שילוב עם תלמידים אקסטרניים","status":"פעיל","id":"yb_051"},
+{"layer":"יב'","month":"פברואר","order":52,"topic":"ניהול בחינות מתכונת בשפה","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"ניהול בחינות מתכונת בשפה","status":"פעיל","id":"yb_052"},
+{"layer":"יב'","month":"פברואר","order":53,"topic":"מעקב ובקרה על מכסת שעות ההתנדבות","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"מעקב ובקרה על מכסת שעות ההתנדבות","status":"פעיל","id":"yb_053"},
+{"layer":"יב'","month":"פברואר","order":54,"topic":"סיכום תהליכי ליווי פרטני וניסוח המלצות למסגרות ההמשך","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"סיכום תהליכי ליווי פרטני וניסוח המלצות למסגרות ההמשך","status":"פעיל","id":"yb_054"},
+{"layer":"יב'","month":"מרץ","order":55,"topic":"19–20 במרץ: שבת פנימייה חגיגית (פורים)","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"19–20 במרץ: שבת פנימייה חגיגית (פורים)","status":"פעיל","id":"yb_055"},
+{"layer":"יב'","month":"מרץ","order":56,"topic":"21 במרץ: אירוע הרונדו השכבתי","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"21 במרץ: אירוע הרונדו השכבתי","status":"פעיל","id":"yb_056"},
+{"layer":"יב'","month":"מרץ","order":57,"topic":"30.3–1.4: סמינר ימי / יציאת אילת למגמות חאקי ומדעי הים","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"30.3–1.4: סמינר ימי / יציאת אילת למגמות חאקי ומדעי הים","status":"פעיל","id":"yb_057"},
+{"layer":"יב'","month":"מרץ","order":58,"topic":"קידום מואץ של פרויקט הביאנלה לאחר פורים","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"קידום מואץ של פרויקט הביאנלה לאחר פורים","status":"פעיל","id":"yb_058"},
+{"layer":"יב'","month":"מרץ","order":59,"topic":"התנעת חזרות פנימייתיות לקראת טקס הסיום","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"התנעת חזרות פנימייתיות לקראת טקס הסיום","status":"פעיל","id":"yb_059"},
+{"layer":"יב'","month":"מרץ","order":60,"topic":"מסירת ספר המחזור להדפסה בבית דפוס","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"מסירת ספר המחזור להדפסה בבית דפוס","status":"פעיל","id":"yb_060"},
+{"layer":"יב'","month":"מרץ","order":61,"topic":"שימור גבולות ונורמות התנהגות בתקופה מורכבת ומגוונת","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"שימור גבולות ונורמות התנהגות בתקופה מורכבת ומגוונת","status":"פעיל","id":"yb_061"},
+{"layer":"יב'","month":"מרץ","order":62,"topic":"שיחות ממוקדות עם חניכים שאינם משתלבים בתהליך הסיום והגדרת התניות","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"שיחות ממוקדות עם חניכים שאינם משתלבים בתהליך הסיום והגדרת התניות","status":"פעיל","id":"yb_062"},
+{"layer":"יב'","month":"מרץ","order":63,"topic":"אישור סופי של תוכנית ותפריט שבת הפרידה מול הנהלת הפנימייה (נועם ורונן)","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"אישור סופי של תוכנית ותפריט שבת הפרידה מול הנהלת הפנימייה (נועם ורונן)","status":"פעיל","id":"yb_063"},
+{"layer":"יב'","month":"מרץ","order":64,"topic":"אישור מתכונת טקס הסיום","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"אישור מתכונת טקס הסיום","status":"פעיל","id":"yb_064"},
+{"layer":"יב'","month":"מרץ","order":65,"topic":"בניית לוח זמנים מפורט וספירה לאחור מחזרת פסח עד ל-20 ביוני","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"בניית לוח זמנים מפורט וספירה לאחור מחזרת פסח עד ל-20 ביוני","status":"פעיל","id":"yb_065"},
+{"layer":"יב'","month":"מרץ","order":66,"topic":"התנעת הכנות לטקסי ימי הזיכרון (באחריות השכבה)","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"התנעת הכנות לטקסי ימי הזיכרון (באחריות השכבה)","status":"פעיל","id":"yb_066"},
+{"layer":"יב'","month":"אפריל","order":67,"topic":"חופשת פסח","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"חופשת פסח","status":"פעיל","id":"yb_067"},
+{"layer":"יב'","month":"אפריל","order":68,"topic":"היערכות לוגיסטית ותוכנית סופית לטקס הסיום, שבת פרידה, תערוכת הביאנלה וימי הזיכרון","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"היערכות לוגיסטית ותוכנית סופית לטקס הסיום, שבת פרידה, תערוכת הביאנלה וימי הזיכרון","status":"פעיל","id":"yb_068"},
+{"layer":"יב'","month":"אפריל","order":69,"topic":"תהליכי סיכום והנחיית החניכים לקראת הובלת טקס יום הזיכרון לחללי מערכות ישראל","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"תהליכי סיכום והנחיית החניכים לקראת הובלת טקס יום הזיכרון לחללי מערכות ישראל","status":"פעיל","id":"yb_069"},
+{"layer":"יב'","month":"אפריל","order":70,"topic":"סגירת אישורים לוגיסטיים, תקציביים ותכניים לכלל אירועי הסיום לפני היציאה לחופשה","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"סגירת אישורים לוגיסטיים, תקציביים ותכניים לכלל אירועי הסיום לפני היציאה לחופשה","status":"פעיל","id":"yb_070"},
+{"layer":"יב'","month":"מאי","order":71,"topic":"7–8 במאי: שבת פנימייה","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"7–8 במאי: שבת פנימייה","status":"פעיל","id":"yb_071"},
+{"layer":"יב'","month":"מאי","order":72,"topic":"16–18 במאי: סמינר מגמת חאקי באילת","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"16–18 במאי: סמינר מגמת חאקי באילת","status":"פעיל","id":"yb_072"},
+{"layer":"יב'","month":"מאי","order":73,"topic":"תקופת שיא של בחינות בגרות קיץ","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"תקופת שיא של בחינות בגרות קיץ","status":"פעיל","id":"yb_073"},
+{"layer":"יב'","month":"מאי","order":74,"topic":"הוצאה לפועל של אירועי הסיום: שבת פרידה וטקס סיום","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"הוצאה לפועל של אירועי הסיום: שבת פרידה וטקס סיום","status":"פעיל","id":"yb_074"},
+{"layer":"יב'","month":"מאי","order":75,"topic":"קיום שיחות סיכום אישיות ומעמיקות לכל חניך (פיצול אחריות בין אנשי הצוות)","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"קיום שיחות סיכום אישיות ומעמיקות לכל חניך (פיצול אחריות בין אנשי הצוות)","status":"פעיל","id":"yb_075"},
+{"layer":"יב'","month":"מאי","order":76,"topic":"סדנאות סיכום ופרידה במסגרת שבת הפרידה","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"סדנאות סיכום ופרידה במסגרת שבת הפרידה","status":"פעיל","id":"yb_076"},
+{"layer":"יב'","month":"מאי","order":77,"topic":"ניהול שיחות סיכום פרטניות לפי חלוקת צוות","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"ניהול שיחות סיכום פרטניות לפי חלוקת צוות","status":"פעיל","id":"yb_077"},
+{"layer":"יב'","month":"מאי","order":78,"topic":"הנחיית מפגש חינוכי מכין לקראת נשף הסיום (דגש על מניעת התנהגויות סיכון, לחץ חברתי ואחריות אישית)","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"הנחיית מפגש חינוכי מכין לקראת נשף הסיום (דגש על מניעת התנהגויות סיכון, לחץ חברתי ואחריות אישית)","status":"פעיל","id":"yb_078"},
+{"layer":"יב'","month":"יוני","order":79,"topic":"5 ביוני: נשף הסיום השכבתי (פרום)","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"5 ביוני: נשף הסיום השכבתי (פרום)","status":"פעיל","id":"yb_079"},
+{"layer":"יב'","month":"יוני","order":80,"topic":"10–11 ביוני: חג שבועות","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"10–11 ביוני: חג שבועות","status":"פעיל","id":"yb_080"},
+{"layer":"יב'","month":"יוני","order":81,"topic":"13 ביוני: אירוע סיום שנה בית-ספרי","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"13 ביוני: אירוע סיום שנה בית-ספרי","status":"פעיל","id":"yb_081"},
+{"layer":"יב'","month":"יוני","order":82,"topic":"16 (או 17) ביוני: טקס סיום פנימייתי רשמי","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"16 (או 17) ביוני: טקס סיום פנימייתי רשמי","status":"פעיל","id":"yb_082"},
+{"layer":"יב'","month":"יוני","order":83,"topic":"הפקה וביצוע של טקס הסיום הפנימייתי, נשף הסיום ואירועי הפרידה השכבתיים","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"הפקה וביצוע של טקס הסיום הפנימייתי, נשף הסיום ואירועי הפרידה השכבתיים","status":"פעיל","id":"yb_083"},
+{"layer":"יב'","month":"יוני","order":84,"topic":"סיכום רשמי של התהליך החינוכי הרב-שנתי בפנימייה","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"סיכום רשמי של התהליך החינוכי הרב-שנתי בפנימייה","status":"פעיל","id":"yb_084"},
+{"layer":"יב'","month":"יוני","order":85,"topic":"ניהול וליווי אירועי הסיום הרשמיים וליווי אישי אחרון לחניכים לקראת יציאתם למסגרות ההמשך","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"ניהול וליווי אירועי הסיום הרשמיים וליווי אישי אחרון לחניכים לקראת יציאתם למסגרות ההמשך","status":"פעיל","id":"yb_085"}
 ];
 
 let EDU_DATA = null;
