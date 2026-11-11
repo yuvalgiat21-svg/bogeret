@@ -1618,7 +1618,7 @@ function eduMatrixTable(scope,items){
     const its=items.filter(x=>x.month===m);
     const d=its.filter(x=>(st[scope+'|'+x.id+'|1']||{}).status==='בוצע').length;
     const c=EDU_MCLR[EDU_MONTHS.indexOf(m)%EDU_MCLR.length], now=(m===cur);
-    return `<th style="min-width:215px;padding:8px 10px;background:${now?c:'var(--text)'};color:#fff;border-right:1px solid rgba(255,255,255,.18);text-align:center;">
+    return `<th id="emxM${i}" style="min-width:178px;padding:8px 10px;background:${now?c:'var(--text)'};color:#fff;border-right:1px solid rgba(255,255,255,.18);text-align:center;">
       <div style="font-family:'Rubik';font-weight:800;font-size:13px;">${m}${now?' <span style="font-size:9px;background:#fff;color:'+c+';border-radius:9px;padding:1px 6px;vertical-align:middle;">עכשיו</span>':''}</div>
       <div style="font-size:10px;font-weight:400;opacity:.85;">${d}/${its.length} בוצעו</div></th>`;
   }).join('');
@@ -1634,11 +1634,17 @@ function eduMatrixTable(scope,items){
     <span><b>לחיצה על העיגול</b> מסמנת ביצוע</span>
     ${EDU_ST.map(s=>`<span style="white-space:nowrap;"><span style="display:inline-block;width:14px;height:14px;line-height:12px;text-align:center;border:1.5px solid ${EDU_STC[s]};background:${s?EDU_STC[s]:'#fff'};color:${s?'#fff':EDU_STC[s]};border-radius:50%;font-size:9px;font-weight:900;margin-left:4px;">${EDU_ICO[s]}</span>${s||'טרם סומן'}</span>`).join('')}
     <span>· <b>לחיצה על הטקסט</b> פותחת פירוט ותאריך</span></div>`;
-  return eduHeadStrip(scope,items,legend)
-    + `<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:#fff;">
+  const nav=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 9px 0;">
+    <span style="font-size:11.5px;font-weight:700;color:var(--text2);">קפיצה לחודש:</span>
+    ${months.map((m,i)=>{const c=EDU_MCLR[EDU_MONTHS.indexOf(m)%EDU_MCLR.length];const now=(m===cur);
+      return `<button onclick="document.getElementById('emxM${i}').scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'})" style="border:1px solid ${now?c:'var(--border)'};background:${now?c:'#fff'};color:${now?'#fff':c};border-radius:99px;padding:3px 11px;font-family:'Heebo';font-size:11px;font-weight:700;cursor:pointer;">${m}</button>`;}).join('')}
+    <span style="font-size:11px;color:var(--text3);">· ${months.length} חודשים — גוללים הצידה</span></div>`;
+  return eduHeadStrip(scope,items,legend) + nav
+    + `<div style="position:relative;"><div style="position:absolute;top:0;bottom:0;left:0;width:34px;pointer-events:none;z-index:4;background:linear-gradient(to left,rgba(255,255,255,0),rgba(255,255,255,.92));border-radius:0 0 0 10px;"></div>
+       <div id="emxWrap" style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:#fff;">
        <table style="border-collapse:collapse;width:100%;">
        <thead><tr><th style="position:sticky;right:0;z-index:3;background:var(--text);color:#fff;padding:8px 11px;text-align:right;font-size:12px;min-width:150px;">תחום</th>${head}</tr></thead>
-       <tbody>${rows}</tbody></table></div>`;
+       <tbody>${rows}</tbody></table></div></div>`;
 }
 /* ── תצוגה חודשית: התכנון כבר כתוב, מסמנים ביצוע ── */
 function eduMonthlyTable(scope,items){
