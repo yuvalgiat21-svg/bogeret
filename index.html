@@ -1517,7 +1517,7 @@ function eduStats(scope){
 }
 function eduTable(scope){
   const st=eduLoad(); const cfg=window.eduCfg[scope]; const items=eduItems(cfg.layer);
-  if(eduIsMonthly(items)) return eduMonthlyTable(scope,items);
+  if(eduIsMonthly(items)) return eduView()==='list' ? eduMonthlyTable(scope,items) : eduMatrixTable(scope,items);
   const s=eduStats(scope);
   const byM={}; items.forEach(x=>{ (byM[x.month]=byM[x.month]||[]).push(x); });
   const cards=`<div class="cards" style="margin-bottom:14px;">
@@ -1550,6 +1550,96 @@ function eduTable(scope){
       <th style="padding:8px 6px;">ביצוע בפועל</th><th style="padding:8px 6px;">תאריך</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--text3);">אין נושאים לשכבה זו.</td></tr>'}</tbody></table></div>`;
 }
+/* ── מטריצה שנתית: תחומים בשורות, חודשים בעמודות (כמו הטבלה המקורית) ── */
+const EDU_ICO={'':'○','בוצע':'✓','בוצע חלקית':'◐','לא בוצע':'✕','נדחה':'»'};
+const EDU_VKEY='bogeret_eduview';
+function eduView(){ try{ return localStorage.getItem(EDU_VKEY)||'matrix'; }catch(e){ return 'matrix'; } }
+window.eduSetView=function(v,scope){ try{localStorage.setItem(EDU_VKEY,v);}catch(e){}
+  const el=document.getElementById('edu-'+scope); if(el) el.innerHTML=eduTable(scope); };
+window.eduOpen=window.eduOpen||{};
+window.eduCycle=function(scope,id){
+  const st=eduLoad(); const k=scope+'|'+id+'|1'; st[k]=st[k]||{};
+  const i=EDU_ST.indexOf(st[k].status||''); st[k].status=EDU_ST[(i+1)%EDU_ST.length];
+  eduSave(st);
+  const el=document.getElementById('edu-'+scope); if(el) el.innerHTML=eduTable(scope);
+  if(window.refreshEduMain) refreshEduMain();
+};
+window.eduToggleNote=function(scope,id){
+  window.eduOpen[id]=!window.eduOpen[id];
+  const el=document.getElementById('edu-'+scope); if(el) el.innerHTML=eduTable(scope);
+};
+function eduCurMonth(){
+  const G=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  return G[new Date().getMonth()];
+}
+function eduHeadStrip(scope,items,extra){
+  const st=eduLoad(); let tot=0,done=0,part=0,miss=0,post=0;
+  items.forEach(x=>{ const e=st[scope+'|'+x.id+'|1']||{}; tot++;
+    if(e.status==='בוצע')done++; else if(e.status==='בוצע חלקית')part++;
+    else if(e.status==='לא בוצע')miss++; else if(e.status==='נדחה')post++; });
+  const pct=tot?Math.round((done+part*0.5)/tot*100):0;
+  const pill=(ic,n,lbl,col)=>`<span style="display:inline-flex;align-items:center;gap:5px;background:${col}14;color:${col};border:1px solid ${col}33;border-radius:99px;padding:4px 11px;font-size:12px;font-weight:800;white-space:nowrap;">${ic} ${n}<span style="font-weight:500;opacity:.8;">${lbl}</span></span>`;
+  const v=eduView();
+  const btn=(id,lbl)=>`<button onclick="eduSetView('${id}','${scope}')" style="border:1px solid ${v===id?'var(--blue)':'var(--border)'};background:${v===id?'var(--blue)':'#fff'};color:${v===id?'#fff':'var(--text2)'};border-radius:7px;padding:5px 13px;font-family:'Heebo';font-size:11.5px;font-weight:700;cursor:pointer;">${lbl}</button>`;
+  return `<div style="background:#fff;border:1px solid var(--border);border-radius:11px;padding:11px 13px;margin-bottom:14px;">
+    <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:10px;">
+      ${pill('📋',tot,'משימות','#1d4ed8')}${pill('✓',done,'בוצעו','#047857')}${pill('◐',part,'חלקית','#b45309')}${pill('✕',miss,'לא בוצעו','#b91c1c')}${pill('»',post,'נדחו','#6d28d9')}
+      <span style="flex:1;"></span>${btn('matrix','טבלה שנתית')}${btn('list','לפי חודש')}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;margin-bottom:5px;">
+      <span style="color:var(--text2);">שיעור ביצוע התוכנית</span><span style="color:var(--blue);">${pct}%</span></div>
+    <div style="height:8px;background:#eef2f7;border-radius:99px;overflow:hidden;">
+      <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#047857,#0891b2);border-radius:99px;"></div></div>
+    ${extra||''}
+  </div>`;
+}
+function eduMatrixTable(scope,items){
+  const st=eduLoad(), cur=eduCurMonth();
+  const months=EDU_MONTHS.filter(m=>items.some(x=>x.month===m));
+  const cats=[]; items.forEach(x=>{ if(cats.indexOf(x.category)<0) cats.push(x.category); });
+  const cell=(m,cat)=>{
+    const its=items.filter(x=>x.month===m&&x.category===cat).sort((a,b)=>(a.order||0)-(b.order||0));
+    if(!its.length) return '<span style="color:#cbd5e1;font-size:11px;">—</span>';
+    return its.map(x=>{
+      const e=st[scope+'|'+x.id+'|1']||{}, s=e.status||'', col=EDU_STC[s];
+      const open=!!window.eduOpen[x.id];
+      const note=(e.exec||e.date)?`<div style="font-size:10px;color:#047857;margin:1px 0 0 0;padding-right:19px;">${e.exec?eduEsc(e.exec):''}${e.date?' · '+e.date:''}</div>`:'';
+      const ed=open?`<div style="padding-right:19px;margin-top:3px;display:flex;gap:3px;flex-wrap:wrap;">
+          <input value="${eduEsc(e.exec)}" oninput="eduSet('${scope}','${x.id}',1,'exec',this.value)" placeholder="מה בוצע / מי אחראי…" style="flex:1;min-width:110px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-family:'Heebo';font-size:10.5px;">
+          <input type="date" value="${eduEsc(e.date)}" onchange="eduSet('${scope}','${x.id}',1,'date',this.value)" style="width:98px;border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-family:'Heebo';font-size:10px;"></div>`:'';
+      return `<div style="padding:3px 0;border-bottom:1px dashed #f1f5f9;">
+        <div style="display:flex;align-items:flex-start;gap:5px;">
+          <button onclick="eduCycle('${scope}','${x.id}')" title="לחיצה מסמנת ביצוע" style="flex:none;width:16px;height:16px;line-height:14px;margin-top:1px;border:1.5px solid ${col};background:${s?col:'#fff'};color:${s?'#fff':col};border-radius:50%;font-size:10px;font-weight:900;cursor:pointer;padding:0;">${EDU_ICO[s]}</button>
+          <span onclick="eduToggleNote('${scope}','${x.id}')" title="הוספת פירוט ותאריך" style="flex:1;font-size:11.5px;line-height:1.4;cursor:pointer;${s==='בוצע'?'color:#64748b;':''}">${x.plan}</span>
+        </div>${note}${ed}</div>`;
+    }).join('');
+  };
+  const head=months.map((m,i)=>{
+    const its=items.filter(x=>x.month===m);
+    const d=its.filter(x=>(st[scope+'|'+x.id+'|1']||{}).status==='בוצע').length;
+    const c=EDU_MCLR[EDU_MONTHS.indexOf(m)%EDU_MCLR.length], now=(m===cur);
+    return `<th style="min-width:215px;padding:8px 10px;background:${now?c:'var(--text)'};color:#fff;border-right:1px solid rgba(255,255,255,.18);text-align:center;">
+      <div style="font-family:'Rubik';font-weight:800;font-size:13px;">${m}${now?' <span style="font-size:9px;background:#fff;color:'+c+';border-radius:9px;padding:1px 6px;vertical-align:middle;">עכשיו</span>':''}</div>
+      <div style="font-size:10px;font-weight:400;opacity:.85;">${d}/${its.length} בוצעו</div></th>`;
+  }).join('');
+  const rows=cats.map(cat=>{
+    const cc=EDU_CATS[cat]||{c:'#64748b',ic:'•'};
+    return `<tr>
+      <th style="position:sticky;right:0;z-index:2;min-width:150px;max-width:170px;background:#fff;border-right:6px solid ${cc.c};border-bottom:1px solid var(--border);padding:9px 11px;text-align:right;vertical-align:top;font-size:12px;font-weight:800;color:${cc.c};box-shadow:-3px 0 6px -4px rgba(0,0,0,.25);">
+        <div style="font-size:17px;">${cc.ic}</div>${cat}</th>
+      ${months.map(m=>`<td style="vertical-align:top;padding:5px 9px;border-right:1px solid #eef2f7;border-bottom:1px solid var(--border);background:${m===cur?cc.c+'08':'#fff'};">${cell(m,cat)}</td>`).join('')}
+    </tr>`;
+  }).join('');
+  const legend=`<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:9px;padding-top:9px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);">
+    <span><b>לחיצה על העיגול</b> מסמנת ביצוע</span>
+    ${EDU_ST.map(s=>`<span style="white-space:nowrap;"><span style="display:inline-block;width:14px;height:14px;line-height:12px;text-align:center;border:1.5px solid ${EDU_STC[s]};background:${s?EDU_STC[s]:'#fff'};color:${s?'#fff':EDU_STC[s]};border-radius:50%;font-size:9px;font-weight:900;margin-left:4px;">${EDU_ICO[s]}</span>${s||'טרם סומן'}</span>`).join('')}
+    <span>· <b>לחיצה על הטקסט</b> פותחת פירוט ותאריך</span></div>`;
+  return eduHeadStrip(scope,items,legend)
+    + `<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:#fff;">
+       <table style="border-collapse:collapse;width:100%;">
+       <thead><tr><th style="position:sticky;right:0;z-index:3;background:var(--text);color:#fff;padding:8px 11px;text-align:right;font-size:12px;min-width:150px;">תחום</th>${head}</tr></thead>
+       <tbody>${rows}</tbody></table></div>`;
+}
 /* ── תצוגה חודשית: התכנון כבר כתוב, מסמנים ביצוע ── */
 function eduMonthlyTable(scope,items){
   const st=eduLoad();
@@ -1559,16 +1649,7 @@ function eduMonthlyTable(scope,items){
     if(e.status==='בוצע')done++; else if(e.status==='בוצע חלקית')part++;
     else if(e.status==='לא בוצע')miss++; else if(e.status==='נדחה')post++; });
   const pct = tot? Math.round((done+part*0.5)/tot*100):0;
-  const pill=(ic,n,lbl,col)=>`<span style="display:inline-flex;align-items:center;gap:5px;background:${col}14;color:${col};border:1px solid ${col}33;border-radius:99px;padding:4px 11px;font-size:12px;font-weight:800;white-space:nowrap;">${ic} ${n}<span style="font-weight:500;opacity:.8;">${lbl}</span></span>`;
-  const cards=`<div style="background:#fff;border:1px solid var(--border);border-radius:11px;padding:11px 13px;margin-bottom:14px;">
-    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;">
-      ${pill('📋',tot,'משימות','#1d4ed8')}${pill('✅',done,'בוצעו','#047857')}${pill('🟠',part,'חלקית','#b45309')}${pill('🔴',miss,'לא בוצעו','#b91c1c')}${pill('⏭️',post,'נדחו','#6d28d9')}
-    </div>
-    <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;margin-bottom:5px;">
-      <span style="color:var(--text2);">שיעור ביצוע התוכנית</span><span style="color:var(--blue);">${pct}%</span></div>
-    <div style="height:8px;background:#eef2f7;border-radius:99px;overflow:hidden;">
-      <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#047857,#0891b2);border-radius:99px;"></div></div>
-  </div>`;
+  const cards=eduHeadStrip(scope,items);
   const byM={}; items.forEach(x=>{(byM[x.month]=byM[x.month]||[]).push(x);});
   const rows=EDU_MONTHS.map((m,mi)=>{
     const its=byM[m]; if(!its||!its.length) return '';
@@ -1600,7 +1681,7 @@ function viewEdu(layer, title, scope){
   window.eduCfg[scope]={layer:layer,title:title};
   const monthly = eduIsMonthly(eduItems(layer));
   return info('🎓',`תוכנית חינוכית — ${title}`, monthly
-    ? `התוכנית החודשית של השכבה <b>כבר מוזנת כאן</b> — לפי חודש ולפי ארבעה תחומים: 📅 אירועי עוגן, 🚀 פרויקטים, 🎓 מתווה חינוכי, 👥 משימות צוות.<br>לכל משימה בחרו <b>סטטוס</b>, רשמו מה <b>בוצע בפועל / מי אחראי</b> וסמנו <b>תאריך</b>. הנתונים נשמרים אוטומטית ומתגלגלים לתוכנית החינוכית הראשית.`
+    ? `התוכנית השנתית <b>כבר מוזנת כאן</b>, באותו מבנה של הטבלה המקורית: ארבעת התחומים בשורות, החודשים בעמודות.<br><b>לחיצה על העיגול</b> שליד משימה מסמנת ביצוע (ולחיצה נוספת מחליפה סטטוס). <b>לחיצה על הטקסט</b> פותחת שורה לפירוט ולתאריך. בכפתורים למעלה אפשר לעבור בין <b>טבלה שנתית</b> ל<b>לפי חודש</b>. הכול נשמר אוטומטית ומתגלגל לתוכנית החינוכית הראשית.`
     : `לכל נושא חודשי יש ארבעה שבועות. מלא מה <b>מתוכנן</b>, סמן <b>סטטוס</b> ורשום מה <b>בוצע בפועל</b>. הנתונים מתגלגלים אוטומטית לתוכנית החינוכית הראשית.`)
     + `<div class="panel"><div class="panel-h"><h2>🎓 תכנון מול ביצוע — ${title}</h2></div>
       <div class="panel-b" id="edu-${scope}">${eduTable(scope)}</div></div>`;
