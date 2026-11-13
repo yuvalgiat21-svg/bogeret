@@ -1054,6 +1054,10 @@ async function loadSecure(){
     const as=await dbm.get(dbm.ref(rdb,'portal/bogeret/secure/attendance/latest'));
     window.ATT = as.exists() ? JSON.parse(as.val()) : null;
   }catch(e){ window.ATT=null; }
+  if(ME && (ME.mode==='admin' || (ME.mode==='edit' && LIM_OWN[ME.id]))) try{
+    const ls=await dbm.get(dbm.ref(rdb,'portal/bogeret/secure/limudi/latest'));
+    window.LIMUDI = ls.exists() ? JSON.parse(ls.val()) : null;
+  }catch(e){ window.LIMUDI=null; }
   SECURE_LOADED=true;
 }
 /* עדכון לוח הנוכחות — מופעל ע"י הבדיקה היומית של 08:30 (מנהל בלבד) */
@@ -1065,6 +1069,26 @@ window.attPublish = async function(obj){
   await dbm.set(dbm.ref(rdb,'portal/bogeret/secure/attendance/history/'+(obj.date||Date.now()).toString().replace(/[.#$\[\]\/]/g,'-')), txt);
   return 'ok';
 };
+/* עדכון המצב הלימודי — מופעל ע"י העדכון השבועי מסמרט סקול (מנהל בלבד) */
+window.limudiPublish = async function(obj){
+  if(!ME || ME.mode!=='admin') throw new Error('admin only');
+  if(!obj || !Array.isArray(obj.students) || !obj.students.length) throw new Error('no students');
+  const {dbm,rdb}=await secureDb();
+  const txt=JSON.stringify(obj);
+  await dbm.set(dbm.ref(rdb,'portal/bogeret/secure/limudi/latest'), txt);
+  await dbm.set(dbm.ref(rdb,'portal/bogeret/secure/limudi/history/'+(obj.date||String(Date.now())).replace(/[.#$\[\]\/]/g,'-')), txt);
+  window.LIMUDI=obj;
+  return obj.students.length;
+};
+/* קבלת הנתונים מלשונית סמרט סקול (אותו דפדפן, מנהל מחובר בלבד) */
+window.addEventListener('message', async ev=>{
+  if(ev.origin!=='https://www.smartschool.co.il') return;
+  const m=ev.data; if(!m || m.type!=='bogeret-limudi') return;
+  let reply;
+  try{ const n=await window.limudiPublish(m.payload); reply={type:'bogeret-limudi-ack',ok:true,count:n}; }
+  catch(e){ reply={type:'bogeret-limudi-ack',ok:false,error:String(e&&e.message||e)}; }
+  try{ ev.source && ev.source.postMessage(reply, ev.origin); }catch(e){}
+});
 /* העלאה חד-פעמית של הנתונים לענן (מנהל בלבד) */
 window.secureUpload = async function(obj){
   if(!ME || ME.mode!=='admin') throw new Error('admin only');
@@ -1288,6 +1312,102 @@ function viewRoster(names, clr){
     </div></div></div>`;
 }
 
+/* ═══════ מצב לימודי מסמרט סקול — נטען מהאזור המוגן (portal/bogeret/secure/limudi) ═══════ */
+const LIM_LV={'אדום':'#C0261F','כתום':'#FC5028','צהוב':'#E9B949','ירוק':'#2E8B57'};
+const LIM_ORDER={'אדום':0,'כתום':1,'צהוב':2,'ירוק':3};
+/* הרשאות: רכז רואה הכול; כל מדריך רואה רק את הקבוצה שלו; עו"סיות ושינשינים לא רואים */
+const LIM_OWN={eili:['שחף'], arbel:['שיר'], udi:['שלדג'], sharon:['yb'], eran:['yb'], itai:['yb'], ami:['academy']};
+function limCan(g){ if(!ME) return false; if(ME.mode==='admin') return true; if(ME.mode!=='edit') return false; return (LIM_OWN[ME.id]||[]).includes(g); }
+function limItem(g){ return limCan(g)?[{k:'limudi',label:'📚 מצב לימודי',hl:true}]:[]; }
+function limTok(n){ return String(n||'').replace(/[׳'`"״\-]/g,' ').split(/\s+/).filter(Boolean).map(t=>t.replace(/[וי]/g,'')); }
+function limFind(name){
+  const L=window.LIMUDI; if(!L||!L.students) return null;
+  const a=limTok(name); let best=null, bs=0;
+  const near=(x,y)=>x!==y&&x.length>=2&&y.length>=2&&x.slice(0,2)===y.slice(0,2)&&Math.abs(x.length-y.length)<=1;
+  L.students.forEach(r=>{ const b=limTok(r['שם']); let sc=a.filter(t=>b.includes(t)).length;
+    if(sc===1 && a.some(x=>!b.includes(x)&&b.some(y=>!a.includes(y)&&near(x,y)))) sc+=0.5;
+    if(sc>bs){bs=sc;best=r;} });
+  return bs>=1.5 || (bs===1 && a.length===1) ? best : null;
+}
+function limEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function limRows(names){ const out=[], miss=[]; names.forEach(s=>{ const r=limFind(s.n); if(r) out.push(r); else miss.push(s.n); }); return {rows:out, miss}; }
+function limCount(list, key){ const m={}; list.forEach(r=>String(r[key]||'').split(' · ').filter(Boolean).forEach(x=>{ const k=x.replace(/[:\s][\d.\/]+$/,'').trim(); m[k]=(m[k]||0)+1; })); return Object.entries(m).sort((a,b)=>b[1]-a[1]); }
+function limTiles(rows){
+  const c=k=>rows.filter(r=>r['רמה']===k).length;
+  const avgAb=rows.length?Math.round(rows.reduce((s,r)=>s+(+r['אחוז_חיסור']||0),0)/rows.length*10)/10:0;
+  const t=(v,l,clr)=>`<div class="card"><div class="val" style="color:${clr}">${v}</div><div class="lbl">${l}</div></div>`;
+  return `<div class="cards" style="margin-bottom:14px;">${t(rows.length,'חניכים','var(--blue)')}${t(c('אדום'),'באדום',LIM_LV['אדום'])}${t(c('כתום'),'בכתום',LIM_LV['כתום'])}${t(c('צהוב'),'בצהוב','#b8860b')}${t(c('ירוק'),'בירוק',LIM_LV['ירוק'])}${t(avgAb+'%','חיסור ממוצע','#8E033C')}</div>`;
+}
+function limBars(pairs, clr, title){
+  if(!pairs.length) return `<div style="color:var(--text3);font-size:13px;">אין</div>`;
+  const mx=pairs[0][1]||1;
+  return pairs.slice(0,8).map(([k,v])=>`<div style="display:grid;grid-template-columns:120px 1fr 30px;gap:8px;align-items:center;margin:5px 0;font-size:12.5px;" title="${limEsc(k)}: ${v} ${title}"><span>${limEsc(k)}</span><span style="height:14px;border-radius:4px;background:#F3C2B044;overflow:hidden;"><span style="display:block;height:100%;width:${v/mx*100}%;background:${clr};"></span></span><b>${v}</b></div>`).join('');
+}
+function limTable(rows, showNotes){
+  const sorted=[...rows].sort((a,b)=>(LIM_ORDER[a['רמה']]-LIM_ORDER[b['רמה']])||((+b['ניקוד_סיכון']||0)-(+a['ניקוד_סיכון']||0)));
+  const th=['רמה','שם','כיתה','מגמה','ממוצע','% חיסור','ציונים מתחת ל-55','היעדרות 40%+ במקצוע','בגרות מתחת ל-55','מתמ׳','אנג׳'].concat(showNotes?['הערת מעקב אחרונה']:[]);
+  const td=(v,st='')=>`<td style="padding:6px 8px;vertical-align:top;${st}">${v===''||v==null?'—':limEsc(v)}</td>`;
+  return `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:860px;"><thead><tr>${th.map(h=>`<th style="padding:7px 8px;text-align:right;background:#FFF1EB;border-bottom:2px solid #F3C2B0;white-space:nowrap;">${h}</th>`).join('')}</tr></thead><tbody>${
+    sorted.map(r=>`<tr class="limr" data-q="${limEsc([r['שם'],r['כיתה'],r['מגמה']].join(' '))}" data-l="${limEsc(r['רמה'])}" data-y="${limEsc(r['שכבה'])}" style="border-bottom:1px solid #eef2f7;"><td style="padding:6px 8px;"><span style="display:inline-block;padding:1px 9px;border-radius:10px;color:#fff;font-size:11px;font-weight:700;background:${LIM_LV[r['רמה']]||'#999'}">${limEsc(r['רמה'])}</span></td>${td(r['שם'],'font-weight:600;white-space:nowrap;')}${td(r['כיתה'])}${td(r['מגמה'])}${td(r['ממוצע'])}${td((r['אחוז_חיסור']??'')+'%',(+r['אחוז_חיסור']>=30?'color:#C0261F;font-weight:700;':''))}${td(r['ציונים_נמוכים'])}${td(r['היעדרות_במקצוע'])}${td(r['בגרות_מתחת_55'])}${td(r['יחל_מתמטיקה'])}${td(r['יחל_אנגלית'])}${showNotes?td(r['הערת_מעקב_אחרונה'],'color:var(--text3);max-width:260px;'):''}</tr>`).join('')
+  }</tbody></table></div>`;
+}
+function limStamp(){ const L=window.LIMUDI; return L&&L.date?`עודכן מסמרט סקול: <b>${limEsc(L.date)}</b> · ${limEsc(L.period||'')}`:''; }
+function viewLimudi(names, title){
+  const L=window.LIMUDI;
+  if(!L||!L.students) return info('📚','מצב לימודי','עדיין לא נטענו נתונים מסמרט סקול. הם מתעדכנים אוטומטית פעם בשבוע.');
+  const {rows,miss}=limRows(names); const showNotes=true;
+  return info('📚',`מצב לימודי — ${limEsc(title)}`, limStamp()+'<br>רמת הסיכון מחושבת מחיסורים, ציונים מתחת ל-55, בגרויות נמוכות והפרעות בשיעור. ציון 0 הוא בדרך כלל עבודה שלא הוגשה.')
+   + limTiles(rows)
+   + `<div class="panel" style="margin-bottom:14px;"><div class="panel-h"><h2>📋 החניכים לפי רמת סיכון</h2></div><div class="panel-b">${limTable(rows,showNotes)}</div></div>`
+   + (miss.length?`<div class="info-box" style="background:#fdf1d6;border-color:#f0c674;"><div class="icon">❓</div><div><b>לא נמצאו בסמרט סקול (${miss.length}):</b> ${miss.map(limEsc).join(' · ')}<br><span style="font-size:12px;color:var(--text3);">כנראה עדיין אין לרכז הרשאה לחניכים האלה בסמרט סקול.</span></div></div>`:'');
+}
+window.limFilter=function(){
+  const q=(document.getElementById('limQ')||{}).value||'', y=(document.getElementById('limY')||{}).value||'', l=(document.getElementById('limL')||{}).value||'';
+  document.querySelectorAll('#limAll tr.limr').forEach(tr=>{ tr.style.display=(!q||tr.dataset.q.includes(q))&&(!y||tr.dataset.y===y)&&(!l||tr.dataset.l===l)?'':'none'; });
+};
+function limExtras(all, groups){
+  const box=(t,b)=>`<div style="background:#FFF1EB;border:1px solid #F3C2B0;border-radius:12px;padding:12px;"><h3 style="font-size:14px;margin:0 0 8px;color:#8E033C;">${t}</h3>${b}</div>`;
+  // תגבור מומלץ — ציון נמוך במקצועות ליבה
+  const core=['מתמטיקה','אנגלית','לשון','הסטוריה','תנ"ך','ספרות','אזרחות'];
+  const tg=core.map(c=>[c,all.filter(r=>String(r['ציונים_נמוכים']||'').split(' · ').some(x=>x.startsWith(c+':')&&!x.endsWith(':0')))]).filter(x=>x[1].length);
+  const tgB=tg.length?tg.map(([c,rs])=>`<div style="margin-bottom:6px;font-size:12.5px;"><b>${limEsc(c)} (${rs.length}):</b> ${rs.map(r=>limEsc(r['שם'])).join(' · ')}</div>`).join(''):'<div style="font-size:12.5px;color:var(--text3);">אין ציונים נמוכים במקצועות הליבה (מלבד ציוני 0)</div>';
+  // 5 יח"ל ומגמות
+  const lay=['יא','יב'].map(y=>{ const a=all.filter(r=>r['שכבה']===y); return `<tr><td style="padding:4px 8px;font-weight:600;">${y}'</td><td style="padding:4px 8px;">${a.filter(r=>+r['יחל_מתמטיקה']===5).length}</td><td style="padding:4px 8px;">${a.filter(r=>+r['יחל_אנגלית']===5).length}</td><td style="padding:4px 8px;color:#C0261F;">${a.filter(r=>+r['יחל_אנגלית']===5&&/(^|· )אנגלית:/.test(r['ציונים_נמוכים']||'')).length}</td></tr>`; }).join('');
+  const tr={}; all.forEach(r=>{ const k=r['מגמה']||'—'; tr[k]=(tr[k]||0)+1; });
+  const trB=Object.entries(tr).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<span style="display:inline-block;margin:2px 4px 2px 0;padding:2px 9px;border-radius:10px;background:#fff;border:1px solid #F3C2B0;font-size:12px;">${limEsc(k)} · <b>${v}</b></span>`).join('');
+  const fiveB=`<table style="border-collapse:collapse;font-size:12.5px;margin-bottom:8px;"><thead><tr><th style="padding:4px 8px;text-align:right;">שכבה</th><th style="padding:4px 8px;text-align:right;">5 יח"ל מתמ'</th><th style="padding:4px 8px;text-align:right;">5 יח"ל אנג'</th><th style="padding:4px 8px;text-align:right;">5 יח"ל אנג' בסיכון</th></tr></thead><tbody>${lay}</tbody></table><div>${trB}</div>`;
+  // בקרת פערים — בפנימייה אבל לא בסמרט סקול
+  const gaps=groups.map(([g,names])=>[g,limRows(names).miss]).filter(x=>x[1].length);
+  const gapB=gaps.length?gaps.map(([g,m])=>`<div style="margin-bottom:6px;font-size:12.5px;"><b>${limEsc(g)} (${m.length}):</b> ${m.map(limEsc).join(' · ')}</div>`).join('')+'<div style="font-size:11.5px;color:var(--text3);">חניכים שרשומים בפנימייה אבל לא נמצאו בהרשאות של הרכז בסמרט סקול.</div>':'<div style="font-size:12.5px;">כל החניכים נמצאו ✓</div>';
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:16px;">${box('🎯 תגבור מומלץ (ציון מתחת ל-55)',tgB)}${box('🧮 5 יח"ל ומגמות',fiveB)}${box('🔎 בקרת פערים',gapB)}</div>`;
+}
+function viewLimudiLayer(){
+  const L=window.LIMUDI;
+  if(!ME||ME.mode!=='admin'||!L||!L.students) return '';
+  const groups=GROUPS_YA.map(g=>[g,stuOf(g)]).concat([["קהילת יב'",stuOfLayer("יב'")],['אקדמיה לכדורסל',ACAD_STUDENTS]]);
+  const all=[]; const seen=new Set();
+  const grpRows=groups.map(([g,names])=>{ const {rows,miss}=limRows(names); rows.forEach(r=>{ if(!seen.has(r['שם'])){seen.add(r['שם']);all.push(r);} });
+    const c=k=>rows.filter(r=>r['רמה']===k).length; const av=rows.length?Math.round(rows.reduce((s,r)=>s+(+r['אחוז_חיסור']||0),0)/rows.length*10)/10:'—';
+    return `<tr style="border-bottom:1px solid #eef2f7;"><td style="padding:6px 8px;font-weight:600;">${limEsc(g)}</td><td style="padding:6px 8px;">${rows.length}</td>${['אדום','כתום','צהוב','ירוק'].map(k=>`<td style="padding:6px 8px;color:${LIM_LV[k]};font-weight:700;">${c(k)}</td>`).join('')}<td style="padding:6px 8px;">${av}${av==='—'?'':'%'}</td><td style="padding:6px 8px;color:var(--text3);">${miss.length||''}</td></tr>`; }).join('');
+  const zeros=all.reduce((s,r)=>s+(+r['ציוני_אפס']||0),0);
+  const hab=limCount(all,'היעדרות_במקצוע'), low=limCount(all,'ציונים_נמוכים'), bag=limCount(all,'בגרות_מתחת_55');
+  return `<div class="panel" style="margin-bottom:16px;"><div class="panel-h"><h2>📚 מצב לימודי עדכני — מסמרט סקול</h2><span class="pill">${limStamp()}</span></div><div class="panel-b">
+    ${limTiles(all)}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:14px;">
+      <div><h3 style="font-size:14px;margin:0 0 6px;">לפי קבוצה</h3><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;"><thead><tr>${['קבוצה','חניכים','אדום','כתום','צהוב','ירוק','חיסור ממוצע','לא בסמרט סקול'].map(h=>`<th style="padding:6px 8px;text-align:right;background:#FFF1EB;border-bottom:2px solid #F3C2B0;">${h}</th>`).join('')}</tr></thead><tbody>${grpRows}</tbody></table></div></div>
+      <div><h3 style="font-size:14px;margin:0 0 6px;">היעדרות 40%+ לפי מקצוע (מספר חניכים)</h3>${limBars(hab,'#8E033C','חניכים')}</div>
+      <div><h3 style="font-size:14px;margin:0 0 6px;">ציונים מתחת ל-55 לפי מקצוע</h3>${limBars(low,'#FC5028','חניכים')}<div style="font-size:12px;color:var(--text3);margin-top:6px;">מתוכם ${zeros} ציוני 0 — בדרך כלל עבודה שלא הוגשה.</div></div>
+      <div><h3 style="font-size:14px;margin:0 0 6px;">בגרויות מתחת ל-55</h3>${limBars(bag,'#C0261F','חניכים')}</div>
+    </div>
+    ${limExtras(all, groups)}
+    <div id="limAll"><h3 style="font-size:14px;margin:6px 0;">📋 כל החניכים (${all.length})</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+        <input id="limQ" placeholder="🔍 חיפוש שם, כיתה או מגמה" oninput="limFilter()" style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #F3C2B0;border-radius:8px;font-family:inherit;">
+        <select id="limY" onchange="limFilter()" style="padding:7px;border:1px solid #F3C2B0;border-radius:8px;font-family:inherit;"><option value="">כל השכבות</option><option value="יא">יא'</option><option value="יב">יב'</option></select>
+        <select id="limL" onchange="limFilter()" style="padding:7px;border:1px solid #F3C2B0;border-radius:8px;font-family:inherit;"><option value="">כל הרמות</option><option>אדום</option><option>כתום</option><option>צהוב</option><option>ירוק</option></select>
+      </div>${limTable(all,true)}</div>
+  </div></div>`;
+}
 function viewRamzor(names, title){
   const rows = names.map(s=>{
     const i = ramzorIdxOf(s.n); const r = i>=0 ? RAMZOR_DATA_NEW[i] : null;
@@ -2999,7 +3119,7 @@ function reorganize(){
                  {k:'visits',label:'🏡 ביקורי בית'},{k:'pocket',label:'💰 דמי כיס'},
                  {k:'hug',label:'🎨 חוגים'},{k:'aft',label:'📖 לימודי אחה"צ'},
                  {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},
-                 {k:'kn',label:'📝 שימור ידע'}];
+                 {k:'kn',label:'📝 שימור ידע'}].concat(limItem(g));
     sec.innerHTML = info('👥',`קבוצת ${g} — יא'`,
       `${names.length} חניכים. כאן המדריך מזין את הנתונים של הקבוצה, והם מתגלגלים אוטומטית לסקירה השכבתית.`);
     const nav=mkNav('gr'+g,items,pickIn(inner,'gr'+g),{grid:true}); sec.appendChild(nav);
@@ -3008,7 +3128,7 @@ function reorganize(){
                 rooms:viewRoomsGroup(g),edu:viewEdu("יא'",g,g),visits:viewVisits(names,'vis-'+g,VIS_PHASES_YA),pocket:viewPocket(names,'pm-'+g),
                 hug:viewHugim(names,'hug-'+g),aft:viewAfter(names,'aft-'+g),
                 med:viewMed(names,'med-'+g),diet:viewDiet(names,'diet-'+g),
-                kn:viewKnowledge(g,g)};
+                kn:viewKnowledge(g,g),limudi:limCan(g)?viewLimudi(names,g):''};
     Object.entries(subs).forEach(([k,html],n)=>{ const d=mkSub('gr'+g+'-'+k,n===0); d.innerHTML=html; inner.appendChild(d); });
     sec.appendChild(inner); gr.appendChild(sec); knWire(g);
   });
@@ -3021,7 +3141,7 @@ function reorganize(){
                  {k:'visits',label:'🏡 ביקורי בית'},{k:'pocket',label:'💰 דמי כיס'},{k:'hug',label:'🎨 חוגים'},
                  {k:'aft',label:'📖 לימודי אחה"צ'},{k:'med',label:'🏥 רפואי'},
                  {k:'diet',label:'🥗 תזונה'},{k:'kn',label:'📝 שימור ידע'},
-                 {k:'siyum',label:'🎓 מכלול סיום',hl:true}];
+                 {k:'siyum',label:'🎓 מכלול סיום',hl:true}].concat(limItem('yb'));
   secYB.innerHTML = info('🌊',"קהילת יב' — חוף וצוק",
     `${yb.length} חניכים בשתי הקבוצות. כאן מנוהלים הנתונים של הקהילה כולה, כולל מכלול הסיום.`);
   secYB.appendChild(mkNav('gryb',ybItems,pickIn(innerYB,'gryb'),{grid:true}));
@@ -3030,7 +3150,7 @@ function reorganize(){
                 rooms:viewRoomsYB(),edu:viewEdu("יב'","קהילת יב'",'קהילת יב'),visits:viewVisits(yb,'vis-yb',VIS_PHASES_YB),pocket:viewPocket(yb,'pm-yb'),
                 hug:viewHugim(yb,'hug-yb'),aft:viewAfter(yb,'aft-yb'),
                 med:viewMed(yb,'med-yb'),diet:viewDiet(yb,'diet-yb'),
-                kn:viewKnowledge('yb',"קהילת יב'")};
+                kn:viewKnowledge('yb',"קהילת יב'"),limudi:limCan('yb')?viewLimudi(yb,"קהילת יב'"):''};
   Object.entries(ybSubs).forEach(([k,html],n)=>{ const d=mkSub('gryb-'+k,n===0); d.innerHTML=html; innerYB.appendChild(d); });
   const dSiyum=mkSub('gryb-siyum'); while(old.siyum.firstChild) dSiyum.appendChild(old.siyum.firstChild);
   innerYB.appendChild(dSiyum);
@@ -3046,7 +3166,7 @@ function reorganize(){
     {k:'visits',label:'🏡 ביקורי בית'},{k:'pocket',label:'💰 דמי כיס'},
     {k:'hug',label:'🎨 חוגים'},{k:'aft',label:'📖 לימודי אחה"צ'},
     {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},
-    {k:'kn',label:'📝 שימור ידע'}];
+    {k:'kn',label:'📝 שימור ידע'}].concat(limItem('academy'));
   secAc.appendChild(mkNav('grac',acItems,pickIn(innerAc,'grac'),{grid:true}));
   const acSubs={roster:viewAcademyRoster(), rooms:viewAcademyRooms(),
     ramzor:viewRamzor(acN,'אקדמיה לכדורסל'), edu:viewEdu("יא'",'אקדמיה לכדורסל','אקדמיה'),
@@ -3054,7 +3174,7 @@ function reorganize(){
     pocket:viewPocket(acN,'pm-acad'),
     hug:viewHugim(acN,'hug-acad'), aft:viewAfter(acN,'aft-acad'),
     med:viewMed(acN,'med-acad'), diet:viewDiet(acN,'diet-acad'),
-    kn:viewKnowledge('acad','אקדמיה לכדורסל')};
+    kn:viewKnowledge('acad','אקדמיה לכדורסל'), limudi:limCan('academy')?viewLimudi(acN,'אקדמיה לכדורסל'):''};
   Object.entries(acSubs).forEach(([k,html],n)=>{
     const d=mkSub('grac-'+k,n===0); d.innerHTML=html; innerAc.appendChild(d); });
   window.aggViews['grac-ramzor']={names:acN,title:'אקדמיה לכדורסל'};
@@ -3096,7 +3216,9 @@ function reorganize(){
   main.appendChild(pr);
 
   /* ---------- מעקב לימודי + תוכנית חינוכית ---------- */
-  const pd=mkSec('pedagogy'); while(old.pedagogy.firstChild) pd.appendChild(old.pedagogy.firstChild);
+  const pd=mkSec('pedagogy');
+  const limTop=document.createElement('div'); limTop.innerHTML=viewLimudiLayer(); pd.appendChild(limTop);
+  while(old.pedagogy.firstChild) pd.appendChild(old.pedagogy.firstChild);
   main.appendChild(pd);
   const ep=mkSec('eduplan');
   const epTop=document.createElement('div');
@@ -3775,10 +3897,6 @@ function buildAllSections() {
 
   // 3. PEDAGOGY - LIMUDI DASHBOARD EMBEDDED
   h += `<div class="sec" id="sec-pedagogy">
-    <div class="info-box"><div class="icon">📚</div><div><b>דשבורד לימודי</b><br>מעקב ציונים ובגרויות של השכבה הבוגרת, נטען מתוך הדשבורד החיצוני.</div></div>
-    <div class="panel"><div class="panel-h"><h2>📊 דשבורד לימודי - שכבה בוגרת</h2><a href="https://yuvalgiat21-svg.github.io/limudi-mevoot/" target="_blank" class="btn">↗ פתח במסך מלא</a></div><div class="panel-b" style="padding:0;">
-      <iframe src="https://yuvalgiat21-svg.github.io/limudi-mevoot/" style="width:100%;height:900px;border:none;border-radius:0 0 14px 14px;"></iframe>
-    </div></div>
     <div class="panel"><div class="panel-h"><h2>🎨 חוגי פנאי (${D.hugim.length-1})</h2></div><div class="panel-b">
       ${makeTable(['#','שם','קבוצה','פנאי 1','פנאי 2'], D.hugim.slice(1).map((s,i)=>[i+1,s.name,s.group,s.p1||'-',s.p2||'-']), true)}
     </div></div>
