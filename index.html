@@ -2723,13 +2723,7 @@ function viewAcademyRooms(){
       ${["ט'","י'","יא'"].map(l=>`<div class="card" style="border-right:6px solid ${LAY_CLR[l]};"><div class="icon">🎓</div><div class="val" style="color:${LAY_CLR[l]}">${acadAll().filter(x=>x.l===l).length}</div><div class="lbl">שכבה ${l}</div></div>`).join('')}
     </div>
     <div class="panel"><div class="panel-h"><h2>🏠 שיבוץ חדרים</h2></div><div class="panel-b">
-      <div class="rm-grid">${ACADEMY_ROOMS.map(r=>{
-        const ls=[...new Set(r.m.map(x=>x.l))];
-        const c=ls.length>1?'linear-gradient(90deg,'+LAY_CLR[ls[0]]+','+LAY_CLR[ls[ls.length-1]]+')':LAY_CLR[ls[0]];
-        return `<div class="rm">
-          <div class="hd" style="background:${c}"><span>חדר ${r.r}</span><span class="cap">${r.m.length}</span></div>
-          <div class="bd">${r.m.map(x=>`<div class="mb"><span class="gd" style="background:${LAY_CLR[x.l]||'#8496ab'}"></span><span>${x.n}</span><span style="margin-right:auto;font-size:10.5px;color:var(--text3);">${x.l}</span></div>`).join('')}</div>
-        </div>`;}).join('')}</div>
+      ${rmHost('ac', {edit:true, layer:true, color:'var(--purple)'})}
       <div class="info-box" style="margin-top:14px;background:#fdf1d6;border-color:#f0c674;"><div class="icon">📋</div><div>
         הרשימה נבנתה משני עמודים מתוך שלושה. ייתכן שחסרים חדרים נוספים — שלח את העמוד השלישי ואשלים.</div></div>
     </div></div>`;
@@ -2751,6 +2745,143 @@ function viewAcademyRoster(){
     </div></div>`;
 }
 
+/* ═══════════ עורך שיבוץ חדרים ═══════════
+   נתוני הכספת נשארים כמקור; כל שינוי שהמדריכים עושים נשמר בשכבה נפרדת
+   (bogeret_rooms_v1) ומסתנכרן ככל שאר הנתונים.                        */
+const RM_KEY='bogeret_rooms_v1';
+const RM_NONE='__none';
+function rmOv(){ try{ return JSON.parse(localStorage.getItem(RM_KEY)||'{}'); }catch(e){ return {}; } }
+function rmSave(o){ try{ localStorage.setItem(RM_KEY, JSON.stringify(o)); }catch(e){} }
+function rmK(kind,b,r){ return kind+'§'+(b||'')+'§'+r; }
+function rmCanEdit(){ return !!(window.ME && (ME.mode==='admin' || ME.mode==='edit')); }
+function rmEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function rmQ(v){ return String(v==null?'':v).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+/* מצב החדרים בפועל = כספת + שינויים */
+function rmBuild(kind){
+  const o=rmOv(), mv=o.mv||{}, rn=o.rn||{}, del=o.del||[];
+  let base=[], loose=[];
+  if(kind==='ya'){
+    base=(ROOMS_YA||[]).map(r=>({k:rmK('ya','ורד',r.r), b:'ורד', r:r.r, g:r.g, s:r.s, m:(r.m||[]).map(m=>({...m})), gap:r.gap}));
+    loose=(UNPLACED_YA||[]).map(u=>({...u}));
+  } else if(kind==='yb'){
+    base=(ROOMS_YB||[]).map(r=>({k:rmK('yb',r.b,r.r), b:r.b, r:r.r, g:r.g, m:(r.m||[]).map(m=>({...m}))}));
+    loose=(typeof ROOMS_UNPLACED!=='undefined'?ROOMS_UNPLACED:[]).map(u=>({...u}));
+  } else {
+    base=(ACADEMY_ROOMS||[]).map(r=>({k:rmK('ac','',r.r), b:'', r:r.r, m:(r.m||[]).map(m=>({...m}))}));
+  }
+  (o.add||[]).filter(a=>a.kind===kind && !del.includes(a.k)).forEach(a=>base.push({k:a.k,b:a.b,r:a.r,g:a.g,m:[],added:true}));
+  base=base.filter(r=>!del.includes(r.k));
+  const home={};
+  base.forEach(r=>(r.m||[]).forEach(m=>{ home[m.n]=home[m.n]||{mem:{...m}, k:r.k}; }));
+  loose.forEach(u=>{ home[u.n]=home[u.n]||{mem:{...u}, k:RM_NONE}; });
+  base.forEach(r=>{ if(rn[r.k]!==undefined && rn[r.k]!=='') r.r=rn[r.k]; });
+  const idx={}; base.forEach(r=>idx[r.k]=r);
+  base.forEach(r=>{ r.m=(r.m||[]).filter(m=>mv[m.n]===undefined); });
+  const un=loose.filter(u=>mv[u.n]===undefined);
+  Object.keys(mv).forEach(n=>{
+    const h=home[n]; if(!h) return;
+    const dest=mv[n];
+    if(dest===RM_NONE){ un.push(h.mem); return; }
+    const room=idx[dest];
+    if(room) room.m.push({...h.mem});
+    else if(idx[h.k]) idx[h.k].m.push({...h.mem});
+    else un.push(h.mem);
+  });
+  return {rooms:base, unplaced:un};
+}
+
+/* ── פעולות ── */
+window.rmMove=function(name, dest, kind){
+  const o=rmOv(); o.mv=o.mv||{}; o.mv[name]=dest; rmSave(o); rmRerender(kind);
+};
+window.rmRename=function(k, val, kind){
+  const o=rmOv(); o.rn=o.rn||{};
+  const v=String(val||'').trim();
+  if(v==='') delete o.rn[k]; else o.rn[k]=v;
+  rmSave(o);
+  const el=document.querySelector('[data-rmcap="'+k+'"]'); if(el) el.textContent='חדר '+(v||'');
+};
+window.rmAddRoom=function(kind, b, g){
+  const o=rmOv(); o.add=o.add||[];
+  const n=o.add.filter(a=>a.kind===kind).length+1;
+  o.add.push({kind:kind, k:kind+'§new§'+Date.now(), b:b||'', r:'חדש '+n, g:g||''});
+  rmSave(o); rmRerender(kind);
+};
+window.rmDelRoom=function(k, kind){
+  const o=rmOv(); o.del=o.del||[]; if(!o.del.includes(k)) o.del.push(k);
+  if(o.add) o.add=o.add.filter(a=>a.k!==k);
+  rmSave(o); rmRerender(kind);
+};
+window.rmReset=function(kind){
+  if(!confirm('לבטל את כל השינויים הידניים ולחזור לשיבוץ המקורי?')) return;
+  rmSave({}); rmRerender(kind);
+};
+function rmRerender(kind){
+  const host=document.querySelector('[data-rmhost="'+kind+'"]');
+  if(host){ host.innerHTML=rmInner(kind, JSON.parse(host.dataset.rmopt||'{}')); return; }
+  if(window.renderTab) renderTab();
+  else location.reload();
+}
+
+/* ── תצוגה ── */
+function rmCard(r, kind, opts, allRooms){
+  const ed=opts.edit && rmCanEdit();
+  const gs=[...new Set((r.m||[]).map(m=>m.g).filter(Boolean))];
+  const clr = opts.color || (gs.length>1 ? 'linear-gradient(90deg,#0891b2,#65a30d)' : (GRP_CLR[gs[0]]||'#0891b2'));
+  const sel = (m) => {
+    if(!ed) return '';
+    const cur = r.k;
+    return `<select onchange="rmMove('${rmQ(m.n)}',this.value,'${kind}')" title="העברה לחדר אחר"
+      style="margin-right:auto;max-width:92px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-family:'Heebo';font-size:10.5px;color:var(--text2);background:#fff;">
+      ${allRooms.map(x=>`<option value="${x.k}" ${x.k===cur?'selected':''}>חדר ${rmEsc(x.r)}</option>`).join('')}
+      <option value="${RM_NONE}">ללא שיבוץ</option></select>`;
+  };
+  const head = ed
+    ? `<div class="hd" style="background:${clr};gap:6px;">
+        <span style="display:flex;align-items:center;gap:4px;">חדר
+          <input value="${rmEsc(r.r)}" onchange="rmRename('${r.k}',this.value,'${kind}')" title="מספר החדר"
+            style="width:52px;border:none;border-radius:4px;padding:1px 5px;font-family:'Rubik';font-weight:700;font-size:12.5px;background:rgba(255,255,255,.25);color:#fff;text-align:center;"></span>
+        <span style="display:flex;align-items:center;gap:5px;"><span class="cap">${(r.m||[]).length}</span>
+        ${(r.m||[]).length===0?`<button onclick="rmDelRoom('${r.k}','${kind}')" title="מחיקת חדר ריק" style="background:rgba(255,255,255,.25);border:none;color:#fff;border-radius:4px;width:18px;height:18px;line-height:1;cursor:pointer;font-size:12px;padding:0;">✕</button>`:''}</span>
+      </div>`
+    : `<div class="hd" style="background:${clr}"><span data-rmcap="${r.k}">חדר ${rmEsc(r.r)}</span><span class="cap">${(r.m||[]).length}</span></div>`;
+  return `<div class="rm" data-groups="${gs.join(',')}">${head}
+    <div class="bd">${(r.m||[]).map(m=>`<div class="mb">
+      <span class="gd" style="background:${opts.layer?(LAY_CLR[m.l]||'#8496ab'):(GRP_CLR[m.g]||opts.dot||'#8496ab')}"></span>
+      <span>${rmEsc(m.n)}${m.q===1?' <b class="qm">?</b>':m.q===2?' <b style="color:#6d28d9;">⚑</b>':''}</span>
+      ${opts.layer&&m.l?`<span style="margin-right:auto;font-size:10.5px;color:var(--text3);">${m.l}</span>`:''}${sel(m)}
+    </div>`).join('')}
+    ${(!ed && r.gap)?`<div class="mb" style="opacity:.5;"><span class="gd" style="background:#cbd5e1"></span><span style="font-style:italic;">מקום פנוי</span></div>`:''}
+    ${(r.m||[]).length===0?'<div style="font-size:11.5px;color:var(--text3);font-style:italic;padding:3px 0;">חדר ריק</div>':''}
+    </div></div>`;
+}
+function rmInner(kind, opts){
+  const {rooms, unplaced}=rmBuild(kind);
+  const list = opts.grp ? rooms.filter(r=>r.g===opts.grp) : rooms;
+  const ed = opts.edit && rmCanEdit();
+  const byB={}; list.forEach(r=>{ (byB[r.b||'']=byB[r.b||'']||[]).push(r); });
+  const body=Object.entries(byB).map(([bld,rs])=>
+    `${bld?`<h3 style="font-size:15px;color:${opts.color||'var(--purple)'};margin:0 0 10px;font-family:'Rubik';">🏢 ${bld} <span style="font-size:12px;color:var(--text3);font-weight:400;">(${rs.length} חדרים · ${rs.reduce((a,r)=>a+(r.m||[]).length,0)} חניכים)</span></h3>`:''}
+     <div class="rm-grid" style="margin-bottom:18px;${ed?'grid-template-columns:repeat(auto-fill,minmax(215px,1fr));':''}">${rs.map(r=>rmCard(r,kind,opts,list)).join('')}</div>`).join('');
+  const unBox = unplaced.length ? `<div class="info-box" style="background:#fdf1d6;border-color:#f0c674;margin:0 0 12px;"><div class="icon">❓</div><div>
+      <b>ללא שיבוץ:</b> ${unplaced.map(u=>ed
+        ? `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 0 2px 9px;">${rmEsc(u.n)}
+           <select onchange="rmMove('${rmQ(u.n)}',this.value,'${kind}')" style="border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-family:'Heebo';font-size:10.5px;">
+           <option value="${RM_NONE}" selected>שבץ לחדר…</option>${list.map(x=>`<option value="${x.k}">חדר ${rmEsc(x.r)}</option>`).join('')}</select></span>`
+        : `<b>${rmEsc(u.n)}</b>`).join(ed?'':' · ')}</div></div>` : '';
+  const tools = ed ? `<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;">
+      <button class="btn" onclick="rmAddRoom('${kind}','${rmQ(opts.bld||'')}','${rmQ(opts.grp||'')}')" style="background:var(--blue);color:#fff;border:none;padding:6px 14px;font-size:12px;">➕ הוספת חדר</button>
+      <button class="btn" onclick="rmReset('${kind}')" style="background:#fff;color:var(--text2);border:1px solid var(--border);padding:6px 14px;font-size:12px;">↺ חזרה לשיבוץ המקורי</button>
+      <span style="font-size:11.5px;color:var(--text3);align-self:center;">בחירת חדר ליד שם מעבירה את החניך · לחיצה על מספר החדר משנה אותו</span>
+    </div>` : '';
+  return tools + unBox + body;
+}
+function rmHost(kind, opts){
+  return `<div data-rmhost="${kind}" data-rmopt="${rmEsc(JSON.stringify(opts||{}))}">${rmInner(kind, opts||{})}</div>`;
+}
+
+
 /* ═══════════ שיבוץ חדרים ═══════════ */
 function roomCard(r){
   const gs=[...new Set(r.m.map(m=>m.g).filter(Boolean))];
@@ -2767,11 +2898,7 @@ function roomsEmpty(sub){
     <div style="font-size:12.5px;color:var(--text2);">${sub}</div></div>`;
 }
 function roomsYB(){
-  const byB={}; ROOMS_YB.forEach(r=>{ (byB[r.b]=byB[r.b]||[]).push(r); });
-  return Object.entries(byB).map(([bld,rs])=>
-    `<h3 style="font-size:15px;color:var(--purple);margin:0 0 10px;font-family:'Rubik';">🏢 ${bld} <span style="font-size:12px;color:var(--text3);font-weight:400;">(${rs.length} חדרים · ${rs.reduce((a,r)=>a+r.m.length,0)} חניכים)</span></h3>
-     <div class="rm-grid" style="margin-bottom:22px;">${rs.map(roomCard).join('')}</div>`).join('')
-   + (ROOMS_UNPLACED.length ? `<div class="info-box" style="background:#fdf1d6;border-color:#f0c674;"><div class="icon">❓</div><div><b>ללא שיבוץ:</b> ${ROOMS_UNPLACED.map(u=>`<b>${u.n}</b> (${u.g})`).join(' · ')}</div></div>` : '');
+  return rmHost('yb', {edit:true, color:'var(--purple)', bld:'זית'});
 }
 function viewRoomsGroup(g){
   const rs=ROOMS_YA.filter(r=>r.g===g);
@@ -2790,15 +2917,7 @@ function viewRoomsGroup(g){
       ${un.length?`<div class="card" style="border-right:6px solid #b45309;"><div class="icon">❓</div><div class="val" style="color:#b45309">${un.length}</div><div class="lbl">ללא שיבוץ</div></div>`:''}
     </div>
     <div class="panel"><div class="panel-h"><h2>🏠 ורד — ${g}</h2></div><div class="panel-b">
-      ${Object.entries(byS).map(([sec,list])=>`
-        ${sec?`<h3 style="font-size:14px;color:${c};margin:0 0 9px;font-family:'Rubik';">${sec} <span style="font-size:12px;color:var(--text3);font-weight:400;">(${list.length} חדרים · ${list.reduce((a,r)=>a+r.m.length,0)} חניכים)</span></h3>`:''}
-        <div class="rm-grid" style="margin-bottom:18px;">${list.map(r=>`<div class="rm">
-          <div class="hd" style="background:${r.dup?'#b45309':c}"><span>חדר ${r.r}${r.dup?' ⚠':''}</span><span class="cap">${r.m.length}${r.gap?'+'+r.gap:''}</span></div>
-          <div class="bd">${r.m.map(m=>`<div class="mb"><span class="gd" style="background:${m.q?(m.q===2?'#6d28d9':'#b45309'):c}"></span><span>${m.n}${m.q===1?' <b style="color:#b45309;">?</b>':m.q===2?' <b style="color:#6d28d9;" title="רשום בקבוצה אחרת באלפון">⚑</b>':''}</span></div>`).join('')}</div>
-        ${r.gap?`<div class="mb" style="opacity:.5;"><span class="gd" style="background:#cbd5e1"></span><span style="font-style:italic;">מקום פנוי — טרם שובץ</span></div>`:''}</div>`).join('')}</div>`).join('')}
-      ${rs.some(r=>r.dup)?`<div class="info-box" style="background:#fdece4;border-color:#e8a87c;border-right-color:#c2410c;margin:0 0 12px;"><div class="icon">⚠️</div><div><b>חדרים ${rs.filter(r=>r.dup).map(r=>r.r).join(' ו-')} זהים</b> — אותם שלושה חניכים מופיעים בשניהם. יש לתקן.</div></div>`:''}
-      ${un.length?`<div class="info-box" style="background:#fdf1d6;border-color:#f0c674;margin:0;"><div class="icon">❓</div><div>
-        <b>ללא שיבוץ:</b> ${un.map(u=>u.n).join(' · ')}${rs.some(r=>r.m.some(m=>m.q))?`<br><span style="font-size:12px;">שמות המסומנים ב-<b style="color:#b45309;">?</b> לא זוהו באלפון · <b style="color:#6d28d9;">⚑</b> רשום בקבוצה אחרת באלפון — יש לוודא.</span>`:''}</div></div>`:''}
+      ${rmHost('ya', {edit:true, color:c, grp:g, bld:'ורד'})}
     </div></div>`;
 }
 function viewRoomsYB(){
@@ -2812,7 +2931,7 @@ function viewRoomsYB(){
       </div></div><div class="panel-b">${roomsYB()}</div></div>`;
 }
 function roomsYAall(){
-  const byG={}; ROOMS_YA.forEach(r=>{ (byG[r.g]=byG[r.g]||[]).push(r); });
+  const byG={}; rmBuild('ya').rooms.forEach(r=>{ (byG[r.g]=byG[r.g]||[]).push(r); });
   return ['שלדג','שחף','שיר'].filter(g=>byG[g]).map(g=>{
     const rs=byG[g].sort((a,b)=>+a.r-+b.r); const c=GRP_CLR[g];
     const n=rs.reduce((a,r)=>a+r.m.length,0);
@@ -2852,7 +2971,7 @@ function viewRoomsAll(){
     <div class="panel"><div class="panel-h"><h2>🏀 אקדמיה לכדורסל</h2>
       <span class="pill" style="background:rgba(194,65,12,.14);border-color:rgba(194,65,12,.35);color:#c2410c;">${ACADEMY_ROOMS.length} חדרים · ${acN} שחקנים</span></div>
       <div class="panel-b">
-        <div class="rm-grid">${ACADEMY_ROOMS.map(r=>{
+        <div class="rm-grid">${rmBuild('ac').rooms.map(r=>{
           const ls=[...new Set(r.m.map(x=>x.l))];
           const c=ls.length>1?'linear-gradient(90deg,'+LAY_CLR[ls[0]]+','+LAY_CLR[ls[ls.length-1]]+')':LAY_CLR[ls[0]];
           return `<div class="rm"><div class="hd" style="background:${c}"><span>חדר ${r.r}</span><span class="cap">${r.m.length}</span></div>
