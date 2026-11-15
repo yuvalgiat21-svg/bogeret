@@ -2944,11 +2944,11 @@ function roomsYAall(){
   }).join('');
 }
 function viewRoomsAll(){
-  const ybN=ROOMS_YB.reduce((a,r)=>a+r.m.length,0);
-  const yaN=ROOMS_YA.reduce((a,r)=>a+r.m.length,0);
-  const acN=ACADEMY_ROOMS.reduce((a,r)=>a+r.m.length,0);
-  const nRooms=ROOMS_YA.length+ROOMS_YB.length+ACADEMY_ROOMS.length;
-  const un=UNPLACED_YA.length+ROOMS_UNPLACED.length;
+  const _ya=rmBuild('ya'), _yb=rmBuild('yb'), _ac=rmBuild('ac');
+  const cnt=o=>o.rooms.reduce((a,r)=>a+(r.m||[]).length,0);
+  const ybN=cnt(_yb), yaN=cnt(_ya), acN=cnt(_ac);
+  const nRooms=_ya.rooms.length+_yb.rooms.length+_ac.rooms.length;
+  const un=_ya.unplaced.length+_yb.unplaced.length;
   return info('🏠','שיבוץ חדרים — מבט שכבתי',
     "כל החדרים בשכבה, נמשכים אוטומטית מהשיבוץ של כל קבוצה. <b>ורד</b> — שכבת יא' ושני חדרי יב'. <b>זית</b> — קהילת יב'. ובנוסף האקדמיה לכדורסל.")
    + `<div class="cards" style="margin-bottom:14px;">
@@ -2960,16 +2960,16 @@ function viewRoomsAll(){
       <div class="card"><div class="icon">❓</div><div class="val" style="color:var(--orange)">${un}</div><div class="lbl">ללא שיבוץ</div></div>
     </div>
     <div class="panel" style="margin-bottom:14px;"><div class="panel-h"><h2>🏢 ורד — שכבת יא'</h2>
-      <span class="pill">${ROOMS_YA.length} חדרים · ${yaN} חניכים</span></div><div class="panel-b">
+      <span class="pill">${_ya.rooms.length} חדרים · ${yaN} חניכים</span></div><div class="panel-b">
       ${roomsYAall()}
-      ${UNPLACED_YA.length?`<div class="info-box" style="background:#fdf1d6;border-color:#f0c674;margin:0;"><div class="icon">❓</div><div>
-        <b>ללא שיבוץ (${UNPLACED_YA.length}):</b> ${UNPLACED_YA.map(u=>`${u.n} <span style="color:var(--text3);">(${u.g})</span>`).join(' · ')}</div></div>`:''}
+      ${_ya.unplaced.length?`<div class="info-box" style="background:#fdf1d6;border-color:#f0c674;margin:0;"><div class="icon">❓</div><div>
+        <b>ללא שיבוץ (${_ya.unplaced.length}):</b> ${_ya.unplaced.map(u=>`${u.n} <span style="color:var(--text3);">(${u.g})</span>`).join(' · ')}</div></div>`:''}
     </div></div>
     <div class="panel" style="margin-bottom:14px;"><div class="panel-h"><h2>🌊 קהילת יב'</h2>
-      <span class="pill" style="background:rgba(4,120,87,.14);border-color:rgba(4,120,87,.35);color:#047857;">${ROOMS_YB.length} חדרים · ${ybN} חניכים</span></div>
-      <div class="panel-b">${roomsYB()}</div></div>
+      <span class="pill" style="background:rgba(4,120,87,.14);border-color:rgba(4,120,87,.35);color:#047857;">${_yb.rooms.length} חדרים · ${ybN} חניכים</span></div>
+      <div class="panel-b">${rmHost('yb', {edit:false, color:'var(--purple)'})}</div></div>
     <div class="panel"><div class="panel-h"><h2>🏀 אקדמיה לכדורסל</h2>
-      <span class="pill" style="background:rgba(194,65,12,.14);border-color:rgba(194,65,12,.35);color:#c2410c;">${ACADEMY_ROOMS.length} חדרים · ${acN} שחקנים</span></div>
+      <span class="pill" style="background:rgba(194,65,12,.14);border-color:rgba(194,65,12,.35);color:#c2410c;">${_ac.rooms.length} חדרים · ${acN} שחקנים</span></div>
       <div class="panel-b">
         <div class="rm-grid">${rmBuild('ac').rooms.map(r=>{
           const ls=[...new Set(r.m.map(x=>x.l))];
