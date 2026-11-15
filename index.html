@@ -1035,6 +1035,7 @@ async function loadSecure(){
   _fill(ACADEMY_ROOMS, P('ACADEMY_ROOMS'));
   _fill(D, P('DATA_JSON'));
   syncRamzorRows(); buildAcadStudents(); syncAcadRamzor();
+  if(window.ramzorRestore) ramzorRestore();   /* החזרת הסימונים ששמרו המדריכים */
   try{
     const as=await dbm.get(dbm.ref(rdb,'portal/bogeret/secure/attendance/latest'));
     window.ATT = as.exists() ? JSON.parse(as.val()) : null;
@@ -5188,11 +5189,13 @@ function refreshRamzorCell(r, month){
     row.dataset.current = r.s[['ספטמבר','אוקטובר','נובמבר','דצמבר','ינואר','פברואר','מרץ','אפריל','מאי','יוני'].slice().reverse().find(m=>r.s[m]&&r.s[m]!=='none')] || 'none';
   }
 }
-// טעינת שינויים שמורים בעת עלייה
-(function(){ const st=ramzorStore();
+// טעינת שינויים שמורים — חייב לרוץ גם אחרי טעינת הכספת,
+// אחרת _fill מאפס את המערך והסימונים שנשמרו לא מוחלים
+window.ramzorRestore = function(){ const st=ramzorStore();
   RAMZOR_DATA_NEW.forEach(r=>{ const e=st[r.n]; if(!e) return;
     Object.assign(r.s, e.s||{}); Object.assign(r.nt, e.nt||{}); });
-})();
+};
+ramzorRestore();
 
 
 // === סנכרון רמזור מגיליון Google Sheets ===
