@@ -1484,7 +1484,7 @@ window.KB={}; window.KB_EDIT={}; window.KB_OPEN={};
 function kbCanEdit(){ return !!(window.ME && (ME.mode==='admin' || ME.mode==='edit')); }
 function kbEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function kbSize(n){ if(!n&&n!==0) return ''; return n<1024?n+' ב׳':n<1048576?(n/1024).toFixed(0)+' KB':(n/1048576).toFixed(1)+' MB'; }
-function kbIcon(it){ if(it.kind==='link') return '🔗'; const m=(it.mime||'')+' '+(it.name||'');
+function kbIcon(it){ if(it.kind==='link') return '🔗'; if(it.kind==='drive' && !it.mime) return '📄'; const m=(it.mime||'')+' '+(it.name||'');
   if(/pdf/i.test(m)) return '📕'; if(/word|document|\.docx?$/i.test(m)) return '📘';
   if(/sheet|excel|\.xlsx?$|\.csv$/i.test(m)) return '📗'; if(/image|\.(png|jpe?g|gif|webp|svg)$/i.test(m)) return '🖼️';
   if(/presentation|\.pptx?$/i.test(m)) return '📙'; return '📄'; }
@@ -1502,6 +1502,80 @@ async function kbWrite(scope,path,val){
   if(val===null) await dbm.remove(r); else await dbm.set(r,val);
 }
 function kbId(p){ return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+
+/* ───── העלאה לדרייב של יובל ───── */
+const KB_GCID='326010980266-q65hmjfvob8unbh1ube3kc1qhp9cmrb9.apps.googleusercontent.com';
+const KB_GSCOPE='https://www.googleapis.com/auth/drive.file';
+const KB_ROOT_NAME='פורטל בוגרת — שימור ידע';
+let kbTok=null, kbTokClient=null;
+
+function kbGisLoad(){
+  return new Promise((res,rej)=>{
+    if(window.google&&google.accounts&&google.accounts.oauth2) return res();
+    const sc=document.createElement('script'); sc.src='https://accounts.google.com/gsi/client';
+    sc.onload=()=>res(); sc.onerror=()=>rej(new Error('gis')); document.head.appendChild(sc);
+  });
+}
+function kbTokenCached(){
+  try{ const r=JSON.parse(localStorage.getItem('kb_gtok')||'null');
+       if(r && r.exp>Date.now()+60000) return r.t; }catch(e){}
+  return null;
+}
+async function kbToken(interactive){
+  const c=kbTokenCached(); if(c) return c;
+  if(!interactive) return null;
+  await kbGisLoad();
+  return new Promise((res,rej)=>{
+    kbTokClient=google.accounts.oauth2.initTokenClient({
+      client_id:KB_GCID, scope:KB_GSCOPE,
+      callback:(r)=>{ if(r&&r.access_token){ kbTok=r.access_token;
+          try{ localStorage.setItem('kb_gtok',JSON.stringify({t:r.access_token,exp:Date.now()+(r.expires_in||3500)*1000})); }catch(e){}
+          res(r.access_token); } else rej(new Error('no token')); },
+      error_callback:()=>rej(new Error('denied'))
+    });
+    kbTokClient.requestAccessToken({prompt:''});
+  });
+}
+async function kbDriveApi(url,opt,tok){
+  const o=opt||{}; o.headers=Object.assign({},o.headers,{Authorization:'Bearer '+tok});
+  const r=await fetch(url,o);
+  if(r.status===401||r.status===403){ try{localStorage.removeItem('kb_gtok');}catch(e){} throw new Error('auth'); }
+  return r.json();
+}
+async function kbFindOrCreateFolder(tok,name,parent){
+  const q=encodeURIComponent(`name='${name.replace(/'/g,"\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`+(parent?` and '${parent}' in parents`:''));
+  const f=await kbDriveApi(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=5`,{},tok);
+  if(f.files&&f.files.length) return f.files[0].id;
+  const body={name,mimeType:'application/vnd.google-apps.folder'}; if(parent) body.parents=[parent];
+  const c=await kbDriveApi('https://www.googleapis.com/drive/v3/files?fields=id',
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)},tok);
+  return c.id;
+}
+window.kbDriveStatus=async function(){ return !!kbTokenCached(); };
+window.kbConnectDrive=async function(scope){
+  try{ await kbToken(true); alert('הדרייב מחובר. מעכשיו קבצים שיועלו כאן יישמרו בתיקייה "'+KB_ROOT_NAME+'" בדרייב שלך.\n\nכדי שהצוות יראה אותם — שתף את התיקייה הזו איתם פעם אחת.'); kbRender(scope); }
+  catch(e){ alert('החיבור לדרייב לא הושלם.'); }
+};
+window.kbDisconnectDrive=function(scope){ try{localStorage.removeItem('kb_gtok');}catch(e){} kbRender(scope); };
+
+async function kbUploadDrive(scope,fid,file,note){
+  const topic=(KB[scope].folders[fid]||{}).name||'כללי';
+  let tok=await kbToken(false);
+  if(!tok){ note.remove(); tok=await kbToken(true); document.body.appendChild(note); }
+  const root=await kbFindOrCreateFolder(tok,KB_ROOT_NAME,null);
+  const sub=await kbFindOrCreateFolder(tok,topic,root);
+  const meta={name:file.name,parents:[sub]};
+  const bnd='kb'+Math.random().toString(36).slice(2);
+  const head=`--${bnd}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${bnd}\r\nContent-Type: ${file.type||'application/octet-stream'}\r\n\r\n`;
+  const tail=`\r\n--${bnd}--`;
+  const blob=new Blob([head,file,tail],{type:'multipart/related; boundary='+bnd});
+  const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink,size',
+    {method:'POST',headers:{Authorization:'Bearer '+tok},body:blob});
+  if(!r.ok) throw new Error('upload');
+  const d=await r.json();
+  return {fileId:d.id,url:d.webViewLink,size:file.size};
+}
 
 function viewKB(scope,title){
   return info('🗂️',`שימור ידע — ${title}`,
@@ -1525,6 +1599,10 @@ function kbRender(scope){
   h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">`;
   if(can) h+=`<button class="btn ${ed?'':'btn-secondary'}" onclick="kbToggle('${scope}')">${ed?'✓ סיום עריכה':'✏️ עריכה'}</button>`;
   if(ed) h+=`<button class="btn btn-secondary" onclick="kbNewFolder('${scope}')">➕ תיקיית נושא</button>`;
+  if(ed) h+= kbTokenCached()
+    ? `<span style="font-size:12px;color:var(--green,#047857);font-weight:600;">☁️ הדרייב מחובר</span>
+       <button class="btn btn-secondary" onclick="kbDisconnectDrive('${scope}')">נתק</button>`
+    : `<button class="btn btn-secondary" onclick="kbConnectDrive('${scope}')">☁️ חבר דרייב</button>`;
   h+=`<span style="font-size:12px;color:var(--text2);">${fids.length} תיקיות · ${Object.keys(d.items).length} פריטים</span></div>`;
 
   if(!fids.length){
@@ -1548,7 +1626,7 @@ function kbRender(scope){
       if(ed) h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
         <button class="btn" onclick="kbPick('${scope}','${fid}')">⬆️ העלאת קובץ</button>
         <button class="btn btn-secondary" onclick="kbAddLink('${scope}','${fid}')">🔗 הוספת קישור</button>
-        <span style="font-size:11px;color:var(--text2);align-self:center;">קובץ עד ${kbSize(KB_MAX)}. גדול יותר — להעלות לדרייב ולהוסיף כקישור.</span></div>`;
+        <span style="font-size:11px;color:var(--text2);align-self:center;">${kbTokenCached()?'הקבצים נשמרים בדרייב שלך, ללא הגבלת גודל.':'ללא חיבור לדרייב — עד '+kbSize(KB_MAX)+' לקובץ.'}</span></div>`;
       if(!its.length) h+=`<div style="color:var(--text2);font-size:13px;padding:8px 0;">התיקייה ריקה.</div>`;
       its.forEach(iid=>{
         const it=d.items[iid];
@@ -1556,9 +1634,9 @@ function kbRender(scope){
           <div style="font-size:20px;">${kbIcon(it)}</div>
           <div style="flex:1;min-width:0;">
             <div class="content" style="font-weight:600;overflow:hidden;text-overflow:ellipsis;">${kbEsc(it.name)}</div>
-            <div class="meta">${it.kind==='link'?'קישור':kbSize(it.size)} · ${kbEsc(it.by||'')} · ${it.at?new Date(it.at).toLocaleDateString('he-IL'):''}</div>
+            <div class="meta">${it.kind==='link'?'קישור':(it.kind==='drive'?'דרייב · ':'')+kbSize(it.size)} · ${kbEsc(it.by||'')} · ${it.at?new Date(it.at).toLocaleDateString('he-IL'):''}</div>
           </div>
-          <button class="btn btn-secondary" onclick="kbOpenItem('${scope}','${iid}')">${it.kind==='link'?'פתח':'הורד'}</button>
+          <button class="btn btn-secondary" onclick="kbOpenItem('${scope}','${iid}')">${it.kind==='file'?'הורד':'פתח'}</button>
           ${ed?`<button class="btn btn-secondary" onclick="kbDelItem('${scope}','${iid}')">🗑️</button>`:''}
         </div>`;
       });
@@ -1600,16 +1678,25 @@ window.kbPick=function(scope,fid){
   inp.click();
 };
 async function kbUpload(scope,fid,file){
-  if(file.size>KB_MAX){ alert(`הקובץ גדול מדי (${kbSize(file.size)}).\nהתקרה היא ${kbSize(KB_MAX)}.\nאפשר להעלות אותו לדרייב ולהוסיף כאן כקישור.`); return; }
+  const useDrive=!!kbTokenCached();
+  if(!useDrive && file.size>KB_MAX){
+    if(confirm(`הקובץ גדול מדי (${kbSize(file.size)}). התקרה ללא דרייב היא ${kbSize(KB_MAX)}.\n\nלחבר את הדרייב שלך ולהעלות לשם ללא הגבלה?`)) kbConnectDrive(scope);
+    return; }
   const host=document.getElementById('kb-'+scope);
   const note=document.createElement('div'); note.textContent='מעלה…';
   note.style.cssText='position:fixed;bottom:16px;left:16px;z-index:9999;background:var(--orange,#FC5028);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;';
   document.body.appendChild(note);
   try{
-    const data=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
     const iid=kbId('i');
-    const meta={fid,name:file.name,kind:'file',mime:file.type||'',size:file.size,at:Date.now(),by:(window.ME&&ME.n)||''};
-    await kbWrite(scope,'blobs/'+iid,data);
+    let meta;
+    if(useDrive){
+      const d=await kbUploadDrive(scope,fid,file,note);
+      meta={fid,name:file.name,kind:'drive',url:d.url,fileId:d.fileId,mime:file.type||'',size:file.size,at:Date.now(),by:(window.ME&&ME.n)||''};
+    } else {
+      const data=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+      meta={fid,name:file.name,kind:'file',mime:file.type||'',size:file.size,at:Date.now(),by:(window.ME&&ME.n)||''};
+      await kbWrite(scope,'blobs/'+iid,data);
+    }
     await kbWrite(scope,'meta/items/'+iid,meta);
     KB[scope].items[iid]=meta; KB_OPEN[scope+'|'+fid]=true; kbRender(scope);
   }catch(e){ alert('ההעלאה נכשלה. ייתכן שהקובץ גדול מדי או שאין הרשאה.'); }
@@ -1625,7 +1712,7 @@ window.kbAddLink=async function(scope,fid){
 };
 window.kbOpenItem=async function(scope,iid){
   const it=KB[scope].items[iid]; if(!it) return;
-  if(it.kind==='link'){ window.open(it.url,'_blank','noopener'); return; }
+  if(it.kind==='link'||it.kind==='drive'){ window.open(it.url,'_blank','noopener'); return; }
   try{
     const {dbm,rdb}=await secureDb();
     const snap=await dbm.get(dbm.ref(rdb,KB_ROOT+'/'+scope+'/blobs/'+iid));
@@ -1635,8 +1722,8 @@ window.kbOpenItem=async function(scope,iid){
 };
 window.kbDelItem=async function(scope,iid){
   const it=KB[scope].items[iid]; if(!it) return;
-  if(!confirm(`למחוק את "${it.name}"? הפעולה אינה הפיכה.`)) return;
-  try{ if(it.kind!=='link') await kbWrite(scope,'blobs/'+iid,null);
+  if(!confirm(it.kind==='drive'?`להסיר את "${it.name}" מהרשימה? הקובץ עצמו יישאר בדרייב שלך.`:`למחוק את "${it.name}"? הפעולה אינה הפיכה.`)) return;
+  try{ if(it.kind==='file') await kbWrite(scope,'blobs/'+iid,null);
        await kbWrite(scope,'meta/items/'+iid,null); delete KB[scope].items[iid]; kbRender(scope); }
   catch(e){ alert('לא ניתן למחוק.'); }
 };
