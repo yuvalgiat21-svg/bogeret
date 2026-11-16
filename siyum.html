@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#1a2744">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="מכלול סיום י״ב">
-<title>מכלול סיום י״ב – מבואות ים</title>
+<meta name="apple-mobile-web-app-title" content="מכלול סיום י״ב — מפרש">
+<title>מכלול סיום י״ב — מפרש</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -332,7 +332,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-h
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="logo"><span>מכלול סיום י״ב</span><span class="badge">סיום שנה</span></div>
+  <div class="logo"><span>מפרש י״ב</span><span class="badge">סיום שנה</span></div>
   <div class="nav">
     <button class="nav-btn active" onclick="showView('overview',this)">🏠 סקירה</button>
     <button class="nav-btn" onclick="showView('calendar',this)">📅 לו״ז</button>
@@ -445,7 +445,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-h
   <div style="background:linear-gradient(135deg,var(--navy) 0%,#0f3460 60%,#1a2744 100%);border-radius:16px;padding:28px 22px;margin-bottom:20px;text-align:center;">
     <div style="font-size:40px;margin-bottom:10px;">🎓</div>
     <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;">שבת פרידה</div>
-    <div style="font-size:14px;color:rgba(255,255,255,0.7);">מבואות ים · מחזור תשפ"ז</div>
+    <div style="font-size:14px;color:rgba(255,255,255,0.7);">מבואות ים · קהילת מפרש</div>
   </div>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 22px;text-align:center;">
     <div style="font-size:34px;margin-bottom:10px;">📅</div>
@@ -758,7 +758,7 @@ function updateProjDropdowns(){
 // ════════════════════════════════════════
 function renderOverview(){
   const today=new Date();today.setHours(0,0,0,0);
-  const end=new Date('2026-06-17');
+  const end=new Date('2027-06-17');
   const days=Math.max(0,Math.ceil((end-today)/86400000));
   const allSubs=tasksCache.flatMap(t=>t.subtasks||[]);
   const alerts=getAlertItems();
@@ -874,12 +874,12 @@ function renderCalendar(){
   const HEB_DAYS_FULL  = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
 
   // Start on Sunday – find first Sunday on or before start
-  const startRaw = new Date('2026-04-12');
+  const startRaw = new Date('2027-04-12');
   const startDay = startRaw.getDay(); // 0=Sun
   const start = new Date(startRaw);
   start.setDate(start.getDate() - startDay); // go back to Sunday
 
-  const end = new Date('2026-08-01');
+  const end = new Date('2027-08-01');
   const today = new Date(); today.setHours(0,0,0,0);
   let cur = new Date(start), lastM = -1;
   let todayElement = null;
@@ -1755,11 +1755,87 @@ document.addEventListener('click',e=>{
 // ════════════════════════════════════════
 // DEFAULT DATA
 // ════════════════════════════════════════
-function getDefaultProjects(){return[];}
+function getDefaultProjects(){return[
+  {id:'p1',name:'טקס ביאנלה',desc:'ביאנלה שנתי לשנת תשפ"ז',assignee:'עמי',date:'2027-05-27',color:'#1a2744'},
+  {id:'p2',name:'ספר מחזור',desc:'עיצוב והפקה',assignee:'אלעד',date:'2027-05-01',color:'#c8922a'},
+  {id:'p3',name:'טקס סיום',desc:'טקס סיום פנימייה',assignee:'אודי',date:'2027-06-17',color:'#2a7a6e'},
+  {id:'p4',name:'שבת פרידה',desc:'שבת האחרונה עם הי"ב',assignee:'חני',date:'2027-05-29',color:'#7c3aed'},
+  {id:'p5',name:'סדנאות פרידה',desc:'סדנאות לחניכים',assignee:'אלעד',date:'2027-06-10',color:'#c0452a'},
+];}
 
-function getDefaultEvents(){return[];}
+function getDefaultEvents(){return[
+  {id:'e1',title:'זיכרון בסלון',date:'2027-04-13',type:'social',notes:'',time:''},
+  {id:'e2',title:'יום השואה',date:'2027-04-14',type:'event',notes:'',time:''},
+  {id:'e4',title:'שבת כפר',date:'2027-04-17',type:'shabbat',notes:'',time:''},
+  {id:'e7',title:'יום העצמאות',date:'2027-04-22',type:'social',notes:'',time:''},
+  {id:'e_trip1a',title:'הפלגת חופים',date:'2027-04-23',type:'trip',notes:'',time:''},
+  {id:'e_trip1b',title:'הפלגת חופים',date:'2027-04-24',type:'trip',notes:'',time:''},
+  {id:'e_trip1c',title:'הפלגת חופים',date:'2027-04-25',type:'trip',notes:'',time:''},
+  {id:'e_photo',title:'צילומים בבית ספר',date:'2027-04-27',type:'academic',notes:'',time:''},
+  {id:'e8',title:'שיחת רכז',date:'2027-04-27',type:'deadline',notes:'',time:''},
+  {id:'e_show',title:'הצגה בעוטף',date:'2027-04-28',type:'social',notes:'',time:''},
+  {id:'e9',title:'פעילות פרידה',date:'2027-04-29',type:'social',notes:'',time:''},
+  {id:'e11',title:'ל״ג בעומר',date:'2027-05-05',type:'social',notes:'',time:''},
+  {id:'e_bag_math1',title:'בגרות מתמטיקה',date:'2027-05-12',type:'bagrut',notes:'',time:''},
+  {id:'e13',title:'יום ירושלים',date:'2027-05-15',type:'event',notes:'',time:''},
+  {id:'e_shab_yam',title:'שבת ימאות',date:'2027-05-15',type:'shabbat',notes:'',time:''},
+  {id:'e_eilat1',title:'חקי באילת',date:'2027-05-17',type:'trip',notes:'',time:''},
+  {id:'e_bag_eng_b',title:'בגרות אנגלית מועד ב',date:'2027-05-18',type:'bagrut',notes:'',time:''},
+  {id:'e14',title:'שבועות',date:'2027-05-21',type:'shabbat',notes:'',time:''},
+  {id:'e15',title:'שיחת רכז',date:'2027-05-25',type:'deadline',notes:'',time:''},
+  {id:'e_bagr_soc',title:'טקס חלוקת בגרות חברתית',date:'2027-05-26',type:'bagrut',notes:'19:00',time:'19:00'},
+  {id:'e16',title:'טקס ביאנלה',date:'2027-05-27',type:'social',notes:'יום א׳',time:'19:00'},
+  {id:'e17',title:'טקס ביאנלה',date:'2027-05-28',type:'social',notes:'יום ב׳',time:'19:00'},
+  {id:'e18',title:'שבת פרידה',date:'2027-05-29',type:'shabbat',notes:'',time:''},
+  {id:'e_bag_tanach',title:'בגרות תנ״ך',date:'2027-06-01',type:'bagrut',notes:'',time:''},
+  {id:'e_party',title:'מסיבת סיום שנה',date:'2027-06-04',type:'social',notes:'',time:''},
+  {id:'e19',title:'שבת אחרונה',date:'2027-06-05',type:'shabbat',notes:'',time:''},
+  {id:'e_prom',title:'פרום י״ב',date:'2027-06-06',type:'social',notes:'',time:''},
+  {id:'e_bag_art',title:'בגרות אומנות',date:'2027-06-08',type:'bagrut',notes:'',time:''},
+  {id:'e_music_eve',title:'ערב מגמת מוזיקה',date:'2027-06-16',type:'social',notes:'',time:''},
+  {id:'e20',title:'🎓 טקס סיום פנימייה',date:'2027-06-17',type:'social',notes:'',time:'18:00'},
+  {id:'e_bag_geo',title:'בגרות גאוגרפיה',date:'2027-06-22',type:'bagrut',notes:'',time:''},
+  {id:'e_bag_music',title:'בגרות מוזיקה',date:'2027-06-25',type:'bagrut',notes:'',time:''},
+  {id:'e_bag_eng_b2',title:'מועד ב׳ אנגלית',date:'2027-06-30',type:'bagrut',notes:'',time:''},
+  {id:'e_bag_math_b',title:'מועד ב׳ מתמטיקה',date:'2027-07-06',type:'bagrut',notes:'',time:''},
+  {id:'e_course1',title:'קורס סגנים מפקדים',date:'2027-07-21',type:'trip',notes:'',time:''},
+];}
 
-function getDefaultTasks(){return[];}
+function getDefaultTasks(){return[
+  {id:'t1',title:'שבת פרידה – הכנות',assignee:'חני',status:'לביצוע',startDate:'2027-05-18',date:'2027-05-25',projectId:'p4',notes:'',subtasks:[
+    {id:'s1',title:'הזמנת אוכל לשבת',assignee:'חני',date:'2027-05-22',done:false},
+    {id:'s2',title:'בניית תכנית שבת',assignee:'עמי',date:'2027-05-20',done:false},
+    {id:'s3',title:'הפקת חוברת תכנית',assignee:'אלעד',date:'2027-05-23',done:false},
+  ]},
+  {id:'t2',title:'ספר מחזור',assignee:'אלעד',status:'בתהליך',startDate:'2027-04-20',date:'2027-05-01',projectId:'p2',notes:'',subtasks:[
+    {id:'s4',title:'איסוף תמונות מהחניכים',assignee:'גיא',date:'2027-04-25',done:false},
+    {id:'s5',title:'כתיבת טקסטים',assignee:'אלעד',date:'2027-04-28',done:false},
+    {id:'s6',title:'עיצוב וגרפיקה',assignee:'אלעד',date:'2027-04-30',done:false},
+    {id:'s7',title:'שליחה לדפוס',assignee:'אלעד',date:'2027-05-01',done:false},
+  ]},
+  {id:'t3',title:'טקס ביאנלה',assignee:'עמי',status:'לביצוע',startDate:'2027-05-01',date:'2027-05-27',projectId:'p1',notes:'',subtasks:[
+    {id:'s8',title:'בניית תסריט טקס',assignee:'עמי',date:'2027-05-15',done:false},
+    {id:'s9',title:'סידור הגברה ותאורה',assignee:'אודי',date:'2027-05-25',done:false},
+    {id:'s10',title:'הדרכת מנחים',assignee:'חני',date:'2027-05-20',done:false},
+    {id:'s11',title:'הכנת תעודות',assignee:'גיא',date:'2027-05-22',done:false},
+  ]},
+  {id:'t4',title:'טקס סיום',assignee:'אודי',status:'לביצוע',startDate:'2027-05-15',date:'2027-06-17',projectId:'p3',notes:'',subtasks:[
+    {id:'s12',title:'הזמנות להורים',assignee:'אודי',date:'2027-06-01',done:false},
+    {id:'s13',title:'בניית תכנית טקס',assignee:'עמי',date:'2027-06-07',done:false},
+    {id:'s14',title:'כיבוד וקייטרינג',assignee:'חני',date:'2027-06-10',done:false},
+    {id:'s15',title:'סרטון סיום',assignee:'אלעד',date:'2027-06-12',done:false},
+    {id:'s16',title:'חזרה כללית',assignee:'אודי',date:'2027-06-14',done:false},
+  ]},
+  {id:'t5',title:'סדנאות פרידה',assignee:'אלעד',status:'לביצוע',startDate:'2027-05-20',date:'2027-06-10',projectId:'p5',notes:'',subtasks:[
+    {id:'s17',title:'בניית מסגרת סדנה',assignee:'אלעד',date:'2027-06-01',done:false},
+    {id:'s18',title:'גיוס מנחים',assignee:'גיא',date:'2027-05-25',done:false},
+    {id:'s19',title:'חלוקת קבוצות',assignee:'חני',date:'2027-06-05',done:false},
+  ]},
+  {id:'t6',title:'פעילות פרידה',assignee:'גיא',status:'לביצוע',startDate:'2027-04-22',date:'2027-04-29',projectId:'',notes:'',subtasks:[
+    {id:'s20',title:'בניית תכנית הפעילות',assignee:'גיא',date:'2027-04-24',done:false},
+    {id:'s21',title:'רכישת חומרים',assignee:'גיא',date:'2027-04-27',done:false},
+  ]},
+];}
 
 // ════════════════════════════════════════
 // GOOGLE CALENDAR INTEGRATION
