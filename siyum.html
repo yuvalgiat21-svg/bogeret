@@ -585,11 +585,36 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-h
 
 <div class="toast" id="toast"></div>
 
+<script>window.__sidReady = new Promise(r => { window.__sidGo = r; });window.__sidToken = async () => null;</script>
+<script type="module">
+  import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  const CFG = {
+  apiKey: "AIzaSyDytvmAX1Sm8KEKINOreUeRutDbnxinVXA",
+  authDomain: "yudbet-almog.firebaseapp.com",
+  databaseURL: "https://yudbet-almog-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "yudbet-almog",
+  storageBucket: "yudbet-almog.firebasestorage.app",
+  messagingSenderId: "933488998542",
+  appId: "1:933488998542:web:c3a36396573c808ba071df"
+};
+  const app = getApps().length ? getApps()[0] : initializeApp(CFG);
+  const auth = getAuth(app);
+  let settled = false;
+  const ready = new Promise(res => onAuthStateChanged(auth, u => { settled = true; res(u); }));
+  window.__sidToken = async () => {
+    if (!settled) await ready;
+    const u = auth.currentUser;
+    try { return u ? await u.getIdToken() : null; } catch (e) { return null; }
+  };
+  ready.then(() => window.__sidGo());
+  setTimeout(() => window.__sidGo(), 8000);
+</script>
 <script>
 // ════════════════════════════════════════
 // CONSTANTS
 // ════════════════════════════════════════
-const FB = 'https://yudbet-almog-default-rtdb.europe-west1.firebasedatabase.app';
+const FB = 'https://yudbet-almog-default-rtdb.europe-west1.firebasedatabase.app/portal/bogeret/siyum';
 const COLORS = {יובל:'#0f766e',עמי:'#1a2744',חני:'#2a7a6e',אודי:'#c8922a',גיא:'#7c3aed',אלעד:'#c0452a'};
 const MEMBERS = ['יובל','עמי','חני','אודי','גיא','אלעד'];
 const MONTHS = {1:'ינואר',2:'פברואר',3:'מרץ',4:'אפריל',5:'מאי',6:'יוני',7:'יולי',8:'אוגוסט'};
@@ -614,10 +639,23 @@ function getChipLabel(e){
 // ════════════════════════════════════════
 // FIREBASE
 // ════════════════════════════════════════
-async function fbGet(p){const r=await fetch(`${FB}${p}.json`);return r.json();}
-async function fbSet(p,d){await fetch(`${FB}${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}
-async function fbPatch(p,d){await fetch(`${FB}${p}.json`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}
-async function fbDelete(p){await fetch(`${FB}${p}.json`,{method:'DELETE'});}
+async function fbUrl(p){
+  let tok = null;
+  try { await window.__sidReady; tok = await window.__sidToken(); } catch(e) {}
+  return `${FB}${p}.json` + (tok ? `?auth=${encodeURIComponent(tok)}` : '');
+}
+async function fbGet(p){const r=await fetch(await fbUrl(p));if(r.status===401){sidDenied();return null;}return r.json();}
+async function fbSet(p,d){const r=await fetch(await fbUrl(p),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});if(r.status===401)sidDenied();}
+async function fbPatch(p,d){const r=await fetch(await fbUrl(p),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});if(r.status===401)sidDenied();}
+async function fbDelete(p){const r=await fetch(await fbUrl(p),{method:'DELETE'});if(r.status===401)sidDenied();}
+function sidDenied(){
+  if(document.getElementById('sid-denied'))return;
+  const d=document.createElement('div');
+  d.id='sid-denied';
+  d.style.cssText='position:fixed;inset:auto 0 0 0;z-index:9999;background:#b91c1c;color:#fff;padding:12px 16px;font:600 13px/1.5 system-ui,sans-serif;text-align:center;';
+  d.textContent='אין הרשאה לשמור נתונים. יש להתחבר לפורטל בוגרת ואז לרענן את הדף.';
+  document.body.appendChild(d);
+}
 
 function parseData(data){
   eventsCache = data&&data.events ? Object.entries(data.events).map(([k,v])=>({...v,_key:k})) : [];
