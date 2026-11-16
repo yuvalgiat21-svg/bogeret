@@ -1583,8 +1583,9 @@ function viewKB(scope,title){
     + `<div id="kb-${scope}"><div class="panel"><div class="panel-b" style="text-align:center;color:var(--text2);padding:24px;">טוען…</div></div></div>`;
 }
 
-async function kbInit(scope){
-  const host=document.getElementById('kb-'+scope); if(!host) return;
+async function kbInit(scope,tries){
+  const host=document.getElementById('kb-'+scope);
+  if(!host){ if((tries||0)<40) setTimeout(()=>kbInit(scope,(tries||0)+1),120); return; }
   try{ await kbFetch(scope); }
   catch(e){ host.innerHTML=`<div class="panel"><div class="panel-b" style="padding:20px;color:var(--text2);">לא ניתן לטעון את החומרים כרגע. יש להתחבר לפורטל ולרענן.</div></div>`; return; }
   kbRender(scope);
