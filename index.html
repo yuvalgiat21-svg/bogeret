@@ -1133,7 +1133,7 @@ const tabs = [
   {id:'graduates',icon:'🎖️',label:'בוגרים'},
   {id:'attendance',icon:'✅',label:'נוכחות'},
   {id:'ramzor',icon:'🚦',label:'רמזור נשירה'},
-  {id:'knowledge',icon:'📝',label:'שימור ידע'},
+  {id:'knowledge',icon:'📋',label:'סיכומי פגישות'},
   {id:'personal',icon:'📁',label:'תיק אישי'},
   {id:'alphon',icon:'📋',label:'אלפון'},
   {id:'staff',icon:'🧑‍🤝‍🧑',label:'צוות'},
@@ -1454,7 +1454,7 @@ window.knRender=function(scope,type){
    : '<div style="color:var(--text2);font-size:13px;padding:22px;text-align:center;">אין רשומות עדיין. לחץ "הוסף" להתחלה.</div>';
 };
 function viewKnowledge(scope,title){
-  return info('📝',`שימור ידע — ${title}`,
+  return info('📋',`סיכומי פגישות — ${title}`,
     'הרשומות נשמרות בנפרד לכל קבוצה, בדפדפן הזה. בחר קטגוריה ולחץ "הוסף".')
    + `<div class="subnav" id="kn${scope}Subnav">${KN_TYPES.map(([k,ic,lb],i)=>
         `<button class="${i===0?'active':''}" data-k="${k}">${ic} ${lb}</button>`).join('')}</div>
@@ -1475,6 +1475,171 @@ function knWire(scope){
   });
   KN_TYPES.forEach(([k])=>knRender(scope,k));
 }
+
+/* ═══════════ שימור ידע — תיקיות נושאים וקבצים ═══════════ */
+const KB_ROOT='portal/bogeret/kb';
+const KB_MAX=1500000;                 /* תקרת גודל לקובץ בודד */
+window.KB={}; window.KB_EDIT={}; window.KB_OPEN={};
+
+function kbCanEdit(){ return !!(window.ME && (ME.mode==='admin' || ME.mode==='edit')); }
+function kbEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function kbSize(n){ if(!n&&n!==0) return ''; return n<1024?n+' ב׳':n<1048576?(n/1024).toFixed(0)+' KB':(n/1048576).toFixed(1)+' MB'; }
+function kbIcon(it){ if(it.kind==='link') return '🔗'; const m=(it.mime||'')+' '+(it.name||'');
+  if(/pdf/i.test(m)) return '📕'; if(/word|document|\.docx?$/i.test(m)) return '📘';
+  if(/sheet|excel|\.xlsx?$|\.csv$/i.test(m)) return '📗'; if(/image|\.(png|jpe?g|gif|webp|svg)$/i.test(m)) return '🖼️';
+  if(/presentation|\.pptx?$/i.test(m)) return '📙'; return '📄'; }
+
+async function kbFetch(scope){
+  const {dbm,rdb}=await secureDb();
+  const snap=await dbm.get(dbm.ref(rdb,KB_ROOT+'/'+scope+'/meta'));
+  const v=snap.val()||{};
+  KB[scope]={folders:v.folders||{}, items:v.items||{}};
+  return KB[scope];
+}
+async function kbWrite(scope,path,val){
+  const {dbm,rdb}=await secureDb();
+  const r=dbm.ref(rdb,KB_ROOT+'/'+scope+'/'+path);
+  if(val===null) await dbm.remove(r); else await dbm.set(r,val);
+}
+function kbId(p){ return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+function viewKB(scope,title){
+  return info('🗂️',`שימור ידע — ${title}`,
+    'תיקיות נושאים וקבצים של הקהילה, נשמרים בענן וגלויים לכל הצוות. כפתור העריכה פותח יצירת תיקייה והעלאת קבצים.')
+    + `<div id="kb-${scope}"><div class="panel"><div class="panel-b" style="text-align:center;color:var(--text2);padding:24px;">טוען…</div></div></div>`;
+}
+
+async function kbInit(scope){
+  const host=document.getElementById('kb-'+scope); if(!host) return;
+  try{ await kbFetch(scope); }
+  catch(e){ host.innerHTML=`<div class="panel"><div class="panel-b" style="padding:20px;color:var(--text2);">לא ניתן לטעון את החומרים כרגע. יש להתחבר לפורטל ולרענן.</div></div>`; return; }
+  kbRender(scope);
+}
+
+function kbRender(scope){
+  const host=document.getElementById('kb-'+scope); if(!host) return;
+  const d=KB[scope]||{folders:{},items:{}};
+  const ed=!!KB_EDIT[scope], can=kbCanEdit();
+  const fids=Object.keys(d.folders).sort((a,b)=>(d.folders[a].name||'').localeCompare(d.folders[b].name||'','he'));
+  let h='';
+  h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">`;
+  if(can) h+=`<button class="btn ${ed?'':'btn-secondary'}" onclick="kbToggle('${scope}')">${ed?'✓ סיום עריכה':'✏️ עריכה'}</button>`;
+  if(ed) h+=`<button class="btn btn-secondary" onclick="kbNewFolder('${scope}')">➕ תיקיית נושא</button>`;
+  h+=`<span style="font-size:12px;color:var(--text2);">${fids.length} תיקיות · ${Object.keys(d.items).length} פריטים</span></div>`;
+
+  if(!fids.length){
+    h+=`<div class="panel"><div class="panel-b" style="text-align:center;padding:30px;color:var(--text2);">
+      <div style="font-size:32px;margin-bottom:8px;">🗂️</div><b>עדיין אין תיקיות נושאים</b><br>
+      ${can?'לחץ "עריכה" ואז "תיקיית נושא" כדי להתחיל.':'הרכז עדיין לא הוסיף חומרים.'}</div></div>`;
+  }
+  fids.forEach(fid=>{
+    const f=d.folders[fid], open=!!KB_OPEN[scope+'|'+fid];
+    const its=Object.keys(d.items).filter(i=>d.items[i].fid===fid)
+      .sort((a,b)=>(d.items[b].at||0)-(d.items[a].at||0));
+    h+=`<div class="panel" style="margin-bottom:10px;"><div class="panel-h" style="cursor:pointer;" onclick="kbFold('${scope}','${fid}')">
+      <h2 style="display:flex;align-items:center;gap:8px;">${open?'📂':'📁'} ${kbEsc(f.name)}
+        <span style="font-size:12px;font-weight:400;color:var(--text2);">(${its.length})</span></h2>
+      <div style="display:flex;gap:6px;" onclick="event.stopPropagation()">
+        ${ed?`<button class="btn btn-secondary" onclick="kbRenameFolder('${scope}','${fid}')">✏️ שם</button>
+              <button class="btn btn-secondary" onclick="kbDelFolder('${scope}','${fid}')">🗑️</button>`:''}
+      </div></div>`;
+    if(open){
+      h+=`<div class="panel-b">`;
+      if(ed) h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <button class="btn" onclick="kbPick('${scope}','${fid}')">⬆️ העלאת קובץ</button>
+        <button class="btn btn-secondary" onclick="kbAddLink('${scope}','${fid}')">🔗 הוספת קישור</button>
+        <span style="font-size:11px;color:var(--text2);align-self:center;">קובץ עד ${kbSize(KB_MAX)}. גדול יותר — להעלות לדרייב ולהוסיף כקישור.</span></div>`;
+      if(!its.length) h+=`<div style="color:var(--text2);font-size:13px;padding:8px 0;">התיקייה ריקה.</div>`;
+      its.forEach(iid=>{
+        const it=d.items[iid];
+        h+=`<div class="knowledge-item" style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:20px;">${kbIcon(it)}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="content" style="font-weight:600;overflow:hidden;text-overflow:ellipsis;">${kbEsc(it.name)}</div>
+            <div class="meta">${it.kind==='link'?'קישור':kbSize(it.size)} · ${kbEsc(it.by||'')} · ${it.at?new Date(it.at).toLocaleDateString('he-IL'):''}</div>
+          </div>
+          <button class="btn btn-secondary" onclick="kbOpenItem('${scope}','${iid}')">${it.kind==='link'?'פתח':'הורד'}</button>
+          ${ed?`<button class="btn btn-secondary" onclick="kbDelItem('${scope}','${iid}')">🗑️</button>`:''}
+        </div>`;
+      });
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+  });
+  host.innerHTML=h;
+}
+
+window.kbToggle=function(scope){ KB_EDIT[scope]=!KB_EDIT[scope]; kbRender(scope); };
+window.kbFold=function(scope,fid){ const k=scope+'|'+fid; KB_OPEN[k]=!KB_OPEN[k]; kbRender(scope); };
+
+window.kbNewFolder=async function(scope){
+  const name=prompt('שם תיקיית הנושא:'); if(!name||!name.trim()) return;
+  const fid=kbId('f');
+  try{ await kbWrite(scope,'meta/folders/'+fid,{name:name.trim(),at:Date.now()});
+       KB[scope].folders[fid]={name:name.trim(),at:Date.now()}; KB_OPEN[scope+'|'+fid]=true; kbRender(scope); }
+  catch(e){ alert('לא ניתן לשמור. ודא שאתה מחובר לפורטל.'); }
+};
+window.kbRenameFolder=async function(scope,fid){
+  const cur=KB[scope].folders[fid]||{}; const name=prompt('שם חדש:',cur.name||''); if(!name||!name.trim()) return;
+  try{ await kbWrite(scope,'meta/folders/'+fid+'/name',name.trim()); KB[scope].folders[fid].name=name.trim(); kbRender(scope); }
+  catch(e){ alert('לא ניתן לשמור.'); }
+};
+window.kbDelFolder=async function(scope,fid){
+  const its=Object.keys(KB[scope].items).filter(i=>KB[scope].items[i].fid===fid);
+  if(!confirm(`למחוק את התיקייה "${KB[scope].folders[fid].name}"${its.length?` ואת ${its.length} הפריטים שבה`:''}? הפעולה אינה הפיכה.`)) return;
+  try{
+    for(const iid of its){ await kbWrite(scope,'blobs/'+iid,null); await kbWrite(scope,'meta/items/'+iid,null); delete KB[scope].items[iid]; }
+    await kbWrite(scope,'meta/folders/'+fid,null); delete KB[scope].folders[fid]; kbRender(scope);
+  }catch(e){ alert('לא ניתן למחוק.'); }
+};
+
+window.kbPick=function(scope,fid){
+  let inp=document.getElementById('kbfile');
+  if(!inp){ inp=document.createElement('input'); inp.type='file'; inp.id='kbfile'; inp.style.display='none'; document.body.appendChild(inp); }
+  inp.value=''; inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(f) kbUpload(scope,fid,f); };
+  inp.click();
+};
+async function kbUpload(scope,fid,file){
+  if(file.size>KB_MAX){ alert(`הקובץ גדול מדי (${kbSize(file.size)}).\nהתקרה היא ${kbSize(KB_MAX)}.\nאפשר להעלות אותו לדרייב ולהוסיף כאן כקישור.`); return; }
+  const host=document.getElementById('kb-'+scope);
+  const note=document.createElement('div'); note.textContent='מעלה…';
+  note.style.cssText='position:fixed;bottom:16px;left:16px;z-index:9999;background:var(--orange,#FC5028);color:#fff;padding:10px 16px;border-radius:10px;font-weight:600;';
+  document.body.appendChild(note);
+  try{
+    const data=await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+    const iid=kbId('i');
+    const meta={fid,name:file.name,kind:'file',mime:file.type||'',size:file.size,at:Date.now(),by:(window.ME&&ME.n)||''};
+    await kbWrite(scope,'blobs/'+iid,data);
+    await kbWrite(scope,'meta/items/'+iid,meta);
+    KB[scope].items[iid]=meta; KB_OPEN[scope+'|'+fid]=true; kbRender(scope);
+  }catch(e){ alert('ההעלאה נכשלה. ייתכן שהקובץ גדול מדי או שאין הרשאה.'); }
+  finally{ note.remove(); }
+}
+window.kbAddLink=async function(scope,fid){
+  const url=prompt('הדבק קישור (דרייב, אתר, וכו׳):'); if(!url||!url.trim()) return;
+  const name=prompt('שם לתצוגה:', url.trim().slice(0,60)); if(!name||!name.trim()) return;
+  const iid=kbId('i');
+  const meta={fid,name:name.trim(),kind:'link',url:url.trim(),at:Date.now(),by:(window.ME&&ME.n)||''};
+  try{ await kbWrite(scope,'meta/items/'+iid,meta); KB[scope].items[iid]=meta; kbRender(scope); }
+  catch(e){ alert('לא ניתן לשמור.'); }
+};
+window.kbOpenItem=async function(scope,iid){
+  const it=KB[scope].items[iid]; if(!it) return;
+  if(it.kind==='link'){ window.open(it.url,'_blank','noopener'); return; }
+  try{
+    const {dbm,rdb}=await secureDb();
+    const snap=await dbm.get(dbm.ref(rdb,KB_ROOT+'/'+scope+'/blobs/'+iid));
+    const data=snap.val(); if(!data){ alert('הקובץ לא נמצא.'); return; }
+    const a=document.createElement('a'); a.href=data; a.download=it.name||'file'; document.body.appendChild(a); a.click(); a.remove();
+  }catch(e){ alert('לא ניתן להוריד את הקובץ.'); }
+};
+window.kbDelItem=async function(scope,iid){
+  const it=KB[scope].items[iid]; if(!it) return;
+  if(!confirm(`למחוק את "${it.name}"? הפעולה אינה הפיכה.`)) return;
+  try{ if(it.kind!=='link') await kbWrite(scope,'blobs/'+iid,null);
+       await kbWrite(scope,'meta/items/'+iid,null); delete KB[scope].items[iid]; kbRender(scope); }
+  catch(e){ alert('לא ניתן למחוק.'); }
+};
 
 /* ═══════════ ביקורי בית ═══════════ */
 const VIS_KEY='bogeret_visits_v2';
@@ -3273,12 +3438,14 @@ function reorganize(){
     'התכנית השנתית ותכנון ספטמבר — משותפים לשלוש הקבוצות. התוכן זמין כאן במלואו, והקבצים המקוריים להורדה.');
   const yaItems=[{k:'frame',label:'🧭 מסגרת התכנית'},{k:'cats',label:'📚 עשר הקטגוריות'},
     {k:'talks',label:'💬 חמש השיחות ומדידה'},{k:'sept',label:'✅ משימות ספטמבר'},
-    {k:'weeks',label:'🗓️ ארבעת השבועות'},{k:'files',label:'📁 קבצים להורדה'}];
+    {k:'weeks',label:'🗓️ ארבעת השבועות'},{k:'files',label:'📁 קבצים להורדה'},
+    {k:'kb',label:'🗂️ שימור ידע'}];
   secYA.appendChild(mkNav('gya',yaItems,pickIn(innerYA,'gya'),{grid:true}));
   [['frame',viewYaFrame()],['cats',viewYaCats()],['talks',viewYaTalks()],
-   ['sept',viewYaSept()],['weeks',viewYaWeeks()],['files',viewYaFiles()]].forEach(([k,html],n)=>{
+   ['sept',viewYaSept()],['weeks',viewYaWeeks()],['files',viewYaFiles()],
+   ['kb',viewKB('ya',"שכבת יא'")]].forEach(([k,html],n)=>{
     const d=mkSub('gya-'+k,n===0); d.innerHTML=html; innerYA.appendChild(d); });
-  secYA.appendChild(innerYA); gr.appendChild(secYA);
+  secYA.appendChild(innerYA); gr.appendChild(secYA); kbInit('ya');
 
   GROUPS_YA.forEach((g,i)=>{
     const names=stuOf(g); const sec=mkSub('gr-'+g);
@@ -3288,7 +3455,7 @@ function reorganize(){
                  {k:'visits',label:'🏡 ביקורי בית'},{k:'pocket',label:'💰 דמי כיס'},
                  {k:'hug',label:'🎨 חוגים'},{k:'aft',label:'📖 לימודי אחה"צ'},
                  {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},
-                 {k:'kn',label:'📝 שימור ידע'}].concat(limItem(g));
+                 {k:'kn',label:'📋 סיכומי פגישות'}].concat(limItem(g));
     sec.innerHTML = info('👥',`קבוצת ${g} — יא'`,
       `${names.length} חניכים. כאן המדריך מזין את הנתונים של הקבוצה, והם מתגלגלים אוטומטית לסקירה השכבתית.`);
     const nav=mkNav('gr'+g,items,pickIn(inner,'gr'+g),{grid:true}); sec.appendChild(nav);
@@ -3309,7 +3476,8 @@ function reorganize(){
                  {k:'rooms',label:'🏠 שיבוץ חדרים'},{k:'edu',label:'🎓 תוכנית חינוכית'},
                  {k:'visits',label:'🏡 ביקורי בית'},{k:'pocket',label:'💰 דמי כיס'},{k:'hug',label:'🎨 חוגים'},
                  {k:'aft',label:'📖 לימודי אחה"צ'},{k:'med',label:'🏥 רפואי'},
-                 {k:'diet',label:'🥗 תזונה'},{k:'kn',label:'📝 שימור ידע'},
+                 {k:'diet',label:'🥗 תזונה'},{k:'kn',label:'📋 סיכומי פגישות'},
+                 {k:'kb',label:'🗂️ שימור ידע'},
                  {k:'siyum',label:'🎓 מכלול סיום',hl:true}].concat(limItem('yb'));
   secYB.innerHTML = info('🌊',"קהילת יב' — חוף וצוק",
     `${yb.length} חניכים בשתי הקבוצות. כאן מנוהלים הנתונים של הקהילה כולה, כולל מכלול הסיום.`);
@@ -3319,11 +3487,11 @@ function reorganize(){
                 rooms:viewRoomsYB(),edu:viewEdu("יב'","קהילת יב'",'קהילת יב'),visits:viewVisits(yb,'vis-yb',VIS_PHASES_YB),pocket:viewPocket(yb,'pm-yb'),
                 hug:viewHugim(yb,'hug-yb'),aft:viewAfter(yb,'aft-yb'),
                 med:viewMed(yb,'med-yb'),diet:viewDiet(yb,'diet-yb'),
-                kn:viewKnowledge('yb',"קהילת יב'"),limudi:limCan('yb')?viewLimudi(yb,"קהילת יב'"):''};
+                kn:viewKnowledge('yb',"קהילת יב'"),kb:viewKB('yb',"קהילת יב'"),limudi:limCan('yb')?viewLimudi(yb,"קהילת יב'"):''};
   Object.entries(ybSubs).forEach(([k,html],n)=>{ const d=mkSub('gryb-'+k,n===0); d.innerHTML=html; innerYB.appendChild(d); });
   const dSiyum=mkSub('gryb-siyum'); while(old.siyum.firstChild) dSiyum.appendChild(old.siyum.firstChild);
   innerYB.appendChild(dSiyum);
-  secYB.appendChild(innerYB); gr.appendChild(secYB); knWire('yb');
+  secYB.appendChild(innerYB); gr.appendChild(secYB); knWire('yb'); kbInit('yb');
 
   // אקדמיה לכדורסל — קבוצה רב-גילאית
   const acN=ACAD_STUDENTS; const secAc=mkSub('gr-academy');
@@ -3335,7 +3503,7 @@ function reorganize(){
     {k:'visits',label:'🏡 ביקורי בית'},{k:'pocket',label:'💰 דמי כיס'},
     {k:'hug',label:'🎨 חוגים'},{k:'aft',label:'📖 לימודי אחה"צ'},
     {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},
-    {k:'kn',label:'📝 שימור ידע'}].concat(limItem('academy'));
+    {k:'kn',label:'📋 סיכומי פגישות'}].concat(limItem('academy'));
   secAc.appendChild(mkNav('grac',acItems,pickIn(innerAc,'grac'),{grid:true}));
   const acSubs={roster:viewAcademyRoster(), rooms:viewAcademyRooms(),
     ramzor:viewRamzor(acN,'אקדמיה לכדורסל'), edu:viewEdu("יא'",'אקדמיה לכדורסל','אקדמיה'),
@@ -4294,7 +4462,7 @@ function buildAllSections() {
 
   // 7. KNOWLEDGE
   h += `<div class="sec" id="sec-knowledge">
-    <div class="info-box"><div class="icon">📝</div><div><b>שימור ידע</b><br>כל הרשומות נשמרות בדפדפן הזה. בחר קטגוריה למעלה ולחץ "הוסף" כדי לרשום פגישה, חוזה, סיכום שבועי וכו'.</div></div>
+    <div class="info-box"><div class="icon">📋</div><div><b>סיכומי פגישות</b><br>כל הרשומות נשמרות בדפדפן הזה. בחר קטגוריה למעלה ולחץ "הוסף" כדי לרשום פגישה, חוזה, סיכום שבועי וכו'.</div></div>
     <div class="subnav" id="knSubnav"><button class="active" onclick="subTab2('kn','meetings',this)">📋 סיכומי פגישות</button><button class="" onclick="subTab2('kn','contracts',this)">📜 חוזי התנהגות</button><button class="" onclick="subTab2('kn','weekly',this)">📅 סיכומי שבועי</button><button class="" onclick="subTab2('kn','personal_talks',this)">💬 סיכומי שיחות אישיות</button><button class="" onclick="subTab2('kn','events',this)">📊 מונה אירועים</button></div>
     
     <div class="subsec active" id="kn-meetings">
