@@ -1623,6 +1623,7 @@ function eduStats(scope){
 }
 function eduTable(scope){
   const st=eduLoad(); const cfg=window.eduCfg[scope]; const items=eduItems(cfg.layer);
+  if(eduIsWeekly(items)) return eduWeeklyTable(scope,items);
   if(eduIsMonthly(items)) return eduView()==='list' ? eduMonthlyTable(scope,items) : eduMatrixTable(scope,items);
   const s=eduStats(scope);
   const byM={}; items.forEach(x=>{ (byM[x.month]=byM[x.month]||[]).push(x); });
@@ -1752,6 +1753,62 @@ function eduMatrixTable(scope,items){
        <thead><tr><th style="position:sticky;right:0;z-index:3;background:var(--text);color:#fff;padding:8px 11px;text-align:right;font-size:12px;min-width:150px;">תחום</th>${head}</tr></thead>
        <tbody>${rows}</tbody></table></div></div>`;
 }
+/* ── תוכנית שבועית של קבוצה (שלדג — אודי) ── */
+const EDU_WK_NOTE={
+ 'שלדג':{t:'תכנית קבוצתית — חודשיים של גיבוש, שייכות ואמון',
+   d:['"סבב דופק" קבוע לפתיחת וסגירת כל מפגש.',
+      'מינוף אירועי השיא (מופע, הרצאה) לחיבור קבוצתי עמוק.']}
+};
+function eduIsWeekly(items){ return items.length>0 && items.every(x=>!!x.wk); }
+function eduCurWeek(items){
+  const t=new Date(); t.setHours(12,0,0,0);
+  for(const x of items){ if(x.s&&x.e){ const a=new Date(x.s+'T00:00:00'), b=new Date(x.e+'T23:59:59');
+    if(t>=a && t<=b) return x.id; } }
+  return null;
+}
+function eduWeeklyTable(scope, items){
+  const st=eduLoad(), cur=eduCurWeek(items), note=EDU_WK_NOTE[scope];
+  let done=0,part=0,miss=0,post=0;
+  items.forEach(x=>{ const e=st[scope+'|'+x.id+'|1']||{};
+    if(e.status==='בוצע')done++; else if(e.status==='בוצע חלקית')part++;
+    else if(e.status==='לא בוצע')miss++; else if(e.status==='נדחה')post++; });
+  const pct=items.length?Math.round((done+part*0.5)/items.length*100):0;
+  const pill=(ic,n,lbl,col)=>`<span style="display:inline-flex;align-items:center;gap:5px;background:${col}14;color:${col};border:1px solid ${col}33;border-radius:99px;padding:4px 11px;font-size:12px;font-weight:800;white-space:nowrap;">${ic} ${n}<span style="font-weight:500;opacity:.8;">${lbl}</span></span>`;
+  const head=`<div style="background:#fff;border:1px solid var(--border);border-radius:11px;padding:11px 13px;margin-bottom:14px;">
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;">
+      ${pill('📋',items.length,'שבועות','#1d4ed8')}${pill('✓',done,'בוצעו','#047857')}${pill('◐',part,'חלקית','#b45309')}${pill('✕',miss,'לא בוצעו','#b91c1c')}${pill('»',post,'נדחו','#6d28d9')}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;margin-bottom:5px;">
+      <span style="color:var(--text2);">שיעור ביצוע התוכנית</span><span style="color:var(--blue);">${pct}%</span></div>
+    <div style="height:8px;background:#eef2f7;border-radius:99px;overflow:hidden;">
+      <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#047857,#0891b2);border-radius:99px;"></div></div>
+  </div>`;
+  const c=GRP_CLR[scope]||'#0891b2';
+  const rows=items.map((x,i)=>{
+    const e=st[scope+'|'+x.id+'|1']||{}, now=(x.id===cur);
+    return `<tr style="border-bottom:1px solid #eef2f7;background:${now?c+'0d':'#fff'};">
+      <td style="padding:8px 11px;border-right:6px solid ${now?c:c+'44'};white-space:nowrap;vertical-align:top;">
+        <div style="font-family:'Rubik';font-weight:800;font-size:13px;color:${c};">${x.wk}${now?' <span style="font-size:9px;background:'+c+';color:#fff;border-radius:9px;padding:1px 6px;vertical-align:middle;">השבוע</span>':''}</div>
+        <div style="font-size:11px;color:var(--text3);">${x.dt}</div></td>
+      <td style="padding:8px 10px;vertical-align:top;min-width:150px;">
+        <span style="display:inline-block;background:${c}18;color:${c};border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;">${eduEsc(x.focus)}</span></td>
+      <td style="padding:8px 10px;font-size:12.5px;line-height:1.5;vertical-align:top;min-width:230px;">${x.plan}
+        ${x.hi?`<div style="margin-top:5px;display:inline-flex;align-items:center;gap:5px;background:#fdf1d6;border:1px solid #f0c674;border-radius:7px;padding:3px 9px;font-size:11.5px;font-weight:700;color:#92400e;">⭐ ${eduEsc(x.hi)}</div>`:''}</td>
+      <td style="padding:5px 6px;vertical-align:top;"><select onchange="eduSet('${scope}','${x.id}',1,'status',this.value)" style="width:106px;border:1px solid var(--border);border-radius:5px;padding:4px 5px;font-family:'Heebo';font-size:11px;font-weight:700;color:${EDU_STC[e.status||'']};">
+        ${EDU_ST.map(o=>`<option value="${o}" ${o===(e.status||'')?'selected':''}>${o||'—'}</option>`).join('')}</select></td>
+      <td style="padding:5px 6px;vertical-align:top;"><input value="${eduEsc(e.exec)}" oninput="eduSet('${scope}','${x.id}',1,'exec',this.value)" placeholder="מה בוצע / מי הוביל…" style="width:100%;min-width:150px;border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-family:'Heebo';font-size:11.5px;"></td>
+      <td style="padding:5px 6px;vertical-align:top;"><input type="date" value="${eduEsc(e.date)}" onchange="eduSet('${scope}','${x.id}',1,'date',this.value)" style="width:104px;border:1px solid var(--border);border-radius:5px;padding:4px 5px;font-family:'Heebo';font-size:10.5px;"></td>
+    </tr>`;
+  }).join('');
+  const notes = note ? `<div class="info-box" style="margin-top:14px;background:#fdf1d6;border-color:#f0c674;"><div class="icon">📌</div><div>
+      <b>דגשים:</b><ul style="margin:5px 0 0;padding-right:17px;font-size:12.5px;line-height:1.6;">${note.d.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>` : '';
+  return head + `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead><tr style="background:var(--text);color:#fff;">
+      <th style="padding:9px 11px;text-align:right;">שבוע</th><th style="padding:9px 8px;text-align:right;">מוקד</th>
+      <th style="padding:9px 8px;text-align:right;">פעילות</th><th style="padding:9px 6px;">סטטוס</th>
+      <th style="padding:9px 6px;">ביצוע בפועל / מי הוביל</th><th style="padding:9px 6px;">תאריך</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>` + notes;
+}
 /* ── תצוגה חודשית: התכנון כבר כתוב, מסמנים ביצוע ── */
 function eduMonthlyTable(scope,items){
   const st=eduLoad();
@@ -1791,7 +1848,13 @@ function eduMonthlyTable(scope,items){
 }
 function viewEdu(layer, title, scope){
   window.eduCfg[scope]={layer:layer,title:title};
-  const monthly = eduIsMonthly(eduItems(layer));
+  const _it = eduItems(layer);
+  const weekly = eduIsWeekly(_it), monthly = eduIsMonthly(_it);
+  if(weekly){ const _n=EDU_WK_NOTE[scope];
+    return info('🎓',`תוכנית חינוכית — ${title}`,
+      `<b>${_n?_n.t:'תוכנית קבוצתית'}</b> — <b>כבר מוזנת כאן</b>, שבוע אחר שבוע.<br>לכל שבוע בחרו <b>סטטוס</b>, רשמו מה <b>בוצע בפועל ומי הוביל</b> וסמנו <b>תאריך</b>. השבוע הנוכחי מסומן אוטומטית. הכול נשמר ומתגלגל לתוכנית החינוכית הראשית.`)
+     + `<div class="panel"><div class="panel-h"><h2>🎓 תכנון מול ביצוע — ${title}</h2></div>
+        <div class="panel-b"><div id="edu-${scope}">${eduTable(scope)}</div></div></div>`; }
   return info('🎓',`תוכנית חינוכית — ${title}`, monthly
     ? `התוכנית השנתית <b>כבר מוזנת כאן</b>, באותו מבנה של הטבלה המקורית: ארבעת התחומים בשורות, החודשים בעמודות.<br><b>לחיצה על העיגול</b> שליד משימה מסמנת ביצוע (ולחיצה נוספת מחליפה סטטוס). <b>לחיצה על הטקסט</b> פותחת שורה לפירוט ולתאריך. בכפתורים למעלה אפשר לעבור בין <b>טבלה שנתית</b> ל<b>לפי חודש</b>. הכול נשמר אוטומטית ומתגלגל לתוכנית החינוכית הראשית.`
     : `לכל נושא חודשי יש ארבעה שבועות. מלא מה <b>מתוכנן</b>, סמן <b>סטטוס</b> ורשום מה <b>בוצע בפועל</b>. הנתונים מתגלגלים אוטומטית לתוכנית החינוכית הראשית.`)
@@ -1802,7 +1865,8 @@ function viewEdu(layer, title, scope){
 /* ── תצוגה ראשית מצטברת ── */
 function eduMainTable(){
   const st=eduLoad();
-  const scopes=[['שלדג',"יא'"],['שחף',"יא'"],['שיר',"יא'"],['קהילת יב',"יב'"],['אקדמיה',"יא'"]];
+  const scopes=[['שלדג',"יא'"],['שחף',"יא'"],['שיר',"יא'"],['קהילת יב',"יב'"],['אקדמיה',"יא'"]]
+    .map(([sc,l])=>[sc, eduItems(sc).length? sc : l]);
   const agg=scopes.map(([sc,layer])=>{
     let plan=0,done=0,part=0,miss=0,post=0;
     eduItems(layer).forEach(x=>eduWeeks(x).forEach(wk=>{
@@ -3230,7 +3294,7 @@ function reorganize(){
     const nav=mkNav('gr'+g,items,pickIn(inner,'gr'+g),{grid:true}); sec.appendChild(nav);
     window.aggViews['gr'+g+'-ramzor']={names:names,title:g};
     const subs={roster:viewRoster(names,GRP_CLR[g]),ramzor:viewRamzor(names,g),
-                rooms:viewRoomsGroup(g),edu:viewEdu("יא'",g,g),visits:viewVisits(names,'vis-'+g,VIS_PHASES_YA),pocket:viewPocket(names,'pm-'+g),
+                rooms:viewRoomsGroup(g),edu:viewEdu(eduItems(g).length? g : "יא'",g,g),visits:viewVisits(names,'vis-'+g,VIS_PHASES_YA),pocket:viewPocket(names,'pm-'+g),
                 hug:viewHugim(names,'hug-'+g),aft:viewAfter(names,'aft-'+g),
                 med:viewMed(names,'med-'+g),diet:viewDiet(names,'diet-'+g),
                 kn:viewKnowledge(g,g),limudi:limCan(g)?viewLimudi(names,g):''};
@@ -4580,7 +4644,15 @@ const EDU_DEFAULT_DATA = [
 {"layer":"יב'","month":"יוני","order":82,"topic":"16 (או 17) ביוני: טקס סיום פנימייתי רשמי","category":"תאריכים ואירועי עוגן","cat":"ANCHOR","plan":"16 (או 17) ביוני: טקס סיום פנימייתי רשמי","status":"פעיל","id":"yb_082"},
 {"layer":"יב'","month":"יוני","order":83,"topic":"הפקה וביצוע של טקס הסיום הפנימייתי, נשף הסיום ואירועי הפרידה השכבתיים","category":"פרויקטים ויוזמות שכבתיות","cat":"PROJ","plan":"הפקה וביצוע של טקס הסיום הפנימייתי, נשף הסיום ואירועי הפרידה השכבתיים","status":"פעיל","id":"yb_083"},
 {"layer":"יב'","month":"יוני","order":84,"topic":"סיכום רשמי של התהליך החינוכי הרב-שנתי בפנימייה","category":"מתווה התהליך החינוכי","cat":"EDU","plan":"סיכום רשמי של התהליך החינוכי הרב-שנתי בפנימייה","status":"פעיל","id":"yb_084"},
-{"layer":"יב'","month":"יוני","order":85,"topic":"ניהול וליווי אירועי הסיום הרשמיים וליווי אישי אחרון לחניכים לקראת יציאתם למסגרות ההמשך","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"ניהול וליווי אירועי הסיום הרשמיים וליווי אישי אחרון לחניכים לקראת יציאתם למסגרות ההמשך","status":"פעיל","id":"yb_085"}
+{"layer":"יב'","month":"יוני","order":85,"topic":"ניהול וליווי אירועי הסיום הרשמיים וליווי אישי אחרון לחניכים לקראת יציאתם למסגרות ההמשך","category":"משימות ותחומי אחריות לצוות החינוכי","cat":"TEAM","plan":"ניהול וליווי אירועי הסיום הרשמיים וליווי אישי אחרון לחניכים לקראת יציאתם למסגרות ההמשך","status":"פעיל","id":"yb_085"},
+{"layer":"שלדג","order":1,"id":"sh_01","wk":"שבוע 1","dt":"15.11–21.11","s":"2026-11-15","e":"2026-11-21","focus":"התנעה וגיבוש","topic":"התנעה וגיבוש","plan":"חלוקת תפקידים, תכנון וחזרות למופע חנוכה. עבודה בצוותים קטנים.","month":"נובמבר","category":"תוכנית קבוצתית","status":"פעיל"},
+{"layer":"שלדג","order":2,"id":"sh_02","wk":"שבוע 2","dt":"22.11–28.11","s":"2026-11-22","e":"2026-11-28","focus":"שייכות וגאווה קבוצתית","topic":"שייכות וגאווה קבוצתית","plan":"חזרות גנרליות. סיכום, פרגון וחיזוק ה\"ביחד\".","month":"נובמבר","category":"תוכנית קבוצתית","status":"פעיל","hi":"27.11 — מופע חנוכה!"},
+{"layer":"שלדג","order":3,"id":"sh_03","wk":"שבוע 3","dt":"29.11–05.12","s":"2026-11-29","e":"2026-12-05","focus":"בניית אמון בסיסי","topic":"בניית אמון בסיסי","plan":"אתגר קבוצתי / ODT — תרגילי תמיכה, הובלה בעיניים עצומות ושיח פתוח.","month":"נובמבר","category":"תוכנית קבוצתית","status":"פעיל"},
+{"layer":"שלדג","order":4,"id":"sh_04","wk":"שבוע 4","dt":"06.12–12.12","s":"2026-12-06","e":"2026-12-12","focus":"העמקת השייכות והזהות","topic":"העמקת השייכות והזהות","plan":"יצירת \"תעודת זהות\" קבוצתית, ערב חברתי קליל (בישול משותף / משחקים).","month":"דצמבר","category":"תוכנית קבוצתית","status":"פעיל"},
+{"layer":"שלדג","order":5,"id":"sh_05","wk":"שבוע 5","dt":"13.12–19.12","s":"2026-12-13","e":"2026-12-19","focus":"הכנה לעתיד ושיתוף אישי","topic":"הכנה לעתיד ושיתוף אישי","plan":"הכנה והפגת חששות.","month":"דצמבר","category":"תוכנית קבוצתית","status":"פעיל","hi":"17.12 — הרצאת צו ראשון ותפקידים בצה\"ל"},
+{"layer":"שלדג","order":6,"id":"sh_06","wk":"שבוע 6","dt":"20.12–26.12","s":"2026-12-20","e":"2026-12-26","focus":"עיבוד ההרצאה ואמון הדדי","topic":"עיבוד ההרצאה ואמון הדדי","plan":"מעגל עיבוד וייעוץ עמיתים, זיהוי חוזקות ותמיכה לקראת המיונים.","month":"דצמבר","category":"תוכנית קבוצתית","status":"פעיל"},
+{"layer":"שלדג","order":7,"id":"sh_07","wk":"שבוע 7","dt":"27.12–02.01","s":"2026-12-27","e":"2027-01-02","focus":"אמון, פגיעות ומשוב בונה","topic":"אמון, פגיעות ומשוב בונה","plan":"סדנת \"האור שבך\" — קבלת חיזוקים חיוביים וכנים מחברי הקבוצה.","month":"דצמבר","category":"תוכנית קבוצתית","status":"פעיל"},
+{"layer":"שלדג","order":8,"id":"sh_08","wk":"שבוע 8","dt":"03.01–09.01","s":"2027-01-03","e":"2027-01-09","focus":"הובלה, אחריות וסיכום","topic":"הובלה, אחריות וסיכום","plan":"תכנון וביצוע יוזמה / התנדבות קבוצתית. רפלקציה וסיכום התהליך.","month":"ינואר","category":"תוכנית קבוצתית","status":"פעיל"}
 ];
 
 let EDU_DATA = null;
