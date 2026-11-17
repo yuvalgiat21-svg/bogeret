@@ -2316,16 +2316,38 @@ window.refreshMedMain=function(){ const el=document.getElementById('medMainBody'
 const DIET_KEY='bogeret_diet_v1';
 const DIET_TAGS=['צמחוני','טבעוני','צליאק / גלוטן','רגישות ללקטוז','אלרגיה'];
 const DIET_TC={'צמחוני':'#047857','טבעוני':'#15803d','צליאק / גלוטן':'#b45309','רגישות ללקטוז':'#0e7490','אלרגיה':'#b91c1c'};
-function dietLoad(){ const st=gStore(DIET_KEY,null); if(st) return st;
-  const seed={};
-  Object.entries(SEED_DIET).forEach(([n,v])=>{
-    const d=(v.d||''); const tags=[];
-    if(/טבעונ/.test(d)) tags.push('טבעוני'); else if(/צמחונ/.test(d)) tags.push('צמחוני');
-    if(/צליאק|גלוטן/.test(d)) tags.push('צליאק / גלוטן');
-    if(/לקטוז|חלב/.test(d)) tags.push('רגישות ללקטוז');
-    if(/אלרג/.test(d) && !/חלב/.test(d)) tags.push('אלרגיה');
-    seed[n]={tags:tags,note:d};});
-  gSave(DIET_KEY,seed); return seed; }
+function dietTagsFromText(d){
+  d=d||''; const tags=[];
+  if(/טבעונ/.test(d)) tags.push('טבעוני'); else if(/צמחונ/.test(d)) tags.push('צמחוני');
+  if(/צליאק|גלוטן/.test(d)) tags.push('צליאק / גלוטן');
+  if(/לקטוז|חלב/.test(d)) tags.push('רגישות ללקטוז');
+  if(/אלרג/.test(d) && !/חלב/.test(d)) tags.push('אלרגיה');
+  return tags; }
+function dietMedText(n){ try{ const m=medLoad()[n]||{};
+  return [m.info,m.meds,m.alrg].filter(Boolean).join(' · '); }catch(e){ return ''; } }
+function dietMissingFromMed(n,tags){
+  const t=dietTagsFromText(dietMedText(n));
+  return t.filter(x=>!(tags||[]).includes(x)); }
+function dietLoad(){
+  let st=gStore(DIET_KEY,null);
+  if(!st){ st={};
+    Object.entries(SEED_DIET).forEach(([n,v])=>{ const d=(v.d||''); st[n]={tags:dietTagsFromText(d),note:d}; }); }
+  /* השלמה מהרפואי — רק לחניכים שאין להם בכלל רשומת תזונה, כדי לא לדרוס סימון ידני */
+  try{ const med=medLoad();
+    Object.keys(med).forEach(n=>{ if(st[n]) return;
+      const txt=[med[n].info,med[n].meds,med[n].alrg].filter(Boolean).join(' · ');
+      const t=dietTagsFromText(txt);
+      if(t.length) st[n]={tags:t,note:'מהרפואי: '+[med[n].info,med[n].alrg].filter(Boolean).join(' · ')}; });
+  }catch(e){}
+  gSave(DIET_KEY,st); return st; }
+window.dietApplyMed=function(gid,n){
+  const st=dietLoad(); st[n]=st[n]||{tags:[],note:''}; st[n].tags=st[n].tags||[];
+  const txt=dietMedText(n);
+  dietTagsFromText(txt).forEach(t=>{ if(!st[n].tags.includes(t)) st[n].tags.push(t); });
+  if(!st[n].note) st[n].note='מהרפואי: '+txt;
+  gSave(DIET_KEY,st);
+  const el=document.getElementById(gid); if(el) el.innerHTML=dietTable(gid);
+  if(window.refreshDietMain) refreshDietMain(); };
 window.dietToggle=function(gid,n,tag){ const st=dietLoad(); st[n]=st[n]||{tags:[],note:''};
   const arr=st[n].tags||[]; const k=arr.indexOf(tag); k>=0?arr.splice(k,1):arr.push(tag);
   st[n].tags=arr; gSave(DIET_KEY,st); document.getElementById(gid).innerHTML=dietTable(gid);
@@ -2345,7 +2367,7 @@ function dietTable(gid){
         <td style="padding:5px 9px;color:var(--text3);">${i+1}</td>
         <td style="padding:5px 9px;font-weight:600;white-space:nowrap;">${s.n}</td>
         ${DIET_TAGS.map(tg=>`<td style="padding:4px;text-align:center;"><input type="checkbox" ${tags.includes(tg)?'checked':''} onchange="dietToggle('${gid}','${q}','${tg}')" style="width:17px;height:17px;cursor:pointer;accent-color:${DIET_TC[tg]};"></td>`).join('')}
-        <td style="padding:4px 6px;"><input value="${(e.note||'').replace(/"/g,'&quot;')}" oninput="dietNote('${gid}','${q}',this.value)" placeholder="—" style="width:100%;min-width:150px;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-family:'Heebo';font-size:12px;"></td>
+        <td style="padding:4px 6px;"><input value="${(e.note||'').replace(/"/g,'&quot;')}" oninput="dietNote('${gid}','${q}',this.value)" placeholder="—" style="width:100%;min-width:150px;border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-family:'Heebo';font-size:12px;">${(()=>{const miss=dietMissingFromMed(s.n,tags); return miss.length?`<button onclick="dietApplyMed('${gid}','${q}')" title="מופיע בכרטיס הרפואי ולא מסומן כאן" style="margin-top:4px;display:block;width:100%;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;border-radius:5px;padding:3px 6px;font-family:'Heebo';font-size:11px;font-weight:600;cursor:pointer;">⚠️ ברפואי: ${miss.join(' · ')} — הוסף</button>`:'';})()}</td>
       </tr>`;}).join('')}</tbody></table></div>`;
 }
 function viewDiet(names,gid){
