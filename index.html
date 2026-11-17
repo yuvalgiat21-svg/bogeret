@@ -756,25 +756,24 @@ const D = JSON.parse(document.getElementById('DATA_JSON').textContent);
 const GRADUATES = [];
 
 /* ═══════════════════ משתמשים והרשאות ═══════════════════ */
-const DEFAULT_PW = 'mevoot2027';
 const AUTH_KEY   = 'bogeret_auth_v1';
 
 /* scope: אילו קבוצות נגישות | mode: admin / edit / view */
 const USERS = [
-  {id:'yuval', email:'yuvalg@m-yam.org.il', alt:'yuvalgiat21@gmail.com',   n:'יובל גיאת',    r:'רכז שכבה בוגרת',      mode:'admin', scope:'all'},
-  {id:'sharon', email:'sharonkulawsky@gmail.com',  n:'שרון חסון',    r:"מדריכת קהילת יב'",     mode:'edit',  scope:'yb'},
-  {id:'eran', email:'ec8604@gmail.com',    n:'ערן כרמלי',    r:"מדריך צוק יב'",        mode:'edit',  scope:'yb'},
-  {id:'itai', email:'Kalderon1315@gmail.com',    n:'איתי קלדרון',  r:"מדריך חוף יב'",        mode:'edit',  scope:'yb'},
-  {id:'eden', email:'edensharir@gmail.com',    n:'עדן שריר',     r:"עו\"סית יב'",           mode:'view',  scope:'yb', canEdit:['visits','pocket']},
-  {id:'ariel', email:'arieldolev8@gmail.com',   n:'אריאל דולב',   r:"שינשין יב'",           mode:'view',  scope:'yb'},
-  {id:'eili', email:'ilaythe123@gmail.com',    n:'עילי בלוססקי', r:"מדריך שחף יא'",        mode:'edit',  scope:'ya'},
-  {id:'arbel', email:'arbel1122@gmail.com',   n:'ארבל בנדלר',   r:"מדריך שיר יא'",        mode:'edit',  scope:'ya'},
-  {id:'udi', email:'ymaabi@gmail.com',     n:'אודי מעבי',    r:"מדריך שלדג יא'",       mode:'edit',  scope:'ya'},
-  {id:'yaara', email:'Yaaranezer@gmail.com',   n:'יערה נזר',     r:"עו\"סית יא'",           mode:'view',  scope:'ya', canEdit:['visits','pocket']},
-  {id:'noam', email:'noamohayon200@gmail.com',    n:'נעם אוחיון',   r:'שינשינית שלדג',        mode:'view',  scope:'ya'},
-  {id:'noa', email:'noarozenberg08@gmail.com',     n:'נעה רוזנברג',  r:'שינשינית שיר',         mode:'view',  scope:'ya'},
-  {id:'ido', email:'idonissan7@gmail.com',     n:'עידו ניסן',    r:'שינשין שחף',           mode:'view',  scope:'ya'},
-  {id:'ami', email:'amigreengrass@gmail.com',     n:'עמי גרינגרס',  r:'מדריך אקדמיה לכדורסל', mode:'edit',  scope:'academy'},
+  {id:'yuval', eh:'2fee9bcc2839b552901a66c4c8e162e97abb7da4e1fa91dbd9f1a7463bd62a45', em:'yu***@m-yam.org.il', ah:'c3ba6e271bb3392903edfc88fad0a89283fa50a41994018369987b12a302da78',   n:'יובל גיאת',    r:'רכז שכבה בוגרת',      mode:'admin', scope:'all'},
+  {id:'sharon', eh:'8fe38a7844137b2e7e42494c3b630224df3bcad90c730551c5208f2e55dafcad', em:'sh***@gmail.com',  n:'שרון חסון',    r:"מדריכת קהילת יב'",     mode:'edit',  scope:'yb'},
+  {id:'eran', eh:'16aa4e4a1015bbbc8ba6ec513140165ab7dcd23d2e7b894f682a63ac0de0ef3f', em:'ec***@gmail.com',    n:'ערן כרמלי',    r:"מדריך צוק יב'",        mode:'edit',  scope:'yb'},
+  {id:'itai', eh:'fdf6288bb204b87000cafd2744231f9aa5ba6b0cc0bc87ee9ab4cc4b9a43edc3', em:'ka***@gmail.com',    n:'איתי קלדרון',  r:"מדריך חוף יב'",        mode:'edit',  scope:'yb'},
+  {id:'eden', eh:'44d947217f57288c020b0703545c54d92ebe8a252af20f21846d067e0d80ee16', em:'ed***@gmail.com',    n:'עדן שריר',     r:"עו\"סית יב'",           mode:'view',  scope:'yb', canEdit:['visits','pocket']},
+  {id:'ariel', eh:'9832cb930ffd23782a997f9d72c4d2fa5e11f52565df019bbd22bdd0030f092e', em:'ar***@gmail.com',   n:'אריאל דולב',   r:"שינשין יב'",           mode:'view',  scope:'yb'},
+  {id:'eili', eh:'036ef8f5c25194f261b18a373e4dfaf6a7543fc510d26996a2d5f730459d33aa', em:'il***@gmail.com',    n:'עילי בלוססקי', r:"מדריך שחף יא'",        mode:'edit',  scope:'ya'},
+  {id:'arbel', eh:'8b300e90b61cff55929fe2f177abada2e6f8c17592d441f9792d9639ebd95498', em:'ar***@gmail.com',   n:'ארבל בנדלר',   r:"מדריך שיר יא'",        mode:'edit',  scope:'ya'},
+  {id:'udi', eh:'8f5ee3a3da2499ed8d1271c248baf023721be9f2da5915b7729e565e10f3ea43', em:'ym***@gmail.com',     n:'אודי מעבי',    r:"מדריך שלדג יא'",       mode:'edit',  scope:'ya'},
+  {id:'yaara', eh:'7daf1cb7bd5eaf9cd0fa1f95e29ad0aeee020e57edb5ed61d24cfe31630a58a0', em:'ya***@gmail.com',   n:'יערה נזר',     r:"עו\"סית יא'",           mode:'view',  scope:'ya', canEdit:['visits','pocket']},
+  {id:'noam', eh:'62bddedc82ae4716bc1c46f7331e78d39a43cebf982d5f53588d6124201c0e31', em:'no***@gmail.com',    n:'נעם אוחיון',   r:'שינשינית שלדג',        mode:'view',  scope:'ya'},
+  {id:'noa', eh:'01759b10ad2161b6fa2bd42fd0c3f46818be1d452709f0b08ea24d935276cb14', em:'no***@gmail.com',     n:'נעה רוזנברג',  r:'שינשינית שיר',         mode:'view',  scope:'ya'},
+  {id:'ido', eh:'166a5fee68c21c3a87e35091a2e19fafbdddeb2ea223de8c8897c91c1544d1f4', em:'id***@gmail.com',     n:'עידו ניסן',    r:'שינשין שחף',           mode:'view',  scope:'ya'},
+  {id:'ami', eh:'54d4ed0cdec59959340a6fba5e5578059c8844db7d6db8559aa31450d7bfa67d', em:'am***@gmail.com',     n:'עמי גרינגרס',  r:'מדריך אקדמיה לכדורסל', mode:'edit',  scope:'academy'},
 ];
 const SCOPE_GROUPS = { all:null, ya:['שלדג','שחף','שיר'], yb:['yb'], academy:['academy'] };
 
@@ -797,7 +796,15 @@ async function fbInit(){
   return FBAUTH;
 }
 function normEmail(e){ return (e||'').trim().toLowerCase(); }
-function userByEmail(e){ const x=normEmail(e); return USERS.find(u => normEmail(u.email)===x || normEmail(u.alt)===x); }
+/* SHA-256 סינכרוני – המיילים שמורים כ-hash ולא כטקסט גלוי */
+function sha256hex(str){const K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+const b=new TextEncoder().encode(str);const l=b.length;const n=((l+9+63)>>6)<<6;const m=new Uint8Array(n);m.set(b);m[l]=0x80;const dv=new DataView(m.buffer);dv.setUint32(n-4,l*8);dv.setUint32(n-8,Math.floor(l/0x20000000));
+let H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];const w=new Uint32Array(64);const r=(x,k)=>(x>>>k)|(x<<(32-k));
+for(let o=0;o<n;o+=64){for(let i=0;i<16;i++)w[i]=dv.getUint32(o+i*4);for(let i=16;i<64;i++){const s0=r(w[i-15],7)^r(w[i-15],18)^(w[i-15]>>>3),s1=r(w[i-2],17)^r(w[i-2],19)^(w[i-2]>>>10);w[i]=(w[i-16]+s0+w[i-7]+s1)>>>0;}
+let[a,bb,c,d,e,f,g,hh]=H;for(let i=0;i<64;i++){const S1=r(e,6)^r(e,11)^r(e,25),ch=(e&f)^(~e&g),t1=(hh+S1+ch+K[i]+w[i])>>>0,S0=r(a,2)^r(a,13)^r(a,22),mj=(a&bb)^(a&c)^(bb&c),t2=(S0+mj)>>>0;hh=g;g=f;f=e;e=(d+t1)>>>0;d=c;c=bb;bb=a;a=(t1+t2)>>>0;}
+H=[H[0]+a,H[1]+bb,H[2]+c,H[3]+d,H[4]+e,H[5]+f,H[6]+g,H[7]+hh].map(x=>x>>>0);}
+return H.map(x=>x.toString(16).padStart(8,'0')).join('');}
+function userByEmail(e){ const x=sha256hex(normEmail(e)); return USERS.find(u => u.eh===x || u.ah===x); }
 
 async function fbSignInEmail(){
   const err=document.getElementById('loginError');
@@ -819,6 +826,9 @@ async function fbSignInEmail(){
         try{
           res = await FBAUTH.m.createUserWithEmailAndPassword(FBAUTH.a, em, pw);
         }catch(e2){
+          if(/admin-restricted-operation|operation-not-allowed/.test(e2.code||'')){
+            err.textContent='עדיין לא נפתח לך חשבון בפורטל – פנה ליובל.'; err.style.display='block'; return;
+          }
           if((e2.code||'')==='auth/email-already-in-use'){
             err.textContent='הסיסמה שגויה. שכחת? לחץ על "שכחתי סיסמה" למטה ויישלח אליך מייל לאיפוס.'; err.style.display='block'; return;
           }
@@ -943,11 +953,11 @@ window.renderUsers=function(){
       <td style="padding:7px 9px;color:var(--text2);font-size:12px;">${u.r}</td>
       <td style="padding:7px 9px;"><span class="pill" style="background:${m[1]}18;border-color:${m[1]}55;color:${m[1]};">${m[0]}</span>${(u.canEdit||[]).length?`<br><span class="pill" style="background:rgba(4,120,87,.14);border-color:rgba(4,120,87,.4);color:#047857;margin-top:3px;font-size:10.5px;">✏️ ${u.canEdit.map(k=>({visits:'ביקורי בית',pocket:'דמי כיס'})[k]||k).join(' · ')}</span>`:''}</td>
       <td style="padding:7px 9px;font-size:12px;">${SC[u.scope]}</td>
-      <td style="padding:7px 9px;font-size:11.5px;direction:ltr;text-align:left;color:var(--text2);white-space:nowrap;">${u.email}</td>
+      <td style="padding:7px 9px;font-size:11.5px;direction:ltr;text-align:left;color:var(--text2);white-space:nowrap;">${u.em}</td>
     </tr>`;}).join('')}</tbody></table>
   <div class="info-box" style="margin-top:12px;"><div class="icon">🔑</div><div>
     <b>כניסה אחת: מייל + סיסמה.</b><br>
-    <span style="font-size:12px;color:var(--text2);">בכניסה הראשונה כל אחד בוחר לעצמו סיסמה (6 תווים לפחות) והחשבון נוצר אוטומטית. מי ששכח לוחץ "שכחתי סיסמה" במסך הכניסה ומקבל מייל איפוס — בלי לפנות אליך.</span></div></div>`;
+    <span style="font-size:12px;color:var(--text2);">איש צוות חדש – יובל פותח לו חשבון במסוף Firebase ומוסיף אותו לרשימה; את הסיסמה הוא מחליף בעצמו. מי ששכח לוחץ "שכחתי סיסמה" במסך הכניסה ומקבל מייל איפוס — בלי לפנות אליך.</span></div></div>`;
 };
 function viewUsers(){
   return info('👥','ניהול משתמשים והרשאות','רשימת הצוות, ההרשאות של כל אחד, ואיפוס סיסמאות. לשונית זו גלויה לך בלבד.')
