@@ -1042,6 +1042,7 @@ async function loadSecure(){
   _fill(SEED_DIET, P('SEED_DIET'));
   _fill(SEED_PK, P('SEED_PK'));
   _fill(BUSES_EVAC, P('BUSES_EVAC'));
+  _fill(EVAC_DATA, P('EVAC_5787'));
   _fill(ACADEMY_ROOMS, P('ACADEMY_ROOMS'));
   _fill(D, P('DATA_JSON'));
   syncRamzorRows(); buildAcadStudents(); syncAcadRamzor();
@@ -1250,6 +1251,7 @@ const NEW_TABS = [
   {id:'bodies',   icon:'🧭', label:'גופי מנהיגות'},
   {id:'graduates',icon:'🎖️', label:'בוגרים'},
   {id:'prof',     icon:'📚', label:'חומרים מקצועיים'},
+  {id:'evacplan', icon:'🚨', label:'פינוי בחירום'},
   {id:'users',    icon:'🔐', label:'משתמשים', admin:true},
 ];
 
@@ -2556,6 +2558,134 @@ function viewEvacDash(){
     <div id="evacBuses">${busCards()}</div>`;
 }
 
+/* ═══════════ תוכנית פינוי בחירום תשפ"ז — לשונית עצמאית ═══════════
+   המסלולים (יישובים ומרחקים) כאן בקוד — בלי שמות.
+   רשימות הנוסעים, הטלפונים והמלווים נשמרים רק באזור המוגן בענן (EVAC_5787). */
+const EVAC_ROUTES = [{"id": "1א", "region": "דימונה, הערבה ואילת", "km": 861, "c": "#E63946", "veh": "מיניבוס", "stops": ["נבטים", "דימונה", "נאות הכיכר", "עידן", "אילת"]}, {"id": "1ב", "region": "הר הנגב", "km": 551, "c": "#F4A261", "veh": "מיניבוס", "stops": ["רביבים", "שדה בוקר ומדרשת בן גוריון", "מצפה רמון", "באר מילכה"]}, {"id": "2", "region": "קריות, גליל וגולן", "km": 384, "c": "#2A9D8F", "veh": "אוטובוס", "stops": ["שפרעם", "קרית אתא", "קרית ביאליק", "קרית מוצקין", "קרית ים", "שבי ציון", "נהריה", "יערה", "געתון", "אמירים", "צפת", "צבעון", "שדה אליעזר", "יסוד המעלה", "עין זיוון", "קצרין", "כנף", "נטור"]}, {"id": "3", "region": "מזרח ושומרון", "km": 242, "c": "#264653", "veh": "אוטובוס", "stops": ["חיננית", "חרמש", "שקד", "מבוא דותן", "שבי שומרון", "פצאל", "אריאל", "ברקן", "בית אריה", "ראש העין", "אורנית", "שער השומרון", "צופים", "כוכב יאיר", "צור יצחק"]}, {"id": "4", "region": "עוטף עזה, מערב הנגב ובאר שבע", "km": 394, "c": "#E76F51", "veh": "אוטובוס", "stops": ["אשדוד", "ניצני סיני", "אשקלון", "יד מרדכי", "ארז", "שדרות", "דורות", "רעים", "אופקים", "באר שבע", "עומר", "כרמים", "קרית גת"]}, {"id": "5", "region": "ירושלים והסביבה", "km": 347, "c": "#8E033C", "veh": "אוטובוס", "stops": ["מודיעין-מכבים-רעות", "צרעה", "בית שמש", "מטע", "שריגים-לי און", "קרית ארבע", "נוקדים", "אלמוג", "ירושלים", "מבשרת ציון"]}, {"id": "6", "region": "שפלה", "km": 261, "c": "#6A4C93", "veh": "אוטובוס", "stops": ["חמד", "בית דגן", "ראשון לציון", "נס ציונה", "באר יעקב", "נצר סרני", "רחובות", "גן יבנה", "מזכרת בתיה", "משמר דוד", "טל שחר", "כפר בן נון", "בית חשמונאי", "נען", "רמלה", "לוד", "שוהם", "נעלה"]}, {"id": "7", "region": "גוש דן", "km": 142, "c": "#1982C4", "veh": "אוטובוס", "stops": ["פתח תקווה (מחלף גהה)", "גבעת שמואל (מחלף קוקה קולה)", "קרית אונו (קניון)", "גני תקווה", "נופך", "יהוד מונסון", "אור יהודה", "חולון מזרח (ההסתדרות)", "חולון (קניון)", "תל אביב (השלום)", "תל אביב (סבידור)", "גבעתיים (קניון)", "רמת גן (צומת השלישות)"]}, {"id": "8", "region": "שרון צפון", "km": 99, "c": "#8AC926", "veh": "אוטובוס", "stops": ["אביאל", "פרדס חנה-כרכור", "אליכין", "גבעת חיים", "כפר יונה", "גאולים", "שער אפריים", "עין שריד", "תל מונד", "קדימה-צורן", "צור משה", "פרדסיה", "משמר השרון", "מעברות", "חרב לאת", "בית חירות"]}, {"id": "9", "region": "שרון דרום", "km": 96, "c": "#FF595E", "veh": "אוטובוס", "stops": ["כפר נטר", "תל יצחק", "חרות", "רמת הכובש", "כפר סבא", "הוד השרון", "רמת השרון", "הרצליה", "רעננה", "בני ציון", "שפיים", "געש"]}, {"id": "10א", "region": "ואדי ערה, העמקים ובקעת בית שאן", "km": 256, "c": "#3A86FF", "veh": "אוטובוס", "stops": ["חריש", "עין חרוד", "בית אלפא", "ניר דוד", "רשפים", "דגניה ב'", "לוטם", "אבטליון", "עין מאהל", "נוף הגליל", "מגדל העמק", "מי עמי"]}, {"id": "10ב", "region": "חדרה, חוף הכרמל וחיפה", "km": 156, "c": "#B5179E", "veh": "אוטובוס", "stops": ["חדרה", "רמת ישי", "זרזיר", "קרית טבעון", "שער העמקים", "נשר", "חיפה", "טירת כרמל", "זכרון יעקב", "אור עקיבא"]}, {"id": "11", "region": "נתניה", "km": 40, "c": "#FC5028", "veh": "אוטובוס", "stops": ["נתניה צפון", "נתניה מרכזית", "נתניה ותיקים/נווה איתמר", "נתניה פולג", "נורדיה"]}];
+const EV_LOCAL={id:'מקומי',region:'גרים במבואות ים – ללא הסעה',km:0,c:'#7A6A66',veh:'ללא הסעה',stops:[]};
+const EV_ALL=EVAC_ROUTES.concat([EV_LOCAL]);
+const EVAC_DATA = {};
+const EVAC_KEY = 'EVAC_5787';
+const evNorm = s => String(s||'').replace(/["'`״׳\-\s]+/g,' ').trim();
+function evacIsBog(r){
+  const a=evNorm(r.first+' '+r.last), b=evNorm(r.last+' '+r.first);
+  return STUDENTS_DATA.some(s=>{ const n=evNorm(s.n); return n===a||n===b; });
+}
+function evBus(id){ return (EVAC_DATA.buses||{})[id] || {esc:'',rows:[]}; }
+const evTel = p => p ? `<a href="tel:${String(p).replace(/[^\d+]/g,'')}" style="color:inherit;text-decoration:none;direction:ltr;unicode-bidi:embed;white-space:nowrap;">${p}</a>` : '—';
+
+function viewEvacRoutes(){
+  const has=!!EVAC_DATA.buses;
+  const tot=has?EVAC_ROUTES.reduce((a,r)=>a+evBus(r.id).rows.length,0):404;
+  const maxNot=Math.max(...EVAC_ROUTES.filter(r=>r.km<=400).map(r=>r.km));
+  return info('🚨','תוכנית פינוי בחירום — תשפ"ז',
+      `${EVAC_ROUTES.length} רכבים (${EVAC_ROUTES.filter(r=>r.veh==='מיניבוס').length} מהם מיניבוסים). כל מסלול עד 400 ק"מ הלוך וחזור, חוץ מקו אילת (1א) ומיניבוס הר הנגב (1ב), שרחוק מעל 400 ק"מ גם בנסיעה ישירה.<br>
+       <span style="font-size:12px;color:var(--text2);">המרחקים הם הערכה לפי מרחק על המפה, לא לפי כבישים. לחיצה על קו במפה מגדילה אותו ומראה את סדר התחנות.</span>`)
+   + `<div class="cards" style="margin-bottom:14px;">
+      <div class="card" style="border-right:6px solid #FC5028;"><div class="icon">🚌</div><div class="val" style="color:#FC5028">${EVAC_ROUTES.length}</div><div class="lbl">קווים</div></div>
+      <div class="card" style="border-right:6px solid #8E033C;"><div class="icon">👥</div><div class="val" style="color:#8E033C">${tot}</div><div class="lbl">תלמידים</div></div>
+      <div class="card" style="border-right:6px solid #047857;"><div class="icon">📏</div><div class="val" style="color:#047857">${maxNot}</div><div class="lbl">ק"מ — הקו הארוך (בלי הדרום)</div></div>
+    </div>
+    <div class="panel" style="margin-bottom:14px;"><div class="panel-h"><h2>🗺️ מפת המסלולים</h2>
+      <a class="btn" href="docs/evac-map.html" target="_blank" rel="noopener">↗️ פתח במסך מלא</a></div>
+      <div class="panel-b" style="padding:0;"><iframe src="docs/evac-map.html" title="מפת מסלולי פינוי" loading="lazy" style="width:100%;height:760px;border:0;border-radius:0 0 12px 12px;display:block;"></iframe></div></div>
+    <div class="panel"><div class="panel-h"><h2>🧭 הקווים</h2></div><div class="panel-b" style="overflow-x:auto;">
+      <table class="tbl"><thead><tr><th>קו</th><th>אזור</th><th>רכב</th><th>תלמידים</th><th>מלווים</th><th>הלוך וחזור</th><th>סדר התחנות</th></tr></thead><tbody>
+      ${EVAC_ROUTES.map(r=>{const b=evBus(r.id), over=r.km>400;
+        return `<tr style="background:#fff;">
+        <td style="padding:6px 9px;white-space:nowrap;"><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${r.c};margin-left:6px;vertical-align:middle;"></span><b>${r.id}</b></td>
+        <td style="padding:6px 9px;font-weight:700;">${r.region}</td>
+        <td style="padding:6px 9px;">${r.veh}</td>
+        <td style="padding:6px 9px;text-align:center;">${has?b.rows.length:'—'}</td>
+        <td style="padding:6px 9px;font-size:12px;">${b.esc||'—'}</td>
+        <td style="padding:6px 9px;white-space:nowrap;"><span class="pill" style="background:${over?'#FDE9D9':'#e3f4e8'};border-color:${over?'#F3C2B0':'#b7e1c4'};color:${over?'#b03a1a':'#1b7a3a'};">${r.km} ק"מ</span></td>
+        <td style="padding:6px 9px;font-size:11.5px;color:var(--text2);line-height:1.7;">${r.stops.map((s,i)=>`${i+1}. ${s}`).join(' ← ')}</td></tr>`;}).join('')}
+      </tbody></table></div></div>`;
+}
+
+window.evacListFilter='all'; window.evacListBus='all';
+window.setEvacList=function(kind,v){ window[kind]=v; renderEvacLists(); };
+window.renderEvacLists=function(){
+  const el=document.getElementById('evacListsBody'); if(!el) return;
+  if(!EVAC_DATA.buses){
+    el.innerHTML=`<div style="background:var(--card-alt);border:2px dashed var(--border);border-radius:12px;padding:30px;text-align:center;">
+      <div style="font-size:34px;margin-bottom:6px;">🔒</div><div style="font-weight:700;margin-bottom:3px;">רשימות הנוסעים עוד לא הועלו לאזור המוגן</div>
+      <div style="font-size:12.5px;color:var(--text2);">המנהל מעלה אותן פעם אחת מקובץ האקסל של תוכנית הפינוי (למטה).</div></div>`;
+    return;
+  }
+  const chip=(kind,v,lb,on)=>`<button onclick="setEvacList('${kind}','${v}')" style="border:1.5px solid ${on?'#FC5028':'var(--border)'};background:${on?'#FC5028':'#fff'};color:${on?'#fff':'var(--text2)'};border-radius:99px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;margin:2px;font-family:Heebo;">${lb}</button>`;
+  const F=window.evacListFilter, B=window.evacListBus;
+  let h=`<div style="margin-bottom:10px;">${chip('evacListFilter','all','כל התלמידים',F==='all')}${chip('evacListFilter','bog','שכבה בוגרת בלבד',F==='bog')}</div>
+    <div style="margin-bottom:14px;">${chip('evacListBus','all','כל הקווים',B==='all')}${EV_ALL.map(r=>chip('evacListBus',r.id,r.id==='מקומי'?'מקומיים':'קו '+r.id,B===r.id)).join('')}</div>`;
+  EV_ALL.filter(r=>B==='all'||B===r.id).forEach(r=>{
+    const b=evBus(r.id); let rows=b.rows.map(x=>Object.assign({bog:evacIsBog(x)},x));
+    if(F==='bog') rows=rows.filter(x=>x.bog);
+    if(!rows.length) return;
+    const order=Object.fromEntries(r.stops.map((s,i)=>[evNorm(s),i]));
+    const stopIdx=x=>{ const c=evNorm(x.city); for(const k in order){ if(k.startsWith(c)||c.startsWith(k.split(' ')[0])) return order[k]; } return 99; };
+    rows.sort((a,b)=>stopIdx(a)-stopIdx(b)||String(a.city).localeCompare(b.city,'he')||String(a.last).localeCompare(b.last,'he'));
+    h+=`<div class="panel" style="margin-bottom:14px;border-top:5px solid ${r.c};">
+      <div class="panel-h" style="background:${r.c}10;"><h2 style="color:${r.c};">${r.id==='מקומי'?'🏠 מקומיים':'🚌 קו '+r.id} · ${r.region}</h2>
+        <span class="pill" style="background:${r.c}18;border-color:${r.c}55;color:${r.c};font-size:13px;padding:5px 13px;">${rows.length} תלמידים · ${r.veh}</span></div>
+      <div class="panel-b">
+        <div style="background:#FFF1EB;border:1px solid #F3C2B0;border-right:4px solid ${r.c};border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:12.5px;line-height:1.7;">
+          <b style="color:#8E033C;">מלווים:</b> ${b.esc||'—'} ${r.km?` &nbsp;·&nbsp; <b style="color:#8E033C;">הלוך וחזור:</b> ${r.km} ק"מ<br><b style="color:#8E033C;">מסלול:</b> ${r.stops.join(' ← ')}`:''}</div>
+        <div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>#</th><th>שם</th><th>כיתה</th><th>יישוב</th><th>כתובת</th><th>נייד</th><th>הורה 1</th><th>הורה 2</th><th>הערות</th></tr></thead>
+        <tbody>${rows.map((x,i)=>`<tr style="background:#fff;">
+          <td style="padding:5px 8px;color:var(--text3);">${i+1}</td>
+          <td style="padding:5px 8px;font-weight:700;white-space:nowrap;">${x.first} ${x.last}${x.bog?' <span title="שכבה בוגרת" style="font-size:10px;color:#047857;">●</span>':''}</td>
+          <td style="padding:5px 8px;white-space:nowrap;">${x.cls||'—'}</td>
+          <td style="padding:5px 8px;font-weight:600;white-space:nowrap;">${x.city||'—'}</td>
+          <td style="padding:5px 8px;font-size:11.5px;color:var(--text2);">${x.addr||'—'}</td>
+          <td style="padding:5px 8px;font-size:12px;">${evTel(x.ph)}</td>
+          <td style="padding:5px 8px;font-size:12px;white-space:nowrap;">${x.p1||''} ${evTel(x.p1ph)}</td>
+          <td style="padding:5px 8px;font-size:12px;white-space:nowrap;">${x.p2||''} ${x.p2ph?evTel(x.p2ph):''}</td>
+          <td style="padding:5px 8px;font-size:11px;${x.note?'color:#b03a1a;':''}">${x.note||''}</td></tr>`).join('')}</tbody></table></div>
+      </div></div>`;
+  });
+  el.innerHTML=h;
+};
+function viewEvacLists(){
+  return info('🚌','רשימות נוסעים לפי קו',
+      'לכל קו: התלמידים לפי סדר התחנות, טלפון של התלמיד ושל ההורים (לחיצה מחייגת), והמלווים. ● = חניך/ה בשכבה הבוגרת.<br><span style="font-size:12px;color:var(--text2);">הרשימות שמורות באזור המוגן — לא בקוד של האתר.</span>')
+   + `<div class="panel" style="margin-bottom:14px;"><div class="panel-h"><h2>🚌 הנוסעים</h2><button class="btn" onclick="renderEvacLists()">🔄 רענן</button></div><div class="panel-b" id="evacListsBody"></div></div>`
+   + ((window.ME&&ME.mode==='admin')?`<div class="panel"><div class="panel-h"><h2>📤 עדכון הרשימות (מנהל בלבד)</h2></div><div class="panel-b">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;line-height:1.6;">בחר את קובץ האקסל <b>תוכנית פינוי בחירום מבואות ים תשפז.xlsx</b>. הרשימות והמלווים יישמרו באזור המוגן ויחליפו את הקודמים.</div>
+      <input type="file" id="evacPick" accept=".xlsx" onchange="evacImport(this)" style="font-family:Heebo;font-size:13px;">
+      <div id="evacMsg" style="margin-top:8px;font-size:13px;"></div></div></div>`:'');
+}
+function evLoadXlsx(){ return window.XLSX ? Promise.resolve(window.XLSX) : new Promise((res,rej)=>{
+  const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=()=>res(window.XLSX); s.onerror=()=>rej(new Error('טעינת קורא האקסל נכשלה')); document.head.appendChild(s); }); }
+window.evacPublish = async function(obj){
+  if(!ME || ME.mode!=='admin') throw new Error('admin only');
+  if(!obj || !obj.buses) throw new Error('no data');
+  const {dbm,rdb}=await secureDb();
+  await dbm.set(dbm.ref(rdb,SECURE_PATH+'/'+EVAC_KEY), JSON.stringify(obj));
+  _fill(EVAC_DATA, obj);
+  return Object.values(obj.buses).reduce((a,b)=>a+b.rows.length,0);
+};
+window.evacImport = async function(inp){
+  const msg=document.getElementById('evacMsg'); msg.textContent='קורא את הקובץ…'; msg.style.color='var(--text2)';
+  try{
+    const X=await evLoadXlsx();
+    const wb=X.read(await inp.files[0].arrayBuffer(),{type:'array'});
+    const gen=wb.Sheets['כללי'], sum=wb.Sheets['סיכום'];
+    if(!gen) throw new Error('לא נמצאה לשונית "כללי" בקובץ');
+    const A=X.utils.sheet_to_json(gen,{header:1,defval:''});
+    const hi=A.findIndex(r=>r.includes('שם משפחה')); if(hi<0) throw new Error('לא נמצאה שורת הכותרות');
+    const H=A[hi], c=n=>H.indexOf(n), s=v=>String(v==null?'':v).trim();
+    const buses={}; EV_ALL.forEach(r=>buses[r.id]={esc:'',rows:[]});
+    A.slice(hi+1).forEach(r=>{ const id=s(r[c("מס' אוטובוס")]); if(!s(r[c('שם משפחה')])||!buses[id]) return;
+      buses[id].rows.push({last:s(r[c('שם משפחה')]),first:s(r[c('שם פרטי')]),cls:s(r[c('כיתה')]),city:s(r[c('יישוב')]),addr:s(r[c('כתובת')]),
+        ph:s(r[c('נייד תלמיד')]),p1:s(r[c('הורה 1')]),p1ph:s(r[c('נייד הורה 1')]),p2:s(r[c('הורה 2')]),p2ph:s(r[c('נייד הורה 2')]),note:s(r[c('הערות')])}); });
+    if(sum){ X.utils.sheet_to_json(sum,{header:1,defval:''}).forEach(r=>{ const id=s(r[0]); if(buses[id]) buses[id].esc=s(r[2]); }); }
+    const n=await window.evacPublish({updated:new Date().toISOString(),buses});
+    msg.innerHTML='✅ נשמר באזור המוגן: '+n+' תלמידים.'; msg.style.color='#047857';
+    renderEvacLists(); const rt=document.getElementById('ev-routes'); if(rt) rt.innerHTML=viewEvacRoutes();
+  }catch(e){ msg.textContent='❌ '+(e.message||e); msg.style.color='#b03a1a'; }
+};
+
 /* ═══════════ דשבורד בטיחות בטיולים ═══════════ */
 const TRIP_KEY='bogeret_trips_v1';
 const TRIP_CHECK=['אישור הורים','טופס בריאות','מלווה רפואי','אישור משטרה','מאבטח','ביטוח','תדריך בטיחות','רשימת נוסעים','ערכת עזרה ראשונה','תיאום הסעות'];
@@ -3653,20 +3783,25 @@ function reorganize(){
 
   /* ---------- 5. חומרים מקצועיים ---------- */
   const pr=mkSec('prof');
-  const prItems=[{k:'emergency',label:'🚨 פינוי בחירום'},{k:'evac',label:'🚌 דשבורד פינוי'},
-                 {k:'safety',label:'⛑️ בטיחות וטיולים'},{k:'bluebook',label:'📘 הספר הכחול'},{k:'files',label:'📁 קבצים ולינקים'}];
+  const prItems=[{k:'safety',label:'⛑️ בטיחות וטיולים'},{k:'bluebook',label:'📘 הספר הכחול'},{k:'files',label:'📁 קבצים ולינקים'}];
   pr.appendChild(mkNav('pr',prItems,pickIn(pr,'pr')));
-  const pE=mkSub('pr-emergency',true); while(old.emergency.firstChild) pE.appendChild(old.emergency.firstChild);
+  /* פינוי בחירום — לשונית עצמאית בבר העליון */
+  const ev=mkSec('evacplan');
+  ev.appendChild(mkNav('ev',[{k:'routes',label:'🗺️ מסלולים ומפה'},{k:'lists',label:'🚌 רשימות נוסעים'},{k:'cities',label:'📍 חניכי בוגרת לפי יישוב'},{k:'folder',label:'📁 תיק פינוי ואנשי קשר'}],pickIn(ev,'ev')));
+  const eR=mkSub('ev-routes',true); eR.innerHTML=viewEvacRoutes();
+  const eL=mkSub('ev-lists'); eL.innerHTML=viewEvacLists();
+  const eC=mkSub('ev-cities');
+  const pE=mkSub('ev-folder'); while(old.emergency.firstChild) pE.appendChild(old.emergency.firstChild);
   const evacBox=document.createElement('div');
   evacBox.innerHTML = info('🚌','מקומות מגורים — בניית מסלולי נסיעה',
     'ריכוז כל החניכים לפי יישוב, ממוין מהיישוב הגדול לקטן. מיועד לתכנון מסלולי הפינוי וההסעות.')
     + `<div class="panel"><div class="panel-h"><h2>🚌 חניכים לפי יישוב</h2><button class="btn" onclick="refreshEvac()">🔄 רענן</button></div><div class="panel-b" id="evacBody"></div></div>`;
-  pE.appendChild(evacBox);
-  const pS=mkSub('pr-safety');
+  eC.appendChild(evacBox);
+  [eR,eL,eC,pE].forEach(x=>ev.appendChild(x));
+  const pS=mkSub('pr-safety',true);
   pS.innerHTML = info('⛑️','בטיחות וטיולים',
     'ריכוז נהלים, אישורים וטפסים לטיולים ולפעילויות. לחיצה על "הוסף" תיצור רשומה חדשה.')
     + `<div class="panel"><div class="panel-h"><h2>⛑️ נהלים וטפסים</h2><button class="btn" onclick="addKnowledge('safety')">➕ הוסף</button></div><div class="panel-b" id="kn-body-safety"></div></div>`;
-  const pEv=mkSub('pr-evac'); pEv.innerHTML=viewEvacDash();
   const pF=mkSub('pr-files'); pF.innerHTML=viewFiles();
   const pB=mkSub('pr-bluebook');
   pB.innerHTML = info('📘','הספר הכחול – קובץ נהלים לפנימייה החינוכית בכפר הנוער',
@@ -3678,8 +3813,9 @@ function reorganize(){
         </div></div>
        <div class="panel-b" style="padding:0;"><a href="docs/blue-book.pdf#page=6" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>חברי ועדת הנהלים</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 6</span></a><a href="docs/blue-book.pdf#page=7" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>פתח דבר</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 7</span></a><a href="docs/blue-book.pdf#page=8" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>מבוא</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 8</span></a><a href="docs/blue-book.pdf#page=10" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>א. המשנה החינוכית ("החזון")</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 10</span></a><a href="docs/blue-book.pdf#page=11" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ב. התכנית החינוכית בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 11</span></a><a href="docs/blue-book.pdf#page=14" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ג. הפעילות בשגרת היום-יום בכפר הנוער</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 14</span></a><a href="docs/blue-book.pdf#page=17" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ד. כוח אדם בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 17</span></a><a href="docs/blue-book.pdf#page=40" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ה. קבלה וליווי החניך בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 40</span></a><a href="docs/blue-book.pdf#page=45" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ו. נהלי עזיבת / העברת / השעיית / הוצאת חניך מהפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 45</span></a><a href="docs/blue-book.pdf#page=50" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ז. איכות החיים ורווחת הפרט בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 50</span></a><a href="docs/blue-book.pdf#page=61" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ח. ביטחון, בטיחות, שע"ח</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 61</span></a><a href="docs/blue-book.pdf#page=64" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ט. נספחים</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 64</span></a></div></div>`;
   pS.innerHTML=viewTrips();
-  [pE,pEv,pS,pB,pF].forEach(x=>pr.appendChild(x));
+  [pS,pB,pF].forEach(x=>pr.appendChild(x));
   main.appendChild(pr);
+  main.appendChild(ev);
 
   /* ---------- מעקב לימודי + תוכנית חינוכית ---------- */
   const pd=mkSec('pedagogy');
@@ -3713,6 +3849,7 @@ function reorganize(){
   if(window.refreshMedMain) refreshMedMain();
   if(window.refreshDietMain) refreshDietMain();
   if(window.refreshEvac) refreshEvac();
+  if(window.renderEvacLists) renderEvacLists();
   if(window.renderTrips) renderTrips();
   if(window.renderFiles) renderFiles();
   if(window.renderYaSept) renderYaSept();
