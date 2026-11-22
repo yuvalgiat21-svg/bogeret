@@ -1309,6 +1309,7 @@ async function loadPhotos(){
     const ph=(await dbm.get(dbm.ref(rdb,PHOTOS_PATH))).val()||{};
     window.PHOTOS=ph; let n=0;
     STUDENTS_DATA.forEach(s=>{ const d=ph[s.n]; if(d){ s.p=d; n++; } });
+    if(typeof ACAD_STUDENTS!=='undefined') ACAD_STUDENTS.forEach(s=>{ const d=ph[s.n]; if(d){ s.p=d; n++; } });
     if(typeof RAMZOR_DATA_NEW!=='undefined') RAMZOR_DATA_NEW.forEach(r=>{ const d=ph[r.n]; if(d) r.p=d; });
     if(n) refreshPhotos();
     return n;
@@ -1326,8 +1327,10 @@ const SC_ORIGIN='https://mevootyam.smart-campus.co.il';
 function phNorm(x){ return String(x||'').replace(/["'`.\u05f3\u05f4]/g,'').replace(/\s+/g,' ').trim(); }
 function phNameMap(){
   const m={};
-  STUDENTS_DATA.forEach(s=>{ const k=phNorm(s.n); m[k]=s.n;
-    const w=k.split(' '); if(w.length===2) m[w[1]+' '+w[0]]=s.n; });
+  const add=s=>{ const k=phNorm(s.n); m[k]=s.n;
+    const w=k.split(' '); if(w.length===2) m[w[1]+' '+w[0]]=s.n; };
+  STUDENTS_DATA.forEach(add);
+  if(typeof ACAD_STUDENTS!=='undefined') ACAD_STUDENTS.forEach(add);
   return m;
 }
 window.addEventListener('message', async (e)=>{
@@ -3372,17 +3375,15 @@ function syncAcadRamzor(){
 }
 
 function viewAcademyRooms(){
-  return info('🏀','אקדמיה לכדורסל — שיבוץ חדרים',
-    `${acadAll().length} שחקנים ב-${ACADEMY_ROOMS.length} חדרים, משכבות ח׳ עד יב׳.`)
+  return info('🏀','אקדמיה לכדורסל — שיבוץ חדרים בג׳נטילי',
+    `${acadAll().length} שחקנים ב-${ACADEMY_ROOMS.length} חדרים בבניין ג׳נטילי, משכבות ח׳ עד יב׳.`)
    + `<div class="cards" style="margin-bottom:14px;">
       <div class="card" style="border-right:6px solid var(--blue);"><div class="icon">🏀</div><div class="val" style="color:var(--blue)">${acadAll().length}</div><div class="lbl">שחקנים</div></div>
       <div class="card" style="border-right:6px solid var(--purple);"><div class="icon">🏠</div><div class="val" style="color:var(--purple)">${ACADEMY_ROOMS.length}</div><div class="lbl">חדרים</div></div>
       ${["ט'","י'","יא'"].map(l=>`<div class="card" style="border-right:6px solid ${LAY_CLR[l]};"><div class="icon">🎓</div><div class="val" style="color:${LAY_CLR[l]}">${acadAll().filter(x=>x.l===l).length}</div><div class="lbl">שכבה ${l}</div></div>`).join('')}
     </div>
-    <div class="panel"><div class="panel-h"><h2>🏠 שיבוץ חדרים</h2></div><div class="panel-b">
-      ${rmHost('ac', {edit:true, layer:true, color:'var(--purple)'})}
-      <div class="info-box" style="margin-top:14px;background:#fdf1d6;border-color:#f0c674;"><div class="icon">📋</div><div>
-        הרשימה נבנתה משני עמודים מתוך שלושה. ייתכן שחסרים חדרים נוספים — שלח את העמוד השלישי ואשלים.</div></div>
+    <div class="panel"><div class="panel-h"><h2>🏠 שיבוץ חדרים — בניין ג׳נטילי</h2></div><div class="panel-b">
+      ${rmHost('ac', {edit:true, layer:true, color:'var(--purple)', bld:'ג׳נטילי'})}
     </div></div>`;
 }
 function viewAcademyRoster(){
@@ -4961,6 +4962,8 @@ function buildAllSections() {
     if (!groupedStudents[s.g]) groupedStudents[s.g] = [];
     groupedStudents[s.g].push(s);
   });
+  if (typeof ACAD_STUDENTS!=='undefined' && ACAD_STUDENTS.length)
+    groupedStudents['אקדמיה'] = ACAD_STUDENTS.slice();
   
   h += `<div class="sec" id="sec-alphon">
     <div class="info-box"><div class="icon">📋</div><div><b>אלפון חניכים - שכבה בוגרת</b><br>סה"כ ${STUDENTS_DATA.length} חניכים מחולקים ל-5 קבוצות. לחיצה על קבוצה תפילטר את התצוגה.</div></div>
@@ -5658,7 +5661,7 @@ window.show = function(id) {
 const ALPHON_ORDER={"יא'":1,"יב'":2};
 const ALPHON_LBL={"יא'":"שכבה י\u05f4א","יב'":"שכבה י\u05f4ב"};
 function alphonSep(layer){
-  const lbl=ALPHON_LBL[layer]||(layer?('שכבה '+layer):'ללא שכבה');
+  const lbl = layer==='__acad' ? 'אקדמיה לכדורסל' : (ALPHON_LBL[layer]||(layer?('שכבה '+layer):'ללא שכבה'));
   return `<div class="alphon-sep" data-layer="${layer||''}" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;margin:10px 0 2px;">
       <span style="font-weight:800;font-size:13px;color:#8E033C;white-space:nowrap;">${lbl}</span>
       <span class="alphon-sep-n" style="font-size:11px;color:var(--t3);font-weight:600;white-space:nowrap;"></span>
@@ -5688,6 +5691,26 @@ function alphonGrid(groupColors){
         </div>
       `;
   });
+  if(typeof ACAD_STUDENTS!=='undefined' && ACAD_STUDENTS.length){
+    const off=STUDENTS_DATA.length;
+    out+=alphonSep('__acad');
+    ACAD_STUDENTS.map((s,k)=>({s,i:off+k}))
+      .sort((x,y)=>(ALPHON_ORDER[x.s.l]||9)-(ALPHON_ORDER[y.s.l]||9)
+        || String(x.s.n||'').localeCompare(String(y.s.n||''),'he'))
+      .forEach(({s,i})=>{ out+=`
+        <div class="alphon-card" data-name="${s.n}" data-group="${s.g}" data-idx="${i}" onclick="showStudentDetails(${i})" style="background:#fff;border:1px solid var(--brd);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:all 0.2s;cursor:pointer;">
+          ${s.p ? `<img src="${s.p}" alt="${s.n}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:3px solid ${groupColors[s.g]||'#94a3b8'};flex-shrink:0;">` : `<div style="width:54px;height:54px;border-radius:50%;flex-shrink:0;background:${groupColors[s.g]||'#94a3b8'}22;border:3px solid ${groupColors[s.g]||'#94a3b8'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:${groupColors[s.g]||'#475569'};">${s.n.split(' ').slice(0,2).map(w=>w[0]).join('')}</div>`}
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:13.5px;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.n}</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px;">
+              <span style="background:${groupColors[s.g]||'#94a3b8'}20;color:${groupColors[s.g]||'#475569'};padding:2px 8px;border-radius:6px;font-weight:600;">${s.g}</span>
+              ${s.r ? ` · חדר ${s.r}` : ''}${s.city ? ` · ${s.city}` : ''}
+            </div>
+            ${s.ph ? `<div style="font-size:10.5px;color:var(--t3);margin-top:2px;">📱 ${s.ph}</div>` : ''}
+          </div>
+        </div>
+      `;; });
+  }
   return out;
 }
 
@@ -5877,7 +5900,8 @@ window.filterEvt = function(k, btn){
 };
 
 window.showStudentDetails = function(idx) {
-  const s = STUDENTS_DATA[idx];
+  const s = (idx < STUDENTS_DATA.length) ? STUDENTS_DATA[idx]
+          : ((typeof ACAD_STUDENTS!=='undefined') ? ACAD_STUDENTS[idx-STUDENTS_DATA.length] : null);
   if (!s) return;
   const modal = document.getElementById('student-modal');
   const body = document.getElementById('student-modal-body');
