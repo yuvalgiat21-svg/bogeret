@@ -5670,6 +5670,7 @@ function alphonGrid(groupColors){
       (ALPHON_ORDER[x.s.l]||9)-(ALPHON_ORDER[y.s.l]||9)
    || String(x.s.g||'').localeCompare(String(y.s.g||''),'he')
    || String(x.s.n||'').localeCompare(String(y.s.n||''),'he'));
+  setTimeout(()=>{ try{ applyAlphonFilters(); }catch(e){} },0);  /* ספירה לכל שכבה מיד עם הטעינה */
   let cur=null, out='';
   rows.forEach(({s,i})=>{
     if(s.l!==cur){ cur=s.l; out+=alphonSep(cur); }
