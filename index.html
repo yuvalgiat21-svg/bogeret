@@ -4978,19 +4978,7 @@ function buildAllSections() {
     </div>
     
     <div id="alphon-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;">
-      ${STUDENTS_DATA.map((s,i) => `
-        <div class="alphon-card" data-name="${s.n}" data-group="${s.g}" data-idx="${i}" onclick="showStudentDetails(${i})" style="background:#fff;border:1px solid var(--brd);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:all 0.2s;cursor:pointer;">
-          ${s.p ? `<img src="${s.p}" alt="${s.n}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:3px solid ${groupColors[s.g]||'#94a3b8'};flex-shrink:0;">` : `<div style="width:54px;height:54px;border-radius:50%;flex-shrink:0;background:${groupColors[s.g]||'#94a3b8'}22;border:3px solid ${groupColors[s.g]||'#94a3b8'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:${groupColors[s.g]||'#475569'};">${s.n.split(' ').slice(0,2).map(w=>w[0]).join('')}</div>`}
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:700;font-size:13.5px;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.n}</div>
-            <div style="font-size:11px;color:var(--t3);margin-top:2px;">
-              <span style="background:${groupColors[s.g]||'#94a3b8'}20;color:${groupColors[s.g]||'#475569'};padding:2px 8px;border-radius:6px;font-weight:600;">${s.g}</span>
-              ${s.r ? ` · חדר ${s.r}` : ''}${s.city ? ` · ${s.city}` : ''}
-            </div>
-            ${s.ph ? `<div style="font-size:10.5px;color:var(--t3);margin-top:2px;">📱 ${s.ph}</div>` : ''}
-          </div>
-        </div>
-      `).join('')}
+      ${alphonGrid(groupColors)}
     </div>
     
     <!-- Modal של פרטי חניך -->
@@ -5665,6 +5653,43 @@ window.show = function(id) {
 
 
 // פונקציות סינון אלפון
+
+/* ── אלפון: רשת מופרדת לפי שכבות ── */
+const ALPHON_ORDER={"יא'":1,"יב'":2};
+const ALPHON_LBL={"יא'":"שכבה י\u05f4א","יב'":"שכבה י\u05f4ב"};
+function alphonSep(layer){
+  const lbl=ALPHON_LBL[layer]||(layer?('שכבה '+layer):'ללא שכבה');
+  return `<div class="alphon-sep" data-layer="${layer||''}" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;margin:10px 0 2px;">
+      <span style="font-weight:800;font-size:13px;color:#8E033C;white-space:nowrap;">${lbl}</span>
+      <span class="alphon-sep-n" style="font-size:11px;color:var(--t3);font-weight:600;white-space:nowrap;"></span>
+      <span style="flex:1;height:2px;background:linear-gradient(90deg,#F3C2B0,transparent);border-radius:2px;"></span>
+    </div>`;
+}
+function alphonGrid(groupColors){
+  const rows=STUDENTS_DATA.map((s,i)=>({s,i})).sort((x,y)=>
+      (ALPHON_ORDER[x.s.l]||9)-(ALPHON_ORDER[y.s.l]||9)
+   || String(x.s.g||'').localeCompare(String(y.s.g||''),'he')
+   || String(x.s.n||'').localeCompare(String(y.s.n||''),'he'));
+  let cur=null, out='';
+  rows.forEach(({s,i})=>{
+    if(s.l!==cur){ cur=s.l; out+=alphonSep(cur); }
+    out+=`
+        <div class="alphon-card" data-name="${s.n}" data-group="${s.g}" data-idx="${i}" onclick="showStudentDetails(${i})" style="background:#fff;border:1px solid var(--brd);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:all 0.2s;cursor:pointer;">
+          ${s.p ? `<img src="${s.p}" alt="${s.n}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:3px solid ${groupColors[s.g]||'#94a3b8'};flex-shrink:0;">` : `<div style="width:54px;height:54px;border-radius:50%;flex-shrink:0;background:${groupColors[s.g]||'#94a3b8'}22;border:3px solid ${groupColors[s.g]||'#94a3b8'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:${groupColors[s.g]||'#475569'};">${s.n.split(' ').slice(0,2).map(w=>w[0]).join('')}</div>`}
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:13.5px;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.n}</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px;">
+              <span style="background:${groupColors[s.g]||'#94a3b8'}20;color:${groupColors[s.g]||'#475569'};padding:2px 8px;border-radius:6px;font-weight:600;">${s.g}</span>
+              ${s.r ? ` · חדר ${s.r}` : ''}${s.city ? ` · ${s.city}` : ''}
+            </div>
+            ${s.ph ? `<div style="font-size:10.5px;color:var(--t3);margin-top:2px;">📱 ${s.ph}</div>` : ''}
+          </div>
+        </div>
+      `;
+  });
+  return out;
+}
+
 window.alphonGroupFilter = 'all';
 window.filterAlphonGroup = function(group) {
   window.alphonGroupFilter = group;
@@ -5697,6 +5722,19 @@ window.applyAlphonFilters = function() {
     if (visible) visibleCount++;
   });
   
+  // הסתרת מפריד של שכבה שאין בה תוצאות + ספירה לכל שכבה
+  const grid=document.getElementById('alphon-grid');
+  if(grid){
+    let sep=null, n=0;
+    const close=()=>{ if(sep){ sep.style.display = n? 'flex':'none';
+      const c=sep.querySelector('.alphon-sep-n'); if(c) c.textContent = n? '· '+n+' חניכים' : ''; } };
+    [...grid.children].forEach(el=>{
+      if(el.classList.contains('alphon-sep')){ close(); sep=el; n=0; }
+      else if(el.classList.contains('alphon-card') && el.style.display!=='none') n++;
+    });
+    close();
+  }
+
   // עדכון מספר תוצאות
   const countEl = document.getElementById('alphon-count');
   if (countEl) {
