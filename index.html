@@ -2565,7 +2565,8 @@ function viewEvacDash(){
 /* ═══════════ תוכנית פינוי בחירום תשפ"ז — לשונית עצמאית ═══════════
    המסלולים (יישובים ומרחקים) כאן בקוד — בלי שמות.
    רשימות הנוסעים, הטלפונים והמלווים נשמרים רק באזור המוגן בענן (EVAC_5787). */
-const EVAC_ROUTES = [{"id": "1", "region": "דימונה, הערבה ואילת", "km": 861, "c": "#E63946", "veh": "מיניבוס", "stops": ["נבטים", "דימונה", "נאות הכיכר", "עידן", "אילת"]}, {"id": "2", "region": "הר הנגב", "km": 551, "c": "#F4A261", "veh": "מיניבוס", "stops": ["רביבים", "שדה בוקר ומדרשת בן גוריון", "מצפה רמון", "באר מילכה"]}, {"id": "3", "region": "קריות, גליל וגולן", "km": 384, "c": "#2A9D8F", "veh": "אוטובוס", "stops": ["שפרעם", "קרית אתא", "קרית ביאליק", "קרית מוצקין", "קרית ים", "שבי ציון", "נהריה", "יערה", "געתון", "אמירים", "צפת", "צבעון", "שדה אליעזר", "יסוד המעלה", "עין זיוון", "קצרין", "כנף", "נטור"]}, {"id": "4", "region": "מזרח ושומרון", "km": 242, "c": "#264653", "veh": "אוטובוס", "stops": ["חיננית", "חרמש", "שקד", "מבוא דותן", "שבי שומרון", "פצאל", "אריאל", "ברקן", "בית אריה", "ראש העין", "אורנית", "שער השומרון", "צופים", "כוכב יאיר", "צור יצחק"]}, {"id": "5", "region": "עוטף עזה, מערב הנגב ובאר שבע", "km": 394, "c": "#E76F51", "veh": "אוטובוס", "stops": ["אשדוד", "ניצני סיני", "אשקלון", "יד מרדכי", "ארז", "שדרות", "דורות", "רעים", "אופקים", "באר שבע", "עומר", "כרמים", "קרית גת"]}, {"id": "6", "region": "ירושלים והסביבה", "km": 347, "c": "#8E033C", "veh": "אוטובוס", "stops": ["מודיעין-מכבים-רעות", "צרעה", "בית שמש", "מטע", "שריגים-לי און", "קרית ארבע", "נוקדים", "אלמוג", "ירושלים", "מבשרת ציון"]}, {"id": "7", "region": "שפלה", "km": 261, "c": "#6A4C93", "veh": "אוטובוס", "stops": ["חמד", "בית דגן", "ראשון לציון", "נס ציונה", "באר יעקב", "נצר סרני", "רחובות", "גן יבנה", "מזכרת בתיה", "משמר דוד", "טל שחר", "כפר בן נון", "בית חשמונאי", "נען", "רמלה", "לוד", "שוהם", "נעלה"]}, {"id": "8", "region": "גוש דן", "km": 142, "c": "#1982C4", "veh": "אוטובוס", "stops": ["פתח תקווה (מחלף גהה)", "גבעת שמואל (מחלף קוקה קולה)", "קרית אונו (קניון)", "גני תקווה", "נופך", "יהוד מונסון", "אור יהודה", "חולון מזרח (ההסתדרות)", "חולון (קניון)", "תל אביב (השלום)", "תל אביב (סבידור)", "גבעתיים (קניון)", "רמת גן (צומת השלישות)"]}, {"id": "9", "region": "שרון צפון", "km": 99, "c": "#8AC926", "veh": "אוטובוס", "stops": ["אביאל", "פרדס חנה-כרכור", "אליכין", "גבעת חיים", "כפר יונה", "גאולים", "שער אפריים", "עין שריד", "תל מונד", "קדימה-צורן", "צור משה", "פרדסיה", "משמר השרון", "מעברות", "חרב לאת", "בית חירות"]}, {"id": "10", "region": "שרון דרום", "km": 96, "c": "#FF595E", "veh": "אוטובוס", "stops": ["כפר נטר", "תל יצחק", "חרות", "רמת הכובש", "כפר סבא", "הוד השרון", "רמת השרון", "הרצליה", "רעננה", "בני ציון", "שפיים", "געש"]}, {"id": "11", "region": "ואדי ערה, העמקים ובקעת בית שאן", "km": 256, "c": "#3A86FF", "veh": "אוטובוס", "stops": ["חריש", "עין חרוד", "בית אלפא", "ניר דוד", "רשפים", "דגניה ב'", "לוטם", "אבטליון", "עין מאהל", "נוף הגליל", "מגדל העמק", "מי עמי"]}, {"id": "12", "region": "חדרה, חוף הכרמל וחיפה", "km": 156, "c": "#B5179E", "veh": "אוטובוס", "stops": ["חדרה", "רמת ישי", "זרזיר", "קרית טבעון", "שער העמקים", "נשר", "חיפה", "טירת כרמל", "זכרון יעקב", "אור עקיבא"]}, {"id": "13", "region": "נתניה", "km": 40, "c": "#FC5028", "veh": "אוטובוס", "stops": ["נתניה צפון", "נתניה מרכזית", "נתניה ותיקים/נווה איתמר", "נתניה פולג", "נורדיה"]}];
+const EVAC_ROUTES = [{"id": "1", "region": "דימונה, הערבה ואילת", "km": 861, "c": "#E63946", "veh": "מיניבוס", "stops": ["נבטים", "דימונה", "נאות הכיכר", "עידן", "אילת"], "pts": [[31.213, 34.937], [31.069, 35.033], [30.932, 35.372], [30.818, 35.297], [29.557, 34.952]]}, {"id": "2", "region": "הר הנגב", "km": 551, "c": "#F4A261", "veh": "מיניבוס", "stops": ["רביבים", "שדה בוקר ומדרשת בן גוריון", "מצפה רמון", "באר מילכה"], "pts": [[31.045, 34.72], [30.86, 34.785], [30.61, 34.801], [30.93, 34.4]]}, {"id": "3", "region": "קריות, גליל וגולן", "km": 384, "c": "#2A9D8F", "veh": "אוטובוס", "stops": ["שפרעם", "קרית אתא", "קרית ביאליק", "קרית מוצקין", "קרית ים", "שבי ציון", "נהריה", "יערה", "געתון", "אמירים", "צפת", "צבעון", "שדה אליעזר", "יסוד המעלה", "עין זיוון", "קצרין", "כנף", "נטור"], "pts": [[32.806, 35.17], [32.806, 35.106], [32.837, 35.088], [32.837, 35.077], [32.849, 35.067], [32.982, 35.083], [33.006, 35.098], [33.068, 35.183], [33.003, 35.211], [32.938, 35.45], [32.964, 35.496], [33.034, 35.483], [33.043, 35.567], [33.058, 35.604], [33.1, 35.78], [32.99, 35.69], [32.882, 35.7], [32.853, 35.753]]}, {"id": "4", "region": "מזרח ושומרון", "km": 242, "c": "#264653", "veh": "אוטובוס", "stops": ["חיננית", "חרמש", "שקד", "מבוא דותן", "שבי שומרון", "פצאל", "אריאל", "ברקן", "בית אריה", "ראש העין", "אורנית", "שער השומרון", "צופים", "כוכב יאיר", "צור יצחק"], "pts": [[32.469, 35.111], [32.463, 35.15], [32.48, 35.168], [32.432, 35.182], [32.266, 35.2], [32.053, 35.452], [32.104, 35.173], [32.108, 35.106], [32.036, 35.051], [32.095, 34.957], [32.131, 34.988], [32.14, 35.04], [32.17, 34.998], [32.224, 34.99], [32.24, 34.997]]}, {"id": "5", "region": "עוטף עזה, מערב הנגב ובאר שבע", "km": 394, "c": "#E76F51", "veh": "אוטובוס", "stops": ["אשדוד", "ניצני סיני", "אשקלון", "יד מרדכי", "ארז", "שדרות", "דורות", "רעים", "אופקים", "באר שבע", "עומר", "כרמים", "קרית גת"], "pts": [[31.801, 34.65], [31.7, 34.598], [31.668, 34.574], [31.588, 34.557], [31.56, 34.565], [31.525, 34.596], [31.503, 34.65], [31.39, 34.459], [31.314, 34.62], [31.252, 34.791], [31.265, 34.85], [31.333, 34.896], [31.61, 34.77]]}, {"id": "6", "region": "ירושלים והסביבה", "km": 347, "c": "#8E033C", "veh": "אוטובוס", "stops": ["מודיעין-מכבים-רעות", "צרעה", "בית שמש", "מטע", "שריגים-לי און", "קרית ארבע", "נוקדים", "אלמוג", "ירושלים", "מבשרת ציון"], "pts": [[31.898, 35.01], [31.772, 34.978], [31.747, 34.989], [31.73, 35.068], [31.674, 34.928], [31.53, 35.12], [31.64, 35.245], [31.79, 35.46], [31.783, 35.205], [31.8, 35.15]]}, {"id": "7", "region": "שפלה", "km": 261, "c": "#6A4C93", "veh": "אוטובוס", "stops": ["חמד", "בית דגן", "ראשון לציון", "נס ציונה", "באר יעקב", "נצר סרני", "רחובות", "גן יבנה", "מזכרת בתיה", "משמר דוד", "טל שחר", "כפר בן נון", "בית חשמונאי", "נען", "רמלה", "לוד", "שוהם", "נעלה"], "pts": [[32.01, 34.85], [32.002, 34.83], [31.964, 34.796], [31.93, 34.799], [31.942, 34.835], [31.922, 34.822], [31.894, 34.811], [31.788, 34.707], [31.853, 34.84], [31.82, 34.9], [31.805, 34.908], [31.862, 34.958], [31.893, 34.922], [31.883, 34.857], [31.929, 34.866], [31.951, 34.895], [31.999, 34.946], [31.983, 35.07]]}, {"id": "8", "region": "גוש דן", "km": 142, "c": "#1982C4", "veh": "אוטובוס", "stops": ["פתח תקווה (מחלף גהה)", "גבעת שמואל (מחלף קוקה קולה)", "קרית אונו (קניון)", "גני תקווה", "נופך", "יהוד מונסון", "אור יהודה", "חולון מזרח (ההסתדרות)", "חולון (קניון)", "תל אביב (השלום)", "תל אביב (סבידור)", "גבעתיים (קניון)", "רמת גן (צומת השלישות)"], "pts": [[32.096, 34.858], [32.077, 34.848], [32.058, 34.857], [32.061, 34.873], [32.026, 34.926], [32.031, 34.887], [32.029, 34.853], [32.012, 34.795], [32.016, 34.777], [32.073, 34.792], [32.084, 34.798], [32.071, 34.81], [32.077, 34.824]]}, {"id": "9", "region": "שרון צפון", "km": 99, "c": "#8AC926", "veh": "אוטובוס", "stops": ["אביאל", "פרדס חנה-כרכור", "אליכין", "גבעת חיים", "כפר יונה", "גאולים", "שער אפריים", "עין שריד", "תל מונד", "קדימה-צורן", "צור משה", "פרדסיה", "משמר השרון", "מעברות", "חרב לאת", "בית חירות"], "pts": [[32.52, 34.99], [32.473, 34.97], [32.408, 34.922], [32.398, 34.93], [32.316, 34.935], [32.288, 34.94], [32.262, 34.963], [32.233, 34.937], [32.252, 34.918], [32.277, 34.917], [32.3, 34.912], [32.305, 34.903], [32.358, 34.91], [32.378, 34.908], [32.392, 34.899], [32.383, 34.882]]}, {"id": "10", "region": "שרון דרום", "km": 96, "c": "#FF595E", "veh": "אוטובוס", "stops": ["כפר נטר", "תל יצחק", "חרות", "רמת הכובש", "כפר סבא", "הוד השרון", "רמת השרון", "הרצליה", "רעננה", "בני ציון", "שפיים", "געש"], "pts": [[32.28, 34.873], [32.252, 34.872], [32.24, 34.885], [32.222, 34.94], [32.178, 34.907], [32.15, 34.89], [32.146, 34.84], [32.166, 34.843], [32.184, 34.871], [32.218, 34.877], [32.222, 34.823], [32.23, 34.822]]}, {"id": "11", "region": "ואדי ערה, העמקים ובקעת בית שאן", "km": 256, "c": "#3A86FF", "veh": "אוטובוס", "stops": ["חריש", "עין חרוד", "בית אלפא", "ניר דוד", "רשפים", "דגניה ב'", "לוטם", "אבטליון", "עין מאהל", "נוף הגליל", "מגדל העמק", "מי עמי"], "pts": [[32.462, 35.045], [32.56, 35.39], [32.517, 35.431], [32.503, 35.455], [32.477, 35.481], [32.702, 35.572], [32.88, 35.34], [32.84, 35.32], [32.719, 35.35], [32.708, 35.327], [32.676, 35.24], [32.522, 35.098]]}, {"id": "12", "region": "חדרה, חוף הכרמל וחיפה", "km": 156, "c": "#B5179E", "veh": "אוטובוס", "stops": ["חדרה", "רמת ישי", "זרזיר", "קרית טבעון", "שער העמקים", "נשר", "חיפה", "טירת כרמל", "זכרון יעקב", "אור עקיבא"], "pts": [[32.437, 34.919], [32.704, 35.171], [32.728, 35.222], [32.716, 35.127], [32.722, 35.1], [32.766, 35.044], [32.8, 34.99], [32.76, 34.971], [32.571, 34.953], [32.505, 34.918]]}, {"id": "13", "region": "נתניה", "km": 40, "c": "#FC5028", "veh": "אוטובוס", "stops": ["נתניה צפון", "נתניה מרכזית", "נתניה ותיקים/נווה איתמר", "נתניה פולג", "נורדיה"], "pts": [[32.345, 34.862], [32.33, 34.857], [32.3, 34.858], [32.278, 34.855], [32.316, 34.9]]}];
+const EV_HOME=[32.406,34.87];
 const EV_LOCAL={id:'מקומי',region:'גרים במבואות ים – ללא הסעה',km:0,c:'#7A6A66',veh:'ללא הסעה',stops:[]};
 const EV_ALL=EVAC_ROUTES.concat([EV_LOCAL]);
 const EVAC_DATA = {};
@@ -2688,6 +2689,124 @@ window.evacImport = async function(inp){
     msg.innerHTML='✅ נשמר באזור המוגן: '+n+' תלמידים.'; msg.style.color='#047857';
     renderEvacLists(); const rt=document.getElementById('ev-routes'); if(rt) rt.innerHTML=viewEvacRoutes();
   }catch(e){ msg.textContent='❌ '+(e.message||e); msg.style.color='#b03a1a'; }
+};
+
+/* ═══════════ פינוי בחירום — מעקב חי אחרי האוטובוסים ═══════════
+   המדריך המוביל משתף מיקום מהטלפון (הפורטל פתוח), והמפה מתעדכנת אצל כולם.
+   המיקומים נשמרים בענן רק לצוות המחובר, ונמחקים בסוף הנסיעה. */
+const EV_LIVE_PATH='portal/bogeret/live/evac';
+const EV_SEND_MS=20000, EV_STALE_MS=3*60000;
+window.EV_LIVE={};
+let evMap=null, evMarkers={}, evWatch=null, evWake=null, evBeat=null, evMine=null, evLast=null, evLastSent=0, evListening=false;
+
+function viewEvacLive(){
+  return info('📡','מעקב חי אחרי האוטובוסים',
+      `המדריך/ה המוביל/ה בכל אוטובוס בוחר/ת את הקו ולוחץ/ת "התחל שיתוף". המיקום מתעדכן כל 20 שניות במפה, אצל כל הצוות המחובר.<br>
+       <span style="font-size:12px;color:var(--text2);"><b>חשוב:</b> להשאיר את הפורטל פתוח על המסך כל הנסיעה, ולחבר את הטלפון למטען. אם נועלים את המסך או עוברים לאפליקציה אחרת, השיתוף נעצר עד שחוזרים. גיבוי: שיתוף מיקום חי בקבוצת הווטסאפ של המלווים.</span>`)
+   + `<div class="panel" style="margin-bottom:14px;"><div class="panel-h"><h2>📲 שיתוף המיקום שלי</h2></div><div class="panel-b">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">באיזה קו אני המדריך/ה המוביל/ה?</div>
+      <div id="evLiveChips" style="margin-bottom:10px;">${EVAC_ROUTES.map(r=>`<button onclick="evLivePick('${r.id}')" data-id="${r.id}" style="border:1.5px solid ${r.c};background:#fff;color:${r.c};border-radius:99px;padding:5px 13px;font-size:13px;font-weight:700;cursor:pointer;margin:3px;font-family:Heebo;">קו ${r.id}</button>`).join('')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button id="evLiveGo" onclick="evLiveStart()" style="background:#FC5028;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-family:Heebo;font-weight:800;font-size:15px;cursor:pointer;">▶️ התחל שיתוף</button>
+        <button onclick="evLiveStop()" style="background:#fff;color:#8E033C;border:1.5px solid #8E033C;border-radius:10px;padding:9px 16px;font-family:Heebo;font-weight:700;font-size:14px;cursor:pointer;">⏹ עצור שיתוף</button>
+        <span id="evLiveStatus" style="font-size:13px;color:var(--text2);">לא משתף</span>
+      </div></div></div>
+    <div class="panel" style="margin-bottom:14px;"><div class="panel-h"><h2>🗺️ איפה האוטובוסים עכשיו</h2>
+      ${(window.ME&&ME.mode==='admin')?`<button class="btn btn-secondary" onclick="evLiveClear()">🧹 ניקוי המיקומים (בסוף הנסיעה)</button>`:''}</div>
+      <div class="panel-b" style="padding:0;"><div id="evLiveMap" style="height:560px;border-radius:0 0 12px 12px;"></div></div></div>
+    <div class="panel"><div class="panel-h"><h2>🚌 מצב הקווים</h2></div><div class="panel-b" id="evLiveTable"></div></div>`;
+}
+function evAgo(t){ const m=Math.round((Date.now()-t)/60000); return m<1?'עכשיו':m===1?'לפני דקה':`לפני ${m} דק'`; }
+function evLoadLeaflet(){ return window.L ? Promise.resolve(window.L) : new Promise((res,rej)=>{
+  const c=document.createElement('link'); c.rel='stylesheet'; c.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(c);
+  const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+  s.onload=()=>res(window.L); s.onerror=()=>rej(new Error('טעינת המפה נכשלה')); document.head.appendChild(s); }); }
+
+window.evLiveInit=async function(){
+  const el=document.getElementById('evLiveMap'); if(!el) return;
+  try{
+    const L=await evLoadLeaflet();
+    if(!evMap){
+      evMap=L.map(el,{zoomControl:true}).setView([31.9,34.95],8);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(evMap);
+      EVAC_ROUTES.forEach(r=>{
+        L.polyline([EV_HOME].concat(r.pts),{color:r.c,weight:2.5,opacity:.45,dashArray:'6 6'}).addTo(evMap);
+        r.pts.forEach((p,i)=>L.circleMarker(p,{radius:3,color:r.c,weight:1.5,fillColor:'#fff',fillOpacity:1}).bindTooltip(`קו ${r.id} · ${i+1}. ${r.stops[i]}`).addTo(evMap));
+      });
+      L.circleMarker(EV_HOME,{radius:7,color:'#fff',weight:2,fillColor:'#FC5028',fillOpacity:1}).bindTooltip('מבואות ים',{permanent:true,direction:'left'}).addTo(evMap);
+    }
+    setTimeout(()=>evMap.invalidateSize(),200);
+  }catch(e){ el.innerHTML=`<div style="padding:30px;text-align:center;color:#b03a1a;">${e.message||e}</div>`; }
+  if(!evListening){
+    evListening=true;
+    try{ const {dbm,rdb}=await secureDb();
+      dbm.onValue(dbm.ref(rdb,EV_LIVE_PATH), snap=>{ window.EV_LIVE=snap.val()||{}; evLiveDraw(); }, err=>{ console.warn('live:',err); });
+    }catch(e){ evListening=false; console.warn('live:',e); }
+  }
+  evLiveDraw();
+  if(!window.evLiveTick) window.evLiveTick=setInterval(evLiveDraw,30000);
+};
+function evLiveDraw(){
+  const L=window.L, D=window.EV_LIVE||{};
+  if(evMap && L){
+    EVAC_ROUTES.forEach(r=>{
+      const d=D[r.id], mk=evMarkers[r.id];
+      if(!d||!d.lat){ if(mk){ evMap.removeLayer(mk); delete evMarkers[r.id]; } return; }
+      const stale=Date.now()-d.t>EV_STALE_MS || d.stopped;
+      const ic=L.divIcon({className:'',iconSize:[34,34],iconAnchor:[17,17],
+        html:`<div style="width:34px;height:34px;border-radius:50%;background:${stale?'#9aa5b1':r.c};color:#fff;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font:800 13px Heebo,sans-serif;">${r.id}</div>`});
+      const tip=`<b>קו ${r.id}</b> · ${r.region}<br>${d.by||''}<br>עודכן ${evAgo(d.t)}${d.stopped?' · השיתוף הופסק':''}`;
+      if(mk){ mk.setLatLng([d.lat,d.lng]); mk.setIcon(ic); mk.setPopupContent(tip); }
+      else evMarkers[r.id]=L.marker([d.lat,d.lng],{icon:ic}).bindPopup(tip).addTo(evMap);
+    });
+  }
+  const tb=document.getElementById('evLiveTable'); if(!tb) return;
+  tb.innerHTML=`<div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>קו</th><th>אזור</th><th>מצב</th><th>עדכון אחרון</th><th>משתף/ת</th><th></th></tr></thead><tbody>
+    ${EVAC_ROUTES.map(r=>{ const d=D[r.id];
+      const st=!d?['⚪ לא משדר','#7A6A66']:d.stopped?['⏹ השיתוף הופסק','#7A6A66']:(Date.now()-d.t>EV_STALE_MS)?['🟠 אין עדכון','#b45309']:['🟢 משדר','#047857'];
+      return `<tr style="background:#fff;"><td style="padding:6px 9px;"><span style="display:inline-block;width:11px;height:11px;border-radius:3px;background:${r.c};margin-left:6px;"></span><b>${r.id}</b></td>
+        <td style="padding:6px 9px;">${r.region}</td><td style="padding:6px 9px;font-weight:700;color:${st[1]};white-space:nowrap;">${st[0]}</td>
+        <td style="padding:6px 9px;white-space:nowrap;">${d?evAgo(d.t):'—'}</td><td style="padding:6px 9px;">${d&&d.by?d.by:'—'}</td>
+        <td style="padding:6px 9px;">${d&&d.lat?`<button onclick="evLiveFocus('${r.id}')" style="border:1px solid var(--border);background:#fff;border-radius:8px;padding:3px 10px;cursor:pointer;font-family:Heebo;">📍 במפה</button>`:''}</td></tr>`;}).join('')}
+    </tbody></table></div>`;
+}
+window.evLiveFocus=function(id){ const d=(window.EV_LIVE||{})[id]; if(evMap&&d){ evMap.setView([d.lat,d.lng],12); const m=evMarkers[id]; if(m) m.openPopup(); document.getElementById('evLiveMap').scrollIntoView({behavior:'smooth',block:'center'}); } };
+window.evLivePick=function(id){ evMine=id;
+  document.querySelectorAll('#evLiveChips button').forEach(b=>{ const r=EVAC_ROUTES.find(x=>x.id===b.dataset.id); const on=b.dataset.id===id; b.style.background=on?r.c:'#fff'; b.style.color=on?'#fff':r.c; });
+  const g=document.getElementById('evLiveGo'); if(g) g.textContent='▶️ התחל שיתוף – קו '+id; };
+function evStatus(t,c){ const s=document.getElementById('evLiveStatus'); if(s){ s.textContent=t; s.style.color=c||'var(--text2)'; } }
+async function evSend(extra){
+  if(!evMine||!evLast) return;
+  const {dbm,rdb}=await secureDb();
+  const p=evLast.coords;
+  await dbm.set(dbm.ref(rdb,EV_LIVE_PATH+'/'+evMine), Object.assign({lat:+p.latitude.toFixed(5),lng:+p.longitude.toFixed(5),acc:Math.round(p.accuracy||0),spd:p.speed?Math.round(p.speed*3.6):0,t:Date.now(),by:(window.ME&&ME.n)||''},extra||{}));
+  evLastSent=Date.now();
+  evStatus(`🟢 משתף – קו ${evMine} · נשלח ${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})} · דיוק ${Math.round(p.accuracy||0)} מ'`,'#047857');
+}
+async function evWakeOn(){ try{ if('wakeLock' in navigator && document.visibilityState==='visible') evWake=await navigator.wakeLock.request('screen'); }catch(e){} }
+document.addEventListener('visibilitychange',()=>{ if(evWatch!==null && document.visibilityState==='visible'){ evWakeOn(); evSend().catch(()=>{}); } });
+window.evLiveStart=function(){
+  if(!evMine){ evStatus('קודם בוחרים קו למעלה','#b03a1a'); return; }
+  if(!('geolocation' in navigator)){ evStatus('הטלפון הזה לא תומך בשיתוף מיקום','#b03a1a'); return; }
+  if(evWatch!==null) navigator.geolocation.clearWatch(evWatch);
+  evStatus('מבקש הרשאת מיקום… יש ללחוץ "אישור" בחלון שנפתח');
+  evWatch=navigator.geolocation.watchPosition(pos=>{
+      evLast=pos; if(Date.now()-evLastSent>=EV_SEND_MS) evSend().catch(e=>evStatus('❌ השליחה נכשלה: '+(e.message||e),'#b03a1a'));
+    }, err=>{ evStatus(err.code===1?'❌ לא ניתנה הרשאת מיקום. יש לאשר מיקום לדפדפן בהגדרות הטלפון.':'⚠️ אין קליטת מיקום כרגע – ממשיך לנסות','#b03a1a'); },
+    {enableHighAccuracy:true,maximumAge:10000,timeout:30000});
+  clearInterval(evBeat); evBeat=setInterval(()=>{ if(evLast) evSend().catch(()=>{}); },30000);
+  evWakeOn();
+  if(!evListening) evLiveInit();
+};
+window.evLiveStop=async function(){
+  if(evWatch!==null) navigator.geolocation.clearWatch(evWatch); evWatch=null; clearInterval(evBeat);
+  try{ if(evWake) await evWake.release(); }catch(e){} evWake=null;
+  try{ if(evMine && evLast) await evSend({stopped:true}); }catch(e){}
+  evStatus('לא משתף');
+};
+window.evLiveClear=async function(){
+  if(!confirm('למחוק את כל המיקומים מהמפה? לעשות רק בסוף הנסיעה.')) return;
+  const {dbm,rdb}=await secureDb(); await dbm.remove(dbm.ref(rdb,EV_LIVE_PATH));
 };
 
 /* ═══════════ דשבורד בטיחות בטיולים ═══════════ */
@@ -3791,8 +3910,9 @@ function reorganize(){
   pr.appendChild(mkNav('pr',prItems,pickIn(pr,'pr')));
   /* פינוי בחירום — לשונית עצמאית בבר העליון */
   const ev=mkSec('evacplan');
-  ev.appendChild(mkNav('ev',[{k:'routes',label:'🗺️ מסלולים ומפה'},{k:'lists',label:'🚌 רשימות נוסעים'},{k:'cities',label:'📍 חניכי בוגרת לפי יישוב'}],pickIn(ev,'ev')));
+  ev.appendChild(mkNav('ev',[{k:'routes',label:'🗺️ מסלולים ומפה'},{k:'live',label:'📡 מעקב חי'},{k:'lists',label:'🚌 רשימות נוסעים'},{k:'cities',label:'📍 חניכי בוגרת לפי יישוב'}],k=>{ pickIn(ev,'ev')(k); if(k==='live') evLiveInit(); }));
   const eR=mkSub('ev-routes',true); eR.innerHTML=viewEvacRoutes();
+  const eV=mkSub('ev-live'); eV.innerHTML=viewEvacLive();
   const eL=mkSub('ev-lists'); eL.innerHTML=viewEvacLists();
   const eC=mkSub('ev-cities');
   const pE=mkSub('ev-folder'); while(old.emergency.firstChild) pE.appendChild(old.emergency.firstChild);
@@ -3801,7 +3921,7 @@ function reorganize(){
     'ריכוז כל החניכים לפי יישוב, ממוין מהיישוב הגדול לקטן. מיועד לתכנון מסלולי הפינוי וההסעות.')
     + `<div class="panel"><div class="panel-h"><h2>🚌 חניכים לפי יישוב</h2><button class="btn" onclick="refreshEvac()">🔄 רענן</button></div><div class="panel-b" id="evacBody"></div></div>`;
   eC.appendChild(evacBox);
-  [eR,eL,eC].forEach(x=>ev.appendChild(x));
+  [eR,eV,eL,eC].forEach(x=>ev.appendChild(x));
   const pS=mkSub('pr-safety',true);
   pS.innerHTML = info('⛑️','בטיחות וטיולים',
     'ריכוז נהלים, אישורים וטפסים לטיולים ולפעילויות. לחיצה על "הוסף" תיצור רשומה חדשה.')
