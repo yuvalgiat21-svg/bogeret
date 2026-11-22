@@ -1321,6 +1321,31 @@ function refreshPhotos(){
     if(first) first.outerHTML=avatar(s,54,GRP_CLR[s.g]||'#94a3b8');
   });
 }
+/* קליטת תמונות מסמרט קמפוס — רק מהאתר של מבואות ים, ורק לרכז */
+const SC_ORIGIN='https://mevootyam.smart-campus.co.il';
+function phNorm(x){ return String(x||'').replace(/["'`.\u05f3\u05f4]/g,'').replace(/\s+/g,' ').trim(); }
+function phNameMap(){
+  const m={};
+  STUDENTS_DATA.forEach(s=>{ const k=phNorm(s.n); m[k]=s.n;
+    const w=k.split(' '); if(w.length===2) m[w[1]+' '+w[0]]=s.n; });
+  return m;
+}
+window.addEventListener('message', async (e)=>{
+  if(e.origin!==SC_ORIGIN) return;
+  const d=e.data; if(!d || d.type!=='bogeret-photos') return;
+  const reply=o=>{ try{ e.source.postMessage(Object.assign({type:'bogeret-photos-ack',seq:d.seq},o), e.origin); }catch(_){} };
+  try{
+    if(!ME || ME.mode!=='admin') throw new Error('admin only');
+    const map=phNameMap(), out={}, miss=[];
+    Object.entries(d.payload||{}).forEach(([name,data])=>{
+      const canon=map[phNorm(name)];
+      if(canon) out[canon]=data; else miss.push(name);
+    });
+    if(Object.keys(out).length) await photosUpload(out);
+    reply({ok:true, saved:Object.keys(out).length, unmatched:miss});
+  }catch(err){ reply({ok:false, err:String((err&&err.message)||err)}); }
+});
+
 /* כתיבת תמונות לכספת — רכז בלבד */
 window.photosUpload=async function(obj){
   if(!ME || ME.mode!=='admin') throw new Error('admin only');
