@@ -1317,7 +1317,10 @@ async function loadPhotos(){
 }
 function refreshPhotos(){
   document.querySelectorAll('.alphon-card').forEach(c=>{
-    const s=STUDENTS_DATA[+c.dataset.idx]; if(!s||!s.p) return;
+    const ix=+c.dataset.idx;
+    const s=(ix<STUDENTS_DATA.length)?STUDENTS_DATA[ix]
+           :((typeof ACAD_STUDENTS!=='undefined')?ACAD_STUDENTS[ix-STUDENTS_DATA.length]:null);
+    if(!s||!s.p) return;
     const first=c.firstElementChild;
     if(first) first.outerHTML=avatar(s,54,GRP_CLR[s.g]||'#94a3b8');
   });
