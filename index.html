@@ -787,7 +787,9 @@ function authSave(o){ try{localStorage.setItem(AUTH_KEY,JSON.stringify(o));}catc
 
 /* ═══════════════════ שכבה 1: זיהוי מול Firebase ═══════════════════ */
 var FBAUTH=null, FBUSER=null;
-async function fbInit(){
+let FB_INIT_P=null;
+async function fbInit(){ return FB_INIT_P || (FB_INIT_P=fbInit_()); }
+async function fbInit_(){
   const appMod = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
   const authMod = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
   const app = appMod.getApps().length ? appMod.getApp() : appMod.initializeApp(FB_CONFIG);
@@ -1015,6 +1017,8 @@ function _fill(t,v){
 }
 async function secureDb(){
   if(!FBAUTH) await fbInit();
+  /* החיבור לפעמים נופל זמן קצר אחרי הכניסה — מחזירים את המשתמש שכבר זוהה */
+  if(!FBAUTH.a.currentUser && FBUSER){ try{ await FBAUTH.m.updateCurrentUser(FBAUTH.a, FBUSER); }catch(e){} }
   if(!FBAUTH.a.currentUser){
     await new Promise(res=>{ const un=FBAUTH.m.onAuthStateChanged(FBAUTH.a,u=>{ if(u){ un(); res(); } }); setTimeout(res,10000); });
   }
