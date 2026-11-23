@@ -451,6 +451,80 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 .lb-lic{font-size:30px;width:54px;height:54px;border-radius:14px;background:#FFF1EB;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .lb-link b{display:block;font-family:'Heebo';font-size:16px;} .lb-link small{display:block;font-size:12px;color:#7A6A66;margin-top:2px;}
 .lb-go{margin-inline-start:auto;font-size:20px;color:#FC5028;font-weight:800;}
+#sccal .ic{border:0;background:none;font-size:18px;cursor:pointer;padding:6px 8px;border-radius:8px;color:#8E033C}
+#sccal .ic:hover{background:#FFF1EB}
+#sccal .muted{color:#7A6A66;font-size:13px}
+#sccal .search{flex:0 1 320px;padding:8px 12px;border:1px solid #F3C2B0;border-radius:10px;font:15px Assistant,Arial;direction:rtl}
+#sccal .pill{border:1px solid #F3C2B0;background:#fff;border-radius:14px;padding:4px 12px;font:600 13px Assistant,Arial;cursor:pointer;color:#2b1d1a}
+#sccal .pill.on{background:#8E033C;border-color:#8E033C;color:#fff}
+#sccal .agenda{display:flex;flex-direction:column;gap:10px;max-width:900px}
+#sccal .day{background:#fff;border:1px solid #F3C2B0;border-radius:12px;padding:8px 12px}
+#sccal .day.wk{background:#fffaf7}
+#sccal .day h4{margin:0 0 4px;font:700 14px Heebo,Arial;color:#8E033C}
+#sccal .ev{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:4px 0;border-top:1px solid #f6e3db}
+#sccal .ev:first-of-type{border-top:0}
+#sccal .ev .t{font-weight:600}#sccal .ev .w{font-size:13px;color:#7A6A66}#sccal .ev .cs{margin-inline-start:auto}
+#sccal .calbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+#sccal .caltitle{margin:0 8px;font:800 20px Heebo,Arial;color:#8E033C;min-width:170px}
+#sccal .calbar .search{flex:0 1 220px}
+#sccal .seg{display:inline-flex;border:1px solid #F3C2B0;border-radius:10px;overflow:hidden;margin-inline-start:auto}
+#sccal .seg button{border:0;background:#fff;padding:6px 14px;font:600 14px Assistant,Arial;cursor:pointer;color:#2b1d1a}
+#sccal .seg button+button{border-inline-start:1px solid #F3C2B0}
+#sccal .seg button.on{background:#FC5028;color:#fff}
+#sccal .calwrap{display:flex;gap:12px;align-items:flex-start}
+#sccal .calmain{flex:1;min-width:0}
+#sccal .layers{flex:0 0 215px;background:#fff;border:1px solid #F3C2B0;border-radius:12px;padding:10px 12px;position:sticky;top:0}
+#sccal .layers h5{margin:6px 0 4px;font:700 13px Heebo,Arial;color:#8E033C}
+#sccal .layers label{display:flex;align-items:center;gap:6px;font-size:13px;padding:2px 0;cursor:pointer}
+#sccal .layers label small{margin-inline-start:auto;color:#7A6A66}
+#sccal .layers label.none{opacity:.5}
+#sccal .layers p{font-size:11px;margin:8px 0 0}
+#sccal .lyr-act{font-size:12px;margin-top:4px}
+#sccal .sw{display:inline-block;width:11px;height:11px;border-radius:3px;flex:none}
+#sccal .srcdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-inline-end:3px;flex:none;vertical-align:middle;border:1px solid #fff}
+#sccal .srcdot.s5{background:#8E033C}#sccal .srcdot.s6{background:#FC5028}#sccal .srcdot.s7{background:#5b3cc4}
+#sccal .month{background:#fff;border:1px solid #F3C2B0;border-radius:12px;overflow:hidden}
+#sccal .mhead{display:grid;grid-template-columns:repeat(7,1fr);background:#FFF1EB}
+#sccal .mhead div{padding:6px 8px;font:700 13px Heebo,Arial;color:#8E033C}
+#sccal .mhead .we{color:#2763b5}
+#sccal .mweek{position:relative;display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid #f3dcd3}
+#sccal .mcell{position:relative;border-inline-start:1px solid #f6e3db;padding:3px 6px;cursor:default}
+#sccal .mcell:first-child{border-inline-start:0}
+#sccal .mcell.we{background:#fbf8ff}
+#sccal .mcell.out{background:#faf7f6}#sccal .mcell.out .mnum{opacity:.45}
+#sccal .mnum{display:flex;gap:6px;align-items:baseline;font-size:12px;white-space:nowrap;overflow:hidden}
+#sccal .mnum b{font:700 13px Heebo,Arial}
+#sccal .mnum span{font-size:10.5px;color:#7A6A66;overflow:hidden;text-overflow:ellipsis}
+#sccal .mcell.today .mnum b{background:#FC5028;color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center}
+#sccal .more{position:absolute;bottom:2px;right:6px;font-size:11px;color:#8E033C}
+#sccal .cbar{position:absolute;background:var(--c);color:#fff;border-radius:5px;font-size:12px;line-height:16px;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;box-sizing:border-box}
+#sccal .cbar.timed{background:#fff;color:#2b1d1a;border-inline-start:4px solid var(--c)}
+#sccal .cbar.cl{border-top-right-radius:0;border-bottom-right-radius:0}#sccal .cbar.cr{border-top-left-radius:0;border-bottom-left-radius:0}
+#sccal .cbar:hover,#sccal .tev:hover{filter:brightness(.92)}
+#sccal .tgrid{background:#fff;border:1px solid #F3C2B0;border-radius:12px;overflow:hidden}
+#sccal .tg-head{display:grid;background:#FFF1EB}
+#sccal .tg-head>div{padding:6px;text-align:center;cursor:pointer}
+#sccal .tg-head b{display:block;font:700 13px Heebo,Arial;color:#8E033C}
+#sccal .tg-head span{font-size:11px;color:#7A6A66}
+#sccal .tg-head .today b{color:#FC5028}
+#sccal .tg-all{display:flex;border-top:1px solid #f3dcd3}
+#sccal .tg-lbl{flex:0 0 52px;font-size:11px;color:#7A6A66;padding:4px}
+#sccal .tg-allin{position:relative;flex:1}
+#sccal .tg-body{display:grid;border-top:1px solid #F3C2B0;max-height:62vh;overflow:auto}
+#sccal .tg-hours div{font-size:11px;color:#7A6A66;text-align:center;border-top:1px solid #f6e3db;box-sizing:border-box;padding-top:2px}
+#sccal .tg-col{position:relative;border-inline-start:1px solid #f6e3db}
+#sccal .tg-col.we{background:#fbf8ff}#sccal .tg-col.today{background:#fff8f4}
+#sccal .tg-hr{position:absolute;left:0;right:0;border-top:1px solid #f6e3db}
+#sccal .tg-now{position:absolute;left:0;right:0;border-top:2px solid #c0262d;z-index:2}
+#sccal .tev{position:absolute;background:#fff;border:1px solid #eee;border-inline-start:4px solid var(--c);border-radius:5px;font-size:12px;padding:1px 5px;overflow:hidden;cursor:pointer;box-sizing:border-box;z-index:1}
+#sccal .tev b{color:#7A6A66;font-weight:700;font-size:11px}
+#sccal .ev{cursor:pointer}#sccal .ev .sw{margin-inline-end:2px}
+#sccal .pop{position:fixed;z-index:5;top:120px;left:50%;transform:translateX(-50%);width:min(440px,92vw);background:#fff;border:1px solid #F3C2B0;border-top:6px solid var(--c);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:12px 16px;display:flex;flex-direction:column;gap:6px}
+#sccal .pop h4{margin:0;font:800 17px Heebo,Arial;color:#2b1d1a;padding-left:24px}
+#sccal .pop .px{position:absolute;left:8px;top:6px}
+@media (max-width:900px){#sccal .calwrap{flex-direction:column}#sccal .layers{position:static;width:100%;flex:none}}
+#sccal .empty{text-align:center;padding:30px;color:#7A6A66;line-height:1.9}
+#sccal .pop{z-index:9000}
 .gantt-d.past { opacity:.62; }
 .gantt-d .gd-ck { position:absolute; bottom:0; left:2px; font-size:10px; font-weight:900; color:#047857; line-height:1; }
 .gantt-d.has-ev .gd-ck { color:#fff; text-shadow:0 0 2px rgba(0,0,0,.55); }
@@ -3131,6 +3205,288 @@ function viewMokedTeva(){
   </div></div>`;
 }
 
+
+/* ═══════════ יומן סמרט קמפוס — לוח שנה (יום/שבוע/חודש/רשימה) ═══════════
+   הנתונים נשלחים מהתוסף "סמרט קמפוס פלוס" (כפתור "שלח לפורטל בוגרת" במסך היומנים) ונשמרים באזור המוגן.
+   התצוגה היא העתק של cal-grid.js מהתוסף (קוד שלנו), בלי ימי הולדת של הצוות. */
+const SCCAL_PATH='portal/bogeret/secure/calendar';
+const PCG=(()=>{
+  const d={pad:n=>String(n).padStart(2,'0')};
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+  const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+  const DSHORT = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+  const H0 = 7, H1 = 24, HPX = 44; // שעות בתצוגת שבוע/יום
+
+  // מקורות (יומני סמרט קמפוס) ושכבות (סוגי אירועים). הסדר בשכבות חשוב: הראשונה שמתאימה קובעת.
+  const SOURCES = [
+    [5, 'לוח פז – יומן צוות'],
+    [6, 'יומן חניכים'],
+    [7, 'יומן בוגרת (רמות ים)'],
+  ];
+  const LAYERS = [
+    { id: 'closed', name: 'שבתות סגורות, יציאות וחופשות', color: '#c0262d', test: (e) => /שבת בית|יציאה הביתה|יציאת אקדמיה|חזרה לפנימי|חופש|יום גשר|סגור/.test(e.title) },
+    { id: 'shabbat', name: 'שבתות בפנימייה', color: '#2763b5', test: (e) => /^שבת|סופ"?ש/.test(e.title) },
+    { id: 'ceremony', name: 'טקסים וימי ציון', color: '#8E033C', test: (e) => /טקס|ציון|זיכרון|זכרון|השואה|עצמאות|רבין|הדלקת נר/.test(e.title) },
+    { id: 'trip', name: 'טיולים ומסעות', color: '#1f8a4c', test: (e) => e.typeId === 28 || /טיול|מסע|פולין|סיור|גדנ/.test(e.title) },
+    { id: 'exam', name: 'מבחנים ולמידה', color: '#5b3cc4', test: (e) => e.cals.includes(7) && (e.typeId === 21 || /מבחן|בחינ|בגרות|בוחן|מתכונ|שיעור|מטלה|עבודה/.test(e.title)) },
+    { id: 'staff', name: 'צוות, ישיבות והשתלמויות', color: '#6b5a56', test: (e) => e.typeId === 27 || /ישיבת|השתלמות|הכשרה|צוות|קומונה|סיכום שנה/.test(e.title) },
+    { id: 'other', name: 'אירועים ופעילויות', color: '#FC5028', test: () => true },
+    { id: 'holiday', name: 'חגים ומועדים', color: '#0f8b8d', extra: true },
+    { id: 'bday', name: 'ימי הולדת צוות', color: '#d99a00', extra: true },
+  ];
+  const L = Object.fromEntries(LAYERS.map((l) => [l.id, l]));
+
+  const iso = (x) => `${x.getFullYear()}-${d.pad(x.getMonth() + 1)}-${d.pad(x.getDate())}`;
+  const dt = (s) => new Date(s + 'T12:00:00');
+  const add = (s, n) => { const x = dt(s); x.setDate(x.getDate() + n); return iso(x); };
+  const days = (a, b) => Math.round((dt(b) - dt(a)) / 864e5);
+  const short = (s) => { const [, m, dd] = s.split('-'); return `${+dd}.${+m}`; };
+  const norm = (t) => (t || '').replace(/["'״׳]/g, '').replace(/[\s\-–()]+/g, ' ').trim();
+  const mins = (hm) => { const [h, m] = (hm || '0:0').split(':').map(Number); return h * 60 + m; };
+
+  // ---- הכנה: איחוד אותו אירוע ביומנים 5/6, סיווג לשכבה, ימי הולדת וחגים ----
+  function build(groups, workers, heb, from, to) {
+    const merged = {};
+    for (const x of groups) {
+      const k = `${norm(x.title)}|${x.start}|${x.end}|${x.time || ''}`;
+      const m = merged[k] || (merged[k] = { k, title: x.title, start: x.start, end: x.end, time: x.time, endTime: x.endTime, typeId: x.typeId, type: x.type, comment: x.comment, cals: [], ids: [] });
+      if (!m.cals.includes(x.cal)) m.cals.push(x.cal);
+      m.ids.push(...x.ids.slice(0, 1));
+      if (!m.comment && x.comment) m.comment = x.comment;
+    }
+    const ev = Object.values(merged);
+    ev.forEach((e) => { e.cals.sort(); e.layer = LAYERS.find((l) => !l.extra && l.test(e)).id; });
+
+    // ימי הולדת צוות – רק שם ויום (בלי שנה וגיל)
+    const y0 = +from.slice(0, 4), y1 = +to.slice(0, 4);
+    for (const w of workers || []) {
+      if (!w.birthday) continue;
+      const md = String(w.birthday).slice(5, 10);
+      if (!/^\d\d-\d\d$/.test(md)) continue;
+      for (let y = y0; y <= y1; y++) {
+        const day = `${y}-${md}`;
+        if (day < from || day > to) continue;
+        const name = `${w.name || ''} ${w.last_name || ''}`.trim();
+        ev.push({ k: `b|${w.id}|${y}`, title: `🎂 ${name}`, start: day, end: day, layer: 'bday', cals: [], note: 'יום הולדת' });
+      }
+    }
+    // חגים ומועדים (Hebcal)
+    const hebDate = {}, parasha = {};
+    for (const h of heb || []) {
+      const day = String(h.date).slice(0, 10);
+      if (h.category === 'hebdate') hebDate[day] = (h.hebrew || '').replace(/\s*תש[^\s]*$/, '');
+      else if (h.category === 'parashat') parasha[day] = h.hebrew || h.title;
+      else if (['holiday', 'roshchodesh', 'modern'].includes(h.category)) {
+        const k = `h|${day}|${h.title}`;
+        ev.push({ k, title: h.hebrew || h.title, start: day, end: day, layer: 'holiday', cals: [], note: h.memo || '' });
+      }
+    }
+    return { ev, hebDate, parasha };
+  }
+
+  function visible(B, prefs) {
+    return B.ev.filter((e) => prefs.layers[e.layer] !== false && (!e.cals.length || e.cals.some((c) => prefs.sources[c] !== false)))
+      .filter((e) => !prefs.q || e.title.includes(prefs.q) || (e.comment || '').includes(prefs.q));
+  }
+  const overlaps = (e, a, b) => e.start <= b && e.end >= a;
+  const allDay = (e) => !e.time || e.start !== e.end;
+  const color = (e) => L[e.layer].color;
+  const srcTag = (e) => e.cals.map((c) => `<span class="srcdot s${c}" title="${esc(SOURCES.find((s) => s[0] === c)[1])}"></span>`).join('');
+
+  // ---- הקצאת "נתיבים" לפסים רב-יומיים בתוך טווח של ימים (שבוע) ----
+  function lanes(list, a, b) {
+    const segs = list.map((e) => {
+      const s = e.start < a ? a : e.start, t = e.end > b ? b : e.end;
+      return { e, c0: days(a, s), c1: days(a, t), cutL: e.start < a, cutR: e.end > b };
+    }).sort((x, y) => x.c0 - y.c0 || (y.c1 - y.c0) - (x.c1 - x.c0) || (x.e.time || '').localeCompare(y.e.time || ''));
+    const ends = [];
+    segs.forEach((s) => { let i = 0; while (ends[i] !== undefined && ends[i] >= s.c0) i++; ends[i] = s.c1; s.lane = i; });
+    return segs;
+  }
+  const bar = (s, cols, top, h) => {
+    const e = s.e, w = (100 / cols);
+    const label = `${e.time && e.start === e.end ? `<b>${e.time}</b> ` : ''}${esc(e.title)}`;
+    return `<div class="cbar ${s.cutL ? 'cl' : ''} ${s.cutR ? 'cr' : ''} ${e.time && e.start === e.end ? 'timed' : ''}" data-k="${esc(e.k)}"
+      style="right:calc(${s.c0 * w}% + 2px);width:calc(${(s.c1 - s.c0 + 1) * w}% - 4px);top:${top}px;height:${h}px;--c:${color(e)}">${srcTag(e)}${label}</div>`;
+  };
+
+  // ---- חודש ----
+  function month(B, list, anchor, today) {
+    const first = anchor.slice(0, 8) + '01';
+    const start = add(first, -dt(first).getDay());
+    const realLast = iso(new Date(+first.slice(0, 4), +first.slice(5, 7), 0)); // היום האחרון בחודש
+    const weeks = Math.ceil((days(start, realLast) + 1) / 7);
+    const MAXL = 4, LH = 19, TOP = 26;
+    let html = `<div class="mhead">${DAYS.map((x, i) => `<div class="${i >= 5 ? 'we' : ''}">${x}</div>`).join('')}</div>`;
+    for (let w = 0; w < weeks; w++) {
+      const a = add(start, w * 7), b = add(a, 6);
+      const segs = lanes(list.filter((e) => overlaps(e, a, b)), a, b);
+      const hidden = Array(7).fill(0);
+      segs.filter((s) => s.lane >= MAXL).forEach((s) => { for (let c = s.c0; c <= s.c1; c++) hidden[c]++; });
+      html += `<div class="mweek" style="height:${TOP + MAXL * LH + 18}px">
+        ${Array.from({ length: 7 }, (_, c) => { const day = add(a, c), x = dt(day);
+          return `<div class="mcell ${day.slice(0, 7) !== first.slice(0, 7) ? 'out' : ''} ${day === today ? 'today' : ''} ${c >= 5 ? 'we' : ''}" data-day="${day}">
+            <div class="mnum"><b>${x.getDate()}</b><span>${esc(B.hebDate[day] || '')}${B.parasha[day] ? ' · ' + esc(B.parasha[day]) : ''}</span></div>
+            ${hidden[c] ? `<a href="#" class="more" data-goday="${day}">+${hidden[c]} נוספים</a>` : ''}</div>`; }).join('')}
+        ${segs.filter((s) => s.lane < MAXL).map((s) => bar(s, 7, TOP + s.lane * LH, LH - 3)).join('')}
+      </div>`;
+    }
+    return `<div class="month">${html}</div>`;
+  }
+
+  // ---- שבוע / יום: פס אירועים של יום שלם למעלה, ומתחת רשת שעות ----
+  function timeGrid(B, list, a, n, today) {
+    const b = add(a, n - 1);
+    const top = lanes(list.filter((e) => allDay(e) && overlaps(e, a, b)), a, b);
+    const nl = top.reduce((m, s) => Math.max(m, s.lane + 1), 0);
+    const LH = 20;
+    const cols = Array.from({ length: n }, (_, c) => add(a, c));
+    const timed = list.filter((e) => !allDay(e) && e.start >= a && e.start <= b);
+    const head = `<div class="tg-head" style="grid-template-columns:52px repeat(${n},1fr)"><div></div>${cols.map((day) => { const x = dt(day);
+      return `<div class="${day === today ? 'today' : ''} ${x.getDay() >= 5 ? 'we' : ''}" data-goday="${day}"><b>${DAYS[x.getDay()]} ${x.getDate()}</b><span>${esc(B.hebDate[day] || '')}${B.parasha[day] ? ' · ' + esc(B.parasha[day]) : ''}</span></div>`; }).join('')}</div>`;
+    const alld = `<div class="tg-all"><div class="tg-lbl">כל היום</div><div class="tg-allin" style="height:${Math.max(1, nl) * LH + 6}px">${top.map((s) => bar(s, n, 3 + s.lane * LH, LH - 3)).join('')}</div></div>`;
+    const hours = Array.from({ length: H1 - H0 }, (_, i) => H0 + i);
+    const body = cols.map((day) => {
+      const evs = timed.filter((e) => e.start === day).sort((x, y) => mins(x.time) - mins(y.time));
+      const colEnd = [];
+      evs.forEach((e) => { const s = mins(e.time), t = e.endTime ? Math.max(mins(e.endTime), s + 30) : s + 60; e._s = s; e._t = t; let i = 0; while (colEnd[i] !== undefined && colEnd[i] > s) i++; colEnd[i] = t; e._c = i; });
+      const nc = Math.max(1, colEnd.length);
+      const now = new Date(), nowM = now.getHours() * 60 + now.getMinutes();
+      return `<div class="tg-col ${day === today ? 'today' : ''} ${dt(day).getDay() >= 5 ? 'we' : ''}" style="height:${(H1 - H0) * HPX}px">
+        ${hours.map((h) => `<div class="tg-hr" style="top:${(h - H0) * HPX}px"></div>`).join('')}
+        ${day === today && nowM >= H0 * 60 ? `<div class="tg-now" style="top:${(nowM - H0 * 60) / 60 * HPX}px"></div>` : ''}
+        ${evs.map((e) => `<div class="tev" data-k="${esc(e.k)}" style="top:${Math.max(0, (e._s - H0 * 60) / 60 * HPX)}px;height:${Math.max(20, (e._t - e._s) / 60 * HPX - 2)}px;right:${e._c * 100 / nc}%;width:calc(${100 / nc}% - 3px);--c:${color(e)}">
+          <b>${e.time}${e.endTime ? '–' + e.endTime : ''}</b> ${srcTag(e)}${esc(e.title)}</div>`).join('')}
+      </div>`;
+    }).join('');
+    const grid = `<div class="tg-body" style="grid-template-columns:52px repeat(${n},1fr)"><div class="tg-hours">${hours.map((h) => `<div style="height:${HPX}px">${d.pad(h)}:00</div>`).join('')}</div>${body}</div>`;
+    return `<div class="tgrid">${head}${alld}${grid}</div>`;
+  }
+
+  // ---- רשימה (30 יום מהתאריך) ----
+  function listView(B, list, a, today) {
+    const b = add(a, 30);
+    const by = {};
+    list.filter((e) => overlaps(e, a, b)).forEach((e) => { const day = e.start < a ? a : e.start; (by[day] = by[day] || []).push(e); });
+    const ks = Object.keys(by).sort();
+    if (!ks.length) return '<div class="empty">אין אירועים בטווח הזה.</div>';
+    return `<div class="agenda">${ks.map((day) => { const x = dt(day);
+      return `<section class="day ${x.getDay() >= 5 ? 'wk' : ''}"><h4>${day === today ? 'היום · ' : ''}יום ${DAYS[x.getDay()]} ${short(day)} <small class="muted">${esc(B.hebDate[day] || '')}</small></h4>
+        ${by[day].sort((p, q) => (p.time || '').localeCompare(q.time || '')).map((e) => `<div class="ev" data-k="${esc(e.k)}"><span class="sw" style="background:${color(e)}"></span><span class="t">${esc(e.title)}</span>
+          <span class="w">${e.start !== e.end ? short(e.start) + '–' + short(e.end) : ''}${e.time ? ' ' + e.time + (e.endTime ? '–' + e.endTime : '') : ''}</span><span class="cs">${srcTag(e)}</span></div>`).join('')}</section>`; }).join('')}</div>`;
+  }
+
+  // ---- כותרת הטווח ----
+  function title(mode, a) {
+    const x = dt(a);
+    if (mode === 'month') return `${MONTHS[x.getMonth()]} ${x.getFullYear()}`;
+    if (mode === 'day') return `יום ${DAYS[x.getDay()]}, ${x.getDate()} ב${MONTHS[x.getMonth()]} ${x.getFullYear()}`;
+    if (mode === 'week') { const s = add(a, -x.getDay()), e = add(s, 6); return `${short(s)} – ${short(e)}.${e.slice(0, 4)}`; }
+    return `30 יום מ-${short(a)}`;
+  }
+  const step = (mode, a, n) => {
+    if (mode === 'month') { const x = dt(a.slice(0, 8) + '01'); x.setMonth(x.getMonth() + n); return iso(x); }
+    return add(a, n * (mode === 'week' ? 7 : mode === 'day' ? 1 : 30));
+  };
+
+  function render(B, prefs, mode, anchor, today) {
+    const list = visible(B, prefs);
+    if (mode === 'month') return month(B, list, anchor, today);
+    if (mode === 'week') { const a = add(anchor, -dt(anchor).getDay()); return timeGrid(B, list, a, 7, today); }
+    if (mode === 'day') return timeGrid(B, list, anchor, 1, today);
+    return listView(B, list, anchor, today);
+  }
+
+  function panel(B, prefs) {
+    const cnt = {};
+    B.ev.forEach((e) => (cnt[e.layer] = (cnt[e.layer] || 0) + 1));
+    return `<aside class="layers">
+      <h5>מקורות</h5>
+      ${SOURCES.map(([id, n]) => `<label><input type="checkbox" data-src="${id}" ${prefs.sources[id] !== false ? 'checked' : ''}><span class="srcdot s${id}"></span>${n}</label>`).join('')}
+      <h5>שכבות</h5>
+      ${LAYERS.map((l) => `<label class="${cnt[l.id] ? '' : 'none'}"><input type="checkbox" data-layer="${l.id}" ${prefs.layers[l.id] !== false ? 'checked' : ''}><span class="sw" style="background:${l.color}"></span>${l.name}<small>${cnt[l.id] || 0}</small></label>`).join('')}
+      <div class="lyr-act"><a href="#" data-alllayers="1">הכול</a> · <a href="#" data-alllayers="0">כלום</a></div>
+      <p class="muted">הסיווג לשכבות נעשה לפי מילים בשם האירוע ולפי סוג המפגש. חגים, תאריך עברי ופרשת השבוע מ-Hebcal.</p>
+    </aside>`;
+  }
+
+  function details(B, k) {
+    const e = B.ev.find((x) => x.k === k);
+    if (!e) return '';
+    const when = e.start === e.end ? `יום ${DAYS[dt(e.start).getDay()]} ${short(e.start)}` : `${short(e.start)} – ${short(e.end)} (${days(e.start, e.end) + 1} ימים)`;
+    return `<div class="pop" style="--c:${color(e)}"><button class="ic px" data-closepop>✕</button>
+      <h4>${esc(e.title)}</h4>
+      <div>${when}${e.time ? ` · ${e.time}${e.endTime ? '–' + e.endTime : ''}` : ' · כל היום'}</div>
+      <div class="muted">${esc(L[e.layer].name)}${e.type ? ' · ' + esc(e.type) : ''}${e.note ? ' · ' + esc(e.note) : ''}</div>
+      ${e.cals.length ? `<div>${e.cals.map((c) => `<span class="srcdot s${c}"></span>${esc(SOURCES.find((s) => s[0] === c)[1])}`).join(' &nbsp; ')}</div>` : ''}
+      ${e.comment ? `<div class="why">${esc(e.comment)}</div>` : ''}</div>`;
+  }
+
+  return { render, panel, details, title, step, LAYERS, iso, add, esc };
+})();
+let SCCAL=undefined;
+const SCC_ST={mode:'month', anchor:PCG.iso(new Date()), q:'', pop:null};
+function sccPrefs(){ let p={}; try{ p=JSON.parse(localStorage.getItem('bogeret_sccal_prefs')||'{}'); }catch(e){}
+  return {layers:p.layers||{}, sources:p.sources||{}, mode:p.mode, q:SCC_ST.q.trim()}; }
+function sccSavePrefs(ch){ try{ const p=JSON.parse(localStorage.getItem('bogeret_sccal_prefs')||'{}'); localStorage.setItem('bogeret_sccal_prefs',JSON.stringify(Object.assign(p,ch))); }catch(e){} }
+async function sccLoad(){
+  if(SCCAL!==undefined) return SCCAL;
+  try{ const {dbm,rdb}=await secureDb(); const s=await dbm.get(dbm.ref(rdb,SCCAL_PATH)); SCCAL=s.exists()?JSON.parse(s.val()):null; }
+  catch(e){ SCCAL=null; }
+  return SCCAL;
+}
+window.scCalRender=async function(){
+  const el=document.getElementById('sccal'); if(!el) return;
+  const B=await sccLoad();
+  if(!B){ el.innerHTML=`<div class="empty">🗓️ לוח השנה עוד לא נשלח מסמרט קמפוס.<br>${(typeof ME!=='undefined'&&ME&&ME.mode==='admin')?'בסמרט קמפוס: ✚ פלוס ← יומנים ← <b>📤 שלח לפורטל בוגרת</b>.':'הוא יופיע כאן אחרי שהרכז ישלח אותו.'}</div>`; return; }
+  const pf=sccPrefs(); if(pf.mode) SCC_ST.mode=pf.mode;
+  const today=PCG.iso(new Date()), esc=PCG.esc;
+  const modes=[['day','יום'],['week','שבוע'],['month','חודש'],['list','רשימה']];
+  const upd=B.generated?new Date(B.generated):null;
+  el.innerHTML=`<div class="calbar">
+      <button class="pill" data-nav="0">היום</button>
+      <button class="pill" data-nav="-1" title="הקודם">›</button><button class="pill" data-nav="1" title="הבא">‹</button>
+      <h3 class="caltitle">${PCG.title(SCC_ST.mode,SCC_ST.anchor)}</h3>
+      <input class="search" placeholder="חיפוש אירוע" value="${esc(SCC_ST.q)}">
+      <span class="seg">${modes.map(([k,l])=>`<button class="${SCC_ST.mode===k?'on':''}" data-mode="${k}">${l}</button>`).join('')}</span>
+    </div>
+    <div class="calwrap">${PCG.panel(B,pf)}<div class="calmain">${PCG.render(B,pf,SCC_ST.mode,SCC_ST.anchor,today)}
+      <p class="muted">מקור: יומני סמרט קמפוס (5 צוות, 6 חניכים, 7 בוגרת)${upd?` · עודכן ${upd.toLocaleDateString('he-IL')} ${upd.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}`:''}</p></div></div>
+    ${SCC_ST.pop?PCG.details(B,SCC_ST.pop):''}`;
+  const rr=()=>scCalRender();
+  el.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{ SCC_ST.mode=b.dataset.mode; sccSavePrefs({mode:SCC_ST.mode}); rr(); });
+  el.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{ const n=+b.dataset.nav; SCC_ST.anchor=n?PCG.step(SCC_ST.mode,SCC_ST.anchor,n):PCG.iso(new Date()); SCC_ST.pop=null; rr(); });
+  el.querySelectorAll('[data-goday]').forEach(b=>b.onclick=e=>{ e.preventDefault(); e.stopPropagation(); SCC_ST.anchor=b.dataset.goday; SCC_ST.mode='day'; SCC_ST.pop=null; rr(); });
+  el.querySelectorAll('.mcell[data-day]').forEach(c=>c.ondblclick=()=>{ SCC_ST.anchor=c.dataset.day; SCC_ST.mode='day'; rr(); });
+  el.querySelectorAll('[data-k]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); SCC_ST.pop=b.dataset.k; rr(); });
+  el.querySelectorAll('[data-closepop]').forEach(b=>b.onclick=()=>{ SCC_ST.pop=null; rr(); });
+  const setP=(key,id,on)=>{ const o=sccPrefs()[key]; o[id]=on; sccSavePrefs({[key]:o}); rr(); };
+  el.querySelectorAll('input[data-layer]').forEach(b=>b.onchange=()=>setP('layers',b.dataset.layer,b.checked));
+  el.querySelectorAll('input[data-src]').forEach(b=>b.onchange=()=>setP('sources',b.dataset.src,b.checked));
+  el.querySelectorAll('[data-alllayers]').forEach(a=>a.onclick=e=>{ e.preventDefault(); const on=a.dataset.alllayers==='1'; sccSavePrefs({layers:Object.fromEntries(PCG.LAYERS.map(l=>[l.id,on]))}); rr(); });
+  const s=el.querySelector('.search');
+  if(s) s.oninput=()=>{ SCC_ST.q=s.value; const pos=s.selectionStart; rr().then(()=>{ const n=el.querySelector('.search'); if(n){ n.focus(); n.setSelectionRange(pos,pos);} }); };
+};
+/* קבלת היומנים מהתוסף בסמרט קמפוס — רכז בלבד */
+let SCC_LASTSEQ=null;
+window.addEventListener('message', async (e)=>{
+  if(e.origin!==SC_ORIGIN) return;
+  const m=e.data; if(!m || m.type!=='bogeret-cal') return;
+  const reply=o=>{ try{ e.source.postMessage(Object.assign({type:'bogeret-cal-ack',seq:m.seq},o), e.origin); }catch(_){} };
+  if(typeof ME==='undefined' || !ME) return reply({ok:false, wait:true});
+  if(ME.mode!=='admin') return reply({ok:false, err:'רק הרכז יכול לעדכן את היומן'});
+  if(SCC_LASTSEQ===m.seq) return reply({ok:true, dup:true});
+  SCC_LASTSEQ=m.seq;
+  try{
+    const P=m.payload||{}; if(!Array.isArray(P.ev)) throw new Error('נתונים לא תקינים');
+    P.ev=P.ev.filter(x=>x.layer!=='bday');
+    const {dbm,rdb}=await secureDb(); await dbm.set(dbm.ref(rdb,SCCAL_PATH), JSON.stringify(P));
+    SCCAL=P; scCalRender();
+    reply({ok:true, count:P.ev.length});
+  }catch(err){ SCC_LASTSEQ=null; reply({ok:false, err:String((err&&err.message)||err)}); }
+});
+
 /* ═══════════ לינקים חשובים ═══════════ */
 const LINKS=[
   {ic:'🏫',t:'סמרט קמפוס',d:'מערכת הפנימייה: תיק אישי, רשימות חניכים ונוכחות',u:'https://mevootyam.smart-campus.co.il'},
@@ -4279,6 +4635,7 @@ function reorganize(){
   if(window.renderFiles) renderFiles();
   if(window.renderImportant) renderImportant();
   if(window.renderTripLib) renderTripLib();
+  if(window.scCalRender) scCalRender();
   if(window.renderYaSept) renderYaSept();
   if(window.renderYaFiles) renderYaFiles();
   if(window.renderUsers) renderUsers();
@@ -4777,14 +5134,18 @@ function buildAllSections() {
 
   h += `<div class="sec" id="sec-calendar">
     <div class="subnav" id="calSubnav">
-      <button class="active" onclick="subTab('cal','gantt',this)">📌 גאנט שנתי</button>
+      <button class="active" onclick="subTab('cal','scgrid',this);scCalRender()">🗓️ לוח שנה — סמרט קמפוס</button>
+      <button onclick="subTab('cal','gantt',this)">📌 גאנט שנתי</button>
       <button onclick="subTab('cal','events',this)">🗓️ לוח שבתות ואירועים</button>
       <button onclick="subTab('cal','luz',this)">🕘 לו"ז רכז עקרוני</button>
       <button onclick="subTab('cal','school',this)">🏫 יומן מתכלל — בי"ס ופנימייה</button>
     </div>
 
+    <!-- ===== לוח שנה מסמרט קמפוס ===== -->
+    <div class="subsec active" id="cal-scgrid"><div id="sccal"><div class="empty">טוען…</div></div></div>
+
     <!-- ===== גאנט ===== -->
-    <div class="subsec active" id="cal-gantt">
+    <div class="subsec" id="cal-gantt">
       <div class="info-box"><div class="icon">📌</div><div><b>גאנט שנתי תשפ"ז</b><br>כל אירועי השנה על ציר הזמן, מסודרים לפי ימי השבוע. כל מסגרת היא שבוע שלם (א'–ש'), והעמודות מיושרות בין החודשים. ריחוף מעל תא פותח חלון עם פרטי האירוע המלאים — סוג, תאריך, אחריות ותורנות — בלי צורך לעבור ללוח האירועים.</div></div>
       <div class="panel"><div class="panel-b">
         <div class="lg-row" style="font-size:12.5px;font-weight:600;">${Object.entries(KIND_LBL).map(([k,v])=>`<span><i style="background:${KIND_CLR[k]};width:16px;height:16px;box-shadow:0 1px 3px rgba(0,0,0,.2)"></i>${v}</span>`).join('')}</div>
