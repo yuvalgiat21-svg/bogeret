@@ -697,6 +697,18 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 .fam-r{font-size:11px;color:#7A6A66;font-weight:700;} .fam-n{font-weight:700;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .fam-miss{opacity:.55;}
 .fam-tel{font-size:12.5px;color:#8E033C;text-decoration:none;direction:ltr;text-align:right;} a.fam-tel:hover{text-decoration:underline;}
+.cmp-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 6px;} .cmp-q{flex:1;min-width:220px;border:1px solid #F3C2B0;border-radius:999px;padding:8px 14px;font:14.5px Assistant,sans-serif;}
+.cmp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.cmp-chip{border:1.5px solid color-mix(in srgb,var(--c) 45%,#fff);background:#fff;color:var(--c);border-radius:999px;padding:5px 12px;font:700 13px Heebo,sans-serif;cursor:pointer;}
+.cmp-chip b{background:color-mix(in srgb,var(--c) 14%,#fff);border-radius:999px;padding:0 7px;margin-right:3px;} .cmp-chip.on{background:var(--c);color:#fff;} .cmp-chip.on b{background:rgba(255,255,255,.25);}
+.cmp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;}
+.cmp-card{background:#fff;border:1px solid #F3C2B0;border-right:5px solid var(--g);border-radius:14px;padding:10px 12px;cursor:pointer;} .cmp-card:hover{box-shadow:0 4px 14px rgba(142,3,60,.12);}
+.cmp-top{display:flex;gap:10px;align-items:center;} .cmp-top b{display:block;font:800 14.5px Heebo,sans-serif;} .cmp-top small{color:#7A6A66;font-size:12px;}
+.cmp-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;} .cmp-tags span{font-size:12px;font-weight:700;color:var(--c);background:color-mix(in srgb,var(--c) 11%,#fff);border-radius:999px;padding:2px 9px;} .cmp-tags em{font-size:12px;color:#94a3b8;}
+.cmp-mech{font-size:12px;color:#5b4d49;margin-top:6px;background:#FFF1EB;border-radius:8px;padding:4px 8px;}
+.soc-prog{background:#FFF1EB;border:1px solid #F3C2B0;border-radius:12px;padding:10px 14px;margin-bottom:4px;font-size:14px;} .soc-prog b{font:800 22px Heebo,sans-serif;color:#8E033C;}
+.soc-bar{height:10px;background:#fff;border-radius:6px;overflow:hidden;margin-top:6px;} .soc-bar i{display:block;height:100%;background:linear-gradient(90deg,#FC5028,#8E033C);}
+.soc-tag{font-size:12.5px;font-weight:700;color:var(--c);background:color-mix(in srgb,var(--c) 11%,#fff);border-radius:999px;padding:2px 10px;white-space:pre-line;}
 .gantt-d.past { opacity:.62; }
 .gantt-d .gd-ck { position:absolute; bottom:0; left:2px; font-size:10px; font-weight:900; color:#047857; line-height:1; }
 .gantt-d.has-ev .gd-ck { color:#fff; text-shadow:0 0 2px rgba(0,0,0,.55); }
@@ -1537,9 +1549,8 @@ const NEW_TABS = [
   {id:'groups',   icon:'👥', label:'ניהול קבוצה'},
   {id:'attendance',icon:'✅', label:'נוכחות'},
   {id:'pedagogy', icon:'📚', label:'מעקב לימודי'},
-  {id:'companion',icon:'🎨', label:'תוכנית מלווה'},
+  {id:'companion',icon:'🧭', label:'תוכנית מלווה'},
   {id:'eduplan',  icon:'🎓', label:'תוכנית חינוכית'},
-  {id:'bodies',   icon:'🧭', label:'גופי מנהיגות'},
   {id:'graduates',icon:'🎖️', label:'בוגרים'},
   {id:'prof',     icon:'📚', label:'חומרים מקצועיים'},
   {id:'links',    icon:'🔗', label:'לינקים חשובים'},
@@ -4262,6 +4273,67 @@ window.famRender=function(){
   const qi=el.querySelector('.fam-q'); qi.oninput=()=>{ FAM.q=qi.value; const p=qi.selectionStart; famRender(); const n=el.querySelector('.fam-q'); n.focus(); n.setSelectionRange(p,p); };
 };
 
+
+/* ═══════════ תוכנית מלווה: לפי חניך + גופי המנהיגות + מעורבות חברתית ═══════════ */
+const CMP_NORM=s=>String(s||'').replace(/["'״׳\-]/g,' ').replace(/\s+/g,' ').trim();
+/* חברי הגוף מהנתונים: רשומות "שם (קבוצה) הערה" ב-D.leadership; ימאות נגזרת מעמודת המעורבות החברתית */
+function cmpMembers(src){
+  if(!src||typeof D==='undefined') return [];
+  if(src==='@yamaut') return (D.hugim||[]).slice(1).filter(h=>/ימאות/.test(h.mechina||'')).map(h=>{ const s=STUDENTS_DATA.find(x=>x.n===h.name); return `${h.name} (${(s&&s.g)||h.group||''})`; });
+  return ((D.leadership||{})[src]||[]).slice(1);
+}
+function cmpBodiesOf(name){
+  const n=CMP_NORM(name), out=[];
+  BODIES.forEach(b=>{ if(cmpMembers(b.src).some(e=>CMP_NORM(String(e).replace(/\(.*$/,''))===n)) out.push(b); });
+  return out;
+}
+function cmpHug(name){ const n=CMP_NORM(name); return ((typeof D!=='undefined'&&D.hugim)||[]).slice(1).find(h=>CMP_NORM(h.name)===n)||null; }
+const CMP={q:'',f:''};
+window.cmpRender=function(){
+  const el=document.getElementById('cmpBody'); if(!el) return;
+  const E=lbEsc, all=STUDENTS_DATA.map((s,i)=>({s,i})).concat((typeof ACAD_STUDENTS!=='undefined'?ACAD_STUDENTS:[]).map((s,k)=>({s,i:STUDENTS_DATA.length+k})));
+  const rows=all.map(({s,i})=>{ const h=cmpHug(s.n); return {s,i,h,b:cmpBodiesOf(s.n),mech:h?String(h.mechina||'').trim():''}; });
+  const F={'':()=>true, none:r=>!r.b.length&&!r.mech&&!(r.h&&(r.h.p1||r.h.p2)), hug:r=>r.h&&(r.h.p1||r.h.p2)};
+  BODIES.forEach(b=>F['b:'+b.k]=r=>r.b.includes(b));
+  const q=CMP.q.trim();
+  const list=rows.filter(r=>(F[CMP.f]||F[''])(r)&&(!q||[r.s.n,r.s.g,r.mech,r.h&&r.h.p1,r.h&&r.h.p2].some(v=>String(v||'').includes(q))));
+  const chip=(k,l,c)=>`<button class="cmp-chip${CMP.f===k?' on':''}" data-f="${k}" style="--c:${c}">${l} <b>${rows.filter(F[k]).length}</b></button>`;
+  el.innerHTML=`<div class="cmp-bar"><input class="cmp-q" placeholder="🔍 חיפוש חניך/ה, קבוצה, חוג או מעורבות" value="${E(CMP.q)}"><small style="color:var(--text3)">${list.length} מתוך ${rows.length}</small></div>
+    <div class="cmp-chips">${chip('','👥 כולם','#8E033C')}${BODIES.map(b=>chip('b:'+b.k,b.icon+' '+b.label,b.clr)).join('')}${chip('hug','🎨 בחוג פנאי','#0e7490')}${chip('none','❔ בלי שיבוץ','#94a3b8')}</div>
+    <div class="cmp-grid">${list.map(r=>{ const gc=GRP_CLR[r.s.g]||'#94a3b8';
+      return `<div class="cmp-card" style="--g:${gc}" onclick="showStudentDetails(${r.i})">
+        <div class="cmp-top">${avatar(r.s,46,gc)}<div><b>${E(r.s.n)}</b><small>${E(r.s.g||'')}${r.s.l?' · '+E(r.s.l):''}</small></div></div>
+        <div class="cmp-tags">${r.b.map(b=>`<span style="--c:${b.clr}">${b.icon} ${E(b.label)}</span>`).join('')}
+          ${r.h&&r.h.p1?`<span style="--c:#0e7490">🎨 ${E(r.h.p1)}</span>`:''}${r.h&&r.h.p2?`<span style="--c:#0e7490">🎨 ${E(r.h.p2)}</span>`:''}
+          ${!r.b.length&&!(r.h&&(r.h.p1||r.h.p2))?'<em>אין שיבוץ</em>':''}</div>
+        ${r.mech?`<div class="cmp-mech">🤝 מעורבות חברתית: ${E(r.mech.split('\n')[0])}</div>`:''}</div>`; }).join('')||'<div style="color:var(--text3)">לא נמצאו חניכים</div>'}</div>`;
+  el.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ CMP.f=CMP.f===b.dataset.f?'':b.dataset.f; cmpRender(); });
+  const qi=el.querySelector('.cmp-q'); qi.oninput=()=>{ CMP.q=qi.value; const p=qi.selectionStart; cmpRender(); const n=el.querySelector('.cmp-q'); n.focus(); n.setSelectionRange(p,p); };
+};
+/* מעקב לימודי ← מעורבות חברתית (חניכי יב — מעמודת "מעורבות חברתית" + שיבוץ בגופים) */
+const SOC={q:'',f:''};
+window.socRender=function(){
+  const el=document.getElementById('socBody'); if(!el) return;
+  const H=((typeof D!=='undefined'&&D.hugim)||[]).slice(1).filter(h=>h.name);
+  if(!H.length){ el.innerHTML='<div style="color:var(--text3)">אין נתונים — נטענים מהאזור המוגן.</div>'; return; }
+  const E=lbEsc, cat=m=>{ m=String(m||'').trim(); if(!m) return 'none'; if(/לא סיים|להשלים|חסר/.test(m)) return 'todo';
+    if(/ימאות/.test(m)&&/מובילים/.test(m)) return 'both'; if(/ימאות/.test(m)) return 'yam'; if(/מובילים/.test(m)) return 'mov'; return 'oth'; };
+  const C=[['','👥','כל חניכי יב','#8E033C'],['yam','⛵','ימאות','#0e7490'],['mov','🧭','מובילים','#1d4ed8'],['both','⭐','ימאות + מובילים','#6d28d9'],['oth','🤝','מעורבות אחרת','#15803d'],['todo','⏳','לא סיימו שעות','#b45309'],['none','❔','לא רשום','#94a3b8']];
+  const cnt=k=>k?H.filter(h=>cat(h.mechina)===k).length:H.length;
+  const done=H.length-cnt('none')-cnt('todo');
+  const q=SOC.q.trim(), list=H.filter(h=>(!SOC.f||cat(h.mechina)===SOC.f)&&(!q||[h.name,h.mechina].some(v=>String(v||'').includes(q))));
+  el.innerHTML=`<div class="soc-prog"><div><b>${Math.round(done*100/H.length)}%</b> מחניכי יב רשומים במעורבות חברתית שהושלמה (${done} מתוך ${H.length})</div><div class="soc-bar"><i style="width:${done*100/H.length}%"></i></div></div>
+    <div class="fam-tiles">${C.filter(([k])=>!k||cnt(k)).map(([k,ic,l,c])=>`<button class="fam-tile${SOC.f===k?' on':''}" data-f="${k}" style="--c:${c}"><span>${ic}</span><b>${cnt(k)}</b><small>${l}</small></button>`).join('')}</div>
+    <div class="fam-bar"><input class="fam-q soc-q" placeholder="🔍 חיפוש חניך/ה או סוג מעורבות" value="${E(SOC.q)}"><small style="color:var(--text3)">${list.length} חניכים</small></div>
+    <div class="ad-scroll"><table class="lim-gt"><thead><tr><th>חניך/ה</th><th>קבוצה</th><th>מעורבות חברתית</th><th>גופי מנהיגות</th></tr></thead><tbody>
+    ${list.sort((a,b)=>String(a.name).localeCompare(String(b.name),'he')).map(h=>{ const s=STUDENTS_DATA.find(x=>x.n===h.name)||{}; const c=C.find(x=>x[0]===cat(h.mechina));
+      return `<tr><td><b>${E(h.name)}</b></td><td>${E(s.g||h.group||'')}</td><td><span class="soc-tag" style="--c:${c[3]}">${c[1]} ${E(String(h.mechina||'לא רשום').replace(/\s+/g,' ').trim())}</span></td><td>${cmpBodiesOf(h.name).map(b=>b.icon+' '+E(b.label)).join(' · ')||'—'}</td></tr>`; }).join('')}
+    </tbody></table></div>
+    <div style="font-size:12px;color:var(--text3);margin-top:6px">מקור: עמודת "מעורבות חברתית" בגיליון השכבה (חניכי יב). חניכי יא יתווספו כשהעמודה תמולא גם אצלם.</div>`;
+  el.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ SOC.f=SOC.f===b.dataset.f?'':b.dataset.f; socRender(); });
+  const qi=el.querySelector('.soc-q'); qi.oninput=()=>{ SOC.q=qi.value; const p=qi.selectionStart; socRender(); const n=el.querySelector('.soc-q'); n.focus(); n.setSelectionRange(p,p); };
+};
+
 /* ═══════════ לינקים חשובים ═══════════ */
 const LINKS=[
   {ic:'🏫',t:'סמרט קמפוס',d:'מערכת הפנימייה: תיק אישי, רשימות חניכים ונוכחות',u:'https://mevootyam.smart-campus.co.il'},
@@ -5012,14 +5084,23 @@ const BODIES = [
    staff:['יובל'], src:'movilim',
    desc:'גוף המובילים — חניכים מובילים בקהילה הבוגרת.'},
   {k:'yamaut',  icon:'⛵', label:'ימאות', clr:'#0e7490',
-   staff:[], src:null,
-   desc:'גוף הימאות — הפלגות, קורסי פיקוד, משט ושבת ימאות.'},
+   staff:[], src:'@yamaut',
+   desc:'גוף הימאות — הפלגות, קורסי פיקוד, משט ושבת ימאות. הרשימה נלקחת מעמודת "מעורבות חברתית" (חניכי יב).'},
+  {k:'deputies',icon:'🎖️', label:'סגנים-מפקדים', clr:'#8E033C',
+   staff:['יובל'], src:null,
+   desc:'סגני ראש הגוף ומפקדי הצוותים בגופי המנהיגות.'},
   {k:'hagbara', icon:'🔊', label:'הגברה', clr:'#b45309',
    staff:['ערן'], src:'hagbara',
    desc:'גוף ההגברה — סאונד, מוזיקה ותפעול טכני באירועים ובטקסים.'},
   {k:'security',icon:'🛡️', label:'אבטחה', clr:'#047857',
    staff:['אודי'], src:null,
    desc:'גוף האבטחה — סיירת ביטחון ומועדון ה-5.'},
+  {k:'bartali',icon:'🎭', label:'ברטלי', clr:'#be185d',
+   staff:[], src:'bartali',
+   desc:'גוף ברטלי.'},
+  {k:'army',   icon:'🪖', label:'הכנה לצבא', clr:'#4d7c0f',
+   staff:['ארבל'], src:null,
+   desc:'הכנה לצבא — אימונים, מיונים והכנה לגיוס.'},
 ];
 
 function memberCard(entry, clr){
@@ -5055,7 +5136,7 @@ function staffCard(nameFrag, clr){
 }
 
 function viewBody(b){
-  const members = b.src ? (D.leadership[b.src]||[]).slice(1) : [];
+  const members = cmpMembers(b.src);
   const deps=[];
   const uniq = a => [...new Set(a)];
   const mm = uniq(members), dd = [];
@@ -5318,10 +5399,7 @@ function reorganize(){
   main.appendChild(gr);
 
   /* ---------- 3.5 גופי מנהיגות ---------- */
-  const bd=mkSec('bodies');
-  bd.appendChild(mkNav('bd', BODIES.map(b=>({k:b.k,label:`${b.icon} ${b.label}`})), pickIn(bd,'bd')));
-  BODIES.forEach((b,i)=>{ const d=mkSub('bd-'+b.k, i===0); d.innerHTML=viewBody(b); bd.appendChild(d); });
-  main.appendChild(bd);
+  /* גופי המנהיגות עברו לתוכנית מלווה (ראו למטה) */
 
   /* ---------- 4. בוגרים ---------- */
   const gd=mkSec('graduates');
@@ -5352,7 +5430,7 @@ function reorganize(){
   pS.innerHTML = info('⛑️','בטיחות וטיולים',
     'ריכוז נהלים, אישורים וטפסים לטיולים ולפעילויות. לחיצה על "הוסף" תיצור רשומה חדשה.')
     + `<div class="panel"><div class="panel-h"><h2>⛑️ נהלים וטפסים</h2><button class="btn" onclick="addKnowledge('safety')">➕ הוסף</button></div><div class="panel-b" id="kn-body-safety"></div></div>`;
-  const pF=mkSub('pr-files'); pF.innerHTML=viewImportant()+viewFiles();
+  const pF=mkSub('pr-files'); pF.innerHTML=viewImportant();
   const pM=mkSub('pr-meetings'); pM.innerHTML=viewMeetArchive();
   const pK=mkSub('pr-knowledge'); pK.innerHTML=viewSumLib();
   const pB=mkSub('pr-bluebook');
@@ -5373,7 +5451,7 @@ function reorganize(){
   /* ---------- מעקב לימודי + תוכנית חינוכית ---------- */
   const pd=mkSec('pedagogy');
   pd.appendChild(mkNav('pd',[{k:'all',label:'📊 מעקב לימודי כללי'},{k:'ya',label:"📘 מעקב לימודי יא'"},{k:'yb',label:"📗 מעקב לימודי יב'"},
-    {k:'acad',label:'🏀 מעקב לימודי אקדמיה לכדורסל'},{k:'exams',label:'📝 מבחנים צפויים'}], k=>{ pickIn(pd,'pd')(k); if(k==='exams') renderExams(); }));
+    {k:'acad',label:'🏀 מעקב לימודי אקדמיה לכדורסל'},{k:'soc',label:'🤝 מעורבות חברתית'},{k:'exams',label:'📝 מבחנים צפויים'}], k=>{ pickIn(pd,'pd')(k); if(k==='exams') renderExams(); if(k==='soc') socRender(); }));
   const pAll=mkSub('pd-all',true);
   pAll.innerHTML=viewLimudiLayer()||info('📚','מעקב לימודי כללי','התמונה הכוללת זמינה לרכז. הנתונים מתעדכנים מסמרט סקול פעם בשבוע.');
   const pYa=mkSub('pd-ya'); pYa.innerHTML=viewLimudiFor(GROUPS_YA.map(g=>[g,stuOf(g)]),"שכבת יא'");
@@ -5381,13 +5459,22 @@ function reorganize(){
   const pAc=mkSub('pd-acad'); pAc.innerHTML=viewLimudiFor([['אקדמיה לכדורסל',ACAD_STUDENTS]],'האקדמיה לכדורסל');
   const pEx=mkSub('pd-exams'); pEx.innerHTML=info('📝','מבחנים צפויים','כל המבחנים, הבחנים, המתכונות והמועדים מלוחות בית הספר, מהיום והלאה, לפי שכבה ושבוע.')
     +`<div class="panel"><div class="panel-b" id="examsBody">טוען…</div></div>`;
-  [pAll,pYa,pYb,pAc,pEx].forEach(x=>pd.appendChild(x));
+  const pSoc=mkSub('pd-soc'); pSoc.innerHTML=info('🤝','מעורבות חברתית','שעות המעורבות החברתית של חניכי יב — מי רשום ואיפה, ומי עוד צריך להשלים.')+'<div class="panel"><div class="panel-b" id="socBody"></div></div>';
+  [pAll,pYa,pYb,pAc,pSoc,pEx].forEach(x=>pd.appendChild(x));
   main.appendChild(pd);
   /* תוכנית מלווה — חוגי פנאי (עברו ממעקב לימודי) */
   const cp=mkSec('companion');
-  cp.innerHTML=info('🎨','תוכנית מלווה','חוגי הפנאי של חניכי השכבה, הקבוצה ושתי בחירות הפנאי של כל חניך.');
-  while(old.pedagogy.firstChild) cp.appendChild(old.pedagogy.firstChild);
+  cp.appendChild(mkNav('cp',[{k:'student',label:'👤 לפי חניך'},{k:'hugim',label:'🎨 חוגי פנאי'}].concat(BODIES.map(b=>({k:'bd-'+b.k,label:`${b.icon} ${b.label}`}))),
+    k=>{ pickIn(cp,'cp')(k); if(k==='student') cmpRender(); }));
+  const cpSt=mkSub('cp-student',true);
+  cpSt.innerHTML=info('👤','תוכנית מלווה — לפי חניך','לכל חניך/ה: הגופים שהוא/היא חבר/ה בהם, חוגי הפנאי והמעורבות החברתית. לחיצה על תגית מסננת, לחיצה על כרטיס פותחת את פרטי החניך/ה.')+'<div id="cmpBody"></div>';
+  const cpHug=mkSub('cp-hugim');
+  cpHug.innerHTML=info('🎨','חוגי פנאי','חוגי הפנאי של חניכי השכבה, הקבוצה ושתי בחירות הפנאי של כל חניך.');
+  while(old.pedagogy.firstChild) cpHug.appendChild(old.pedagogy.firstChild);
+  cp.appendChild(cpSt); cp.appendChild(cpHug);
+  BODIES.forEach(b=>{ const d=mkSub('cp-bd-'+b.k); d.innerHTML=viewBody(b); cp.appendChild(d); });
   main.appendChild(cp);
+  setTimeout(()=>{ try{ cmpRender(); }catch(e){ console.warn('cmp',e); } },0);
   const ep=mkSec('eduplan');
   ep.appendChild(mkNav('ep',[{k:'plan',label:'📊 תכנון מול ביצוע'},{k:'topics',label:'📚 מאגר נושאים'}], k=>{ pickIn(ep,'ep')(k); if(k==='topics') renderEduTopics(); }));
   const epPlan=mkSub('ep-plan',true), epTopics=mkSub('ep-topics');
