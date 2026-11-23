@@ -3090,11 +3090,24 @@ window.renderTripLib=async function(){
    + (!L?`<div class="lb-note" style="margin-top:10px;">🔒 תיקי הטיולים, האישורים וחומרי הביטחון יופיעו כאן אחרי התחברות${ME&&ME.mode==='admin'?' והעלאת הקובץ באזור "סיכומי שיחות"':''}.</div>`:'');
 };
 
+/* ═══════════ מוקד טבע — אשף המסלולים (קישור ישיר לאתר הרשמי) ═══════════ */
+const MOKED_WIZ='https://www.mokedteva.co.il/InfoCenter/TrackWizard';
+function viewMokedTeva(){
+  return `<div class="panel" style="margin-bottom:16px;"><div class="panel-h"><h2>🧭 תכנון טיול — אשף המסלולים של מוקד טבע</h2></div><div class="panel-b">
+    <div class="lb-links">
+      <a class="lb-link" href="${MOKED_WIZ}" target="_blank" rel="noopener"><span class="lb-lic">🗺️</span><span><b>אשף המסלולים</b><small>בוחרים אזור, אורך ורמת קושי ומקבלים מסלולים מתאימים עם מפה ודגשי בטיחות</small></span><span class="lb-go">↗</span></a>
+      <a class="lb-link" href="https://www.mokedteva.co.il/EducationTravelers" target="_blank" rel="noopener"><span class="lb-lic">📝</span><span><b>מטיילי משרד החינוך</b><small>הזנת טיול לתיאום, עדכון טיול, טפסים ובקשות חריגות</small></span><span class="lb-go">↗</span></a>
+    </div>
+    <div class="lb-note" style="margin:12px 0 0;"><b>איך מתכננים טיול:</b> 1. בוחרים מסלול באשף המסלולים. 2. בודקים את החוזרים והנהלים הרלוונטיים בספרייה שמתחת. 3. ממלאים תיק טיול מהתבנית (תבניות וטפסים). 4. מעבירים לרכז הטיולים להזנה ולאישור במוקד טבע.</div>
+  </div></div>`;
+}
+
 /* ═══════════ לינקים חשובים ═══════════ */
 const LINKS=[
   {ic:'🏫',t:'סמרט קמפוס',d:'מערכת הפנימייה: תיק אישי, רשימות חניכים ונוכחות',u:'https://mevootyam.smart-campus.co.il'},
   {ic:'📚',t:'סמרט סקול',d:'מערכת בית הספר: ציונים, מערכת שעות והודעות',u:'https://www.smartschool.co.il'},
   {ic:'🔧',t:'תחזוקנית',d:'פתיחת קריאה לתחזוקה ותקלות',u:'https://tachzukanit.ramdor.net/m_yam/callorder/'},
+  {ic:'🗺️',t:'אשף המסלולים — מוקד טבע',d:'תכנון מסלול לטיול: אזור, אורך, רמת קושי ודגשי בטיחות',u:'https://www.mokedteva.co.il/InfoCenter/TrackWizard'},
   {ic:'🏘️',t:'שריון מתחמים',d:'הזמנת מתחמים וחדרים בכפר (גיליון משותף)',u:'https://docs.google.com/spreadsheets/d/17g_UWjBBaSHq0mQ-5ZhvlgTLnZ0hyqxt4jaW5oajWkk/edit'},
 ];
 function viewLinks(){
@@ -4194,7 +4207,7 @@ function reorganize(){
           <a class="btn" href="docs/blue-book.pdf" download="קובץ נהלים - הספר הכחול.pdf">⬇️ הורד</a>
         </div></div>
        <div class="panel-b" style="padding:0;"><a href="docs/blue-book.pdf#page=6" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>חברי ועדת הנהלים</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 6</span></a><a href="docs/blue-book.pdf#page=7" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>פתח דבר</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 7</span></a><a href="docs/blue-book.pdf#page=8" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>מבוא</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 8</span></a><a href="docs/blue-book.pdf#page=10" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>א. המשנה החינוכית ("החזון")</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 10</span></a><a href="docs/blue-book.pdf#page=11" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ב. התכנית החינוכית בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 11</span></a><a href="docs/blue-book.pdf#page=14" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ג. הפעילות בשגרת היום-יום בכפר הנוער</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 14</span></a><a href="docs/blue-book.pdf#page=17" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ד. כוח אדם בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 17</span></a><a href="docs/blue-book.pdf#page=40" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ה. קבלה וליווי החניך בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 40</span></a><a href="docs/blue-book.pdf#page=45" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ו. נהלי עזיבת / העברת / השעיית / הוצאת חניך מהפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 45</span></a><a href="docs/blue-book.pdf#page=50" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ז. איכות החיים ורווחת הפרט בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 50</span></a><a href="docs/blue-book.pdf#page=61" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ח. ביטחון, בטיחות, שע"ח</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 61</span></a><a href="docs/blue-book.pdf#page=64" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ט. נספחים</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 64</span></a></div></div>`;
-  pS.innerHTML=viewTrips()+viewTripLib();
+  pS.innerHTML=viewMokedTeva()+viewTripLib().replace('class="panel" style="margin-top:16px;"','class="panel"')+'<div style="height:16px"></div>'+viewTrips();
   [pS,pM,pK,pB,pF].forEach(x=>pr.appendChild(x));
   main.appendChild(pr);
   const lk=mkSec('links'); lk.innerHTML=viewLinks(); main.appendChild(lk);
