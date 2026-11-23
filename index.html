@@ -315,9 +315,9 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 .header-date { font-size:12px; color:var(--text2); background:var(--card-alt); padding:6px 14px; border-radius:8px; border:1px solid var(--border); }
 
 /* NAV */
-.nav { display:flex; gap:3px; padding:10px 20px; background:#fff; border-bottom:1px solid var(--border); overflow-x:auto; flex-wrap:wrap; }
-.nav button { padding:8px 14px; border-radius:8px; font-size:13px; font-weight:500; color:var(--text2); cursor:pointer; border:none; background:none; font-family:'Heebo'; white-space:nowrap; transition:all .15s; }
-.nav button:hover { color:var(--text); background:var(--card-alt); }
+.nav { display:flex; gap:6px; padding:10px 20px; background:#fff; border-bottom:1px solid var(--border); overflow-x:auto; flex-wrap:wrap; }
+.nav button { padding:7px 13px; border-radius:10px; font-size:13px; font-weight:600; color:var(--text2); cursor:pointer; border:1.5px solid #F3C2B0; background:#fff; font-family:'Heebo'; white-space:nowrap; transition:all .15s; box-shadow:0 1px 2px rgba(142,3,60,.06); }
+.nav button:hover { color:var(--text); background:#FFF1EB; border-color:#FC5028; }
 .nav button.active { color:#fff; background:var(--blue); border:1px solid var(--blue); font-weight:700; box-shadow:0 2px 8px rgba(29,78,216,.35); }
 
 /* MAIN */
@@ -1545,16 +1545,16 @@ const GRP_CLR = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','ח�
 const NEW_TABS = [
   {id:'overview', icon:'📊', label:'סקירה'},
   {id:'calendar', icon:'📅', label:'יומן'},
+  {id:'attendance',icon:'✅', label:'נוכחות'},
   {id:'team',     icon:'🧑‍🤝‍🧑', label:'צוות'},
   {id:'groups',   icon:'👥', label:'ניהול קבוצה'},
-  {id:'attendance',icon:'✅', label:'נוכחות'},
   {id:'pedagogy', icon:'📚', label:'מעקב לימודי'},
   {id:'companion',icon:'🧭', label:'תוכנית מלווה'},
   {id:'eduplan',  icon:'🎓', label:'תוכנית חינוכית'},
-  {id:'graduates',icon:'🎖️', label:'בוגרים'},
-  {id:'prof',     icon:'📚', label:'חומרים מקצועיים'},
-  {id:'links',    icon:'🔗', label:'לינקים חשובים'},
   {id:'evacplan', icon:'🚨', label:'פינוי בחירום'},
+  {id:'prof',     icon:'📂', label:'חומרים מקצועיים'},
+  {id:'graduates',icon:'🎖️', label:'בוגרים'},
+  {id:'links',    icon:'🔗', label:'לינקים שימושיים'},
   {id:'users',    icon:'🔐', label:'משתמשים', admin:true},
 ];
 
@@ -4355,7 +4355,7 @@ const LINKS=[
   {ic:'🏘️',t:'שריון מתחמים',d:'הזמנת מתחמים וחדרים בכפר (גיליון משותף)',u:'https://docs.google.com/spreadsheets/d/17g_UWjBBaSHq0mQ-5ZhvlgTLnZ0hyqxt4jaW5oajWkk/edit'},
 ];
 function viewLinks(){
-  return info('🔗','לינקים חשובים','המערכות שמשתמשים בהן כל יום. לחיצה על כרטיס פותחת את המערכת בלשונית חדשה.')
+  return info('🔗','לינקים שימושיים','המערכות שמשתמשים בהן כל יום. לחיצה על כרטיס פותחת את המערכת בלשונית חדשה.')
    + `<div class="lb-links">${LINKS.map(x=>x.u
       ? `<a class="lb-link" href="${x.u}" target="_blank" rel="noopener"><span class="lb-lic">${x.ic}</span><span><b>${x.t}</b><small>${x.d}</small></span><span class="lb-go">↗</span></a>`
       : `<div class="lb-link off"><span class="lb-lic">${x.ic}</span><span><b>${x.t}</b><small>${x.d}<br>הקישור עוד לא הוגדר</small></span></div>`).join('')}</div>`;
