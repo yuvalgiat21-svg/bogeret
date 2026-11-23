@@ -2989,7 +2989,7 @@ window.libUploadSec=function(){
       if(!obj.summaries||!obj.trips) throw new Error('זה לא הקובץ הנכון — צריך secure_library.json');
       const {dbm,rdb}=await secureDb(); await dbm.set(dbm.ref(rdb,LIB_SEC_PATH), JSON.stringify(obj));
       window.SECLIB=obj; alert(`נשמר באזור המוגן ✓ — ${obj.summaries.length} סיכומים, ${obj.trips.length} קבצי טיולים`);
-      renderKnowledge(); renderTripLib();
+      renderSumLib(); renderTripLib();
     }catch(e){ alert('השמירה נכשלה: '+(e.message||e)); } };
   inp.click();
 };
@@ -3038,14 +3038,14 @@ window.renderImportant=async function(){
 
 /* ---------- סיכומי שיחות (אזור מוגן) ---------- */
 let KN_C='all';
-function viewKnowledge(){
+function viewSumLib(){
   return info('🧠','סיכומי שיחות — שימור ידע',
     'כל סיכומי השיחות מתחילת השנה, לפי סוג השיחה ולפי חודש. הרשימה שמורה באזור המוגן ומוצגת רק לצוות המחובר. לחיצה פותחת את הסיכום בדרייב.')
-   + `<div class="panel"><div class="panel-h"><h2>🧠 סיכומי שיחות</h2><div style="display:flex;gap:8px;flex-wrap:wrap;"><input id="knSearch" class="lb-search" placeholder="🔎 שם / נושא…" oninput="renderKnowledge()">
+   + `<div class="panel"><div class="panel-h"><h2>🧠 סיכומי שיחות</h2><div style="display:flex;gap:8px;flex-wrap:wrap;"><input id="knSearch" class="lb-search" placeholder="🔎 שם / נושא…" oninput="renderSumLib()">
       ${(typeof ME!=='undefined'&&ME&&ME.mode==='admin')?'<button class="btn btn-secondary" onclick="libUploadSec()">⬆️ עדכון מהקובץ של Claude</button>':''}</div></div><div class="panel-b" id="knBody">טוען…</div></div>`;
 }
-window.knPick=k=>{ KN_C=k; renderKnowledge(); };
-window.renderKnowledge=async function(){
+window.knPick=k=>{ KN_C=k; renderSumLib(); };
+window.renderSumLib=async function(){
   const el=document.getElementById('knBody'); if(!el) return;
   const L=await libLoadSec();
   if(!L){ el.innerHTML=`<div class="lb-empty">🔒 סיכומי השיחות נמצאים באזור המוגן.${ME&&ME.mode==='admin'?'<br>עוד לא הועלו — לחצו "עדכון מהקובץ של Claude" ובחרו את <b>secure_library.json</b>.':'<br>הם יופיעו כאן אחרי שהרכז יעלה אותם.'}</div>`; return; }
@@ -4163,7 +4163,7 @@ function reorganize(){
   const pr=mkSec('prof');
   const prItems=[{k:'safety',label:'⛑️ בטיחות וטיולים'},{k:'meetings',label:'🗂️ ישיבות בוגרת'},{k:'knowledge',label:'🧠 סיכומי שיחות'},{k:'bluebook',label:'📘 הספר הכחול'},{k:'files',label:'📁 קבצים חשובים ולינקים'}];
   pr.appendChild(mkNav('pr',prItems,k=>{ pickIn(pr,'pr')(k);
-    if(k==='meetings') renderMeetArchive(); if(k==='knowledge') renderKnowledge(); if(k==='files') renderImportant(); if(k==='safety') renderTripLib(); }));
+    if(k==='meetings') renderMeetArchive(); if(k==='knowledge') renderSumLib(); if(k==='files') renderImportant(); if(k==='safety') renderTripLib(); }));
   /* פינוי בחירום — לשונית עצמאית בבר העליון */
   const ev=mkSec('evacplan');
   ev.appendChild(mkNav('ev',[{k:'routes',label:'🗺️ מסלולים ומפה'},{k:'live',label:'📡 מעקב חי'},{k:'lists',label:'🚌 רשימות נוסעים'},{k:'cities',label:'📍 חניכי בוגרת לפי יישוב'}],k=>{ pickIn(ev,'ev')(k); if(k==='live') evLiveInit(); }));
@@ -4184,7 +4184,7 @@ function reorganize(){
     + `<div class="panel"><div class="panel-h"><h2>⛑️ נהלים וטפסים</h2><button class="btn" onclick="addKnowledge('safety')">➕ הוסף</button></div><div class="panel-b" id="kn-body-safety"></div></div>`;
   const pF=mkSub('pr-files'); pF.innerHTML=viewImportant()+viewFiles();
   const pM=mkSub('pr-meetings'); pM.innerHTML=viewMeetArchive();
-  const pK=mkSub('pr-knowledge'); pK.innerHTML=viewKnowledge();
+  const pK=mkSub('pr-knowledge'); pK.innerHTML=viewSumLib();
   const pB=mkSub('pr-bluebook');
   pB.innerHTML = info('📘','הספר הכחול – קובץ נהלים לפנימייה החינוכית בכפר הנוער',
     'משרד החינוך, המינהל לחינוך התיישבותי, פנימייתי ועליית הנוער. מהדורה שנייה, תשס"ז (2007). לחיצה על פרק פותחת את הקובץ בעמוד שלו.')
