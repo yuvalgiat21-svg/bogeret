@@ -4282,9 +4282,21 @@ function cmpMembers(src){
   if(src==='@yamaut') return (D.hugim||[]).slice(1).filter(h=>/ימאות/.test(h.mechina||'')).map(h=>{ const s=STUDENTS_DATA.find(x=>x.n===h.name); return `${h.name} (${(s&&s.g)||h.group||''})`; });
   return ((D.leadership||{})[src]||[]).slice(1);
 }
+/* התאמת שם מרשימת גוף לחניך/ה: כל מילות השם הקצר מופיעות בשם המלא (בלי ו/י), ושם פרטי בודד רק אם הוא יחיד בקבוצה */
+const CMP_RES={};
+function cmpResolve(entry){
+  if(CMP_RES[entry]!==undefined) return CMP_RES[entry];
+  const m=String(entry).match(/^(.*?)\s*\(([^)]*)\)/), raw=m?m[1]:String(entry), grp=m?m[2].trim():'';
+  const A=limTok(raw), pool=STUDENTS_DATA.concat(typeof ACAD_STUDENTS!=='undefined'?ACAD_STUDENTS:[]);
+  let hit=pool.filter(s=>CMP_NORM(s.n)===CMP_NORM(raw));
+  if(!hit.length&&A.length>=2) hit=pool.filter(s=>{ const B=limTok(s.n); return A.every(t=>B.includes(t)); });
+  if(!hit.length&&A.length===1&&grp) hit=pool.filter(s=>s.g===grp&&limTok(s.n)[0]===A[0]);
+  if(hit.length>1&&grp) hit=hit.filter(s=>s.g===grp);
+  return CMP_RES[entry]=hit.length===1?hit[0].n:null;
+}
 function cmpBodiesOf(name){
-  const n=CMP_NORM(name), out=[];
-  BODIES.forEach(b=>{ if(cmpMembers(b.src).some(e=>CMP_NORM(String(e).replace(/\(.*$/,''))===n)) out.push(b); });
+  const out=[];
+  BODIES.forEach(b=>{ if(cmpMembers(b.src).some(e=>cmpResolve(e)===name)) out.push(b); });
   return out;
 }
 function cmpHug(name){ const n=CMP_NORM(name); return ((typeof D!=='undefined'&&D.hugim)||[]).slice(1).find(h=>CMP_NORM(h.name)===n)||null; }
