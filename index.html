@@ -616,6 +616,9 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 #attdash .info-box{align-items:center;}
 #attdash .ad-up{background:#FC5028;color:#fff;border-radius:999px;padding:9px 16px;font:700 14px Heebo,sans-serif;cursor:pointer;white-space:nowrap;}
 #attdash .ad-up:hover{background:#e0441f;}
+#attdash .ad-btns{display:flex;flex-direction:column;gap:6px;align-items:stretch;}
+#attdash .ad-sc{border:1.5px solid #FC5028;color:#FC5028;background:#fff;border-radius:999px;padding:8px 16px;font:700 14px Heebo,sans-serif;text-decoration:none;text-align:center;white-space:nowrap;}
+#attdash .ad-sc:hover{background:#FFF1EB;}
 #attdash .ad-filt{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0;}
 #attdash .ad-seg{display:inline-flex;border:1px solid #F3C2B0;border-radius:999px;overflow:hidden;background:#fff;}
 #attdash .ad-seg button{border:0;background:#fff;padding:6px 13px;font:600 13.5px Heebo,sans-serif;cursor:pointer;color:#7A6A66;}
@@ -651,7 +654,29 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 #attdash .ad-strip span{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:#7A6A66;}
 #attdash .ad-strip i,#attdash .ad-lg i.p{width:14px;height:10px;border-radius:3px;display:block;}
 #attdash i.p{background:#10b981;} #attdash i.j{background:#cbbfba;} #attdash i.a{background:#dc2626;} #attdash i.u{background:#fff;border:1.5px dashed #d97706;box-sizing:border-box;} #attdash i.n{background:#f3efed;}
-@media (max-width:900px){#attdash .ad-two{grid-template-columns:1fr;}#attdash .info-box{flex-wrap:wrap;}#attdash .ad-up{width:100%;text-align:center;}}
+@media (max-width:900px){#attdash .ad-two{grid-template-columns:1fr;}#attdash .info-box{flex-wrap:wrap;}#attdash .ad-up{width:100%;text-align:center;}#attdash .ad-btns{width:100%;}}
+/* ===== מעקב לימודי לפי שכבה ===== */
+.lim-strip{display:flex;height:30px;border-radius:10px;overflow:hidden;margin-bottom:10px;background:#f3efed;}
+.lim-strip span{display:flex;align-items:center;justify-content:center;color:#fff;font:800 14px Heebo,sans-serif;}
+.lim-who{font-size:13.5px;margin:6px 0;line-height:2;}
+.lim-chip{display:inline-block;border:1.5px solid;border-radius:999px;padding:0 9px;margin:0 0 0 5px;background:#fff;font-size:12.5px;}
+.lim-ins{margin:0;padding-right:20px;line-height:1.9;font-size:14.5px;}
+.lim-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
+.lim-charts h3{font-size:14px;margin:0 0 6px;color:#8E033C;}
+.lim-gt{width:100%;border-collapse:collapse;font-size:13.5px;} .lim-gt th{background:#FFF1EB;text-align:right;padding:7px 9px;} .lim-gt td{padding:7px 9px;border-top:1px solid #f6dcd2;}
+.ex-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.ex-col h3{font:800 17px Heebo,sans-serif;margin:0 0 8px;} .ex-col h3 small{color:#7A6A66;font-weight:600;}
+.ex-wk{margin-bottom:10px;} .ex-wh{font:700 12.5px Heebo,sans-serif;color:#7A6A66;margin-bottom:4px;}
+.ex-r{display:flex;gap:10px;background:#fff;border:1px solid #F3C2B0;border-right:4px solid var(--c);border-radius:8px;padding:6px 10px;margin-bottom:4px;font-size:13.5px;}
+.ex-d{flex:none;width:92px;font-weight:700;color:#2b2220;}
+@media (max-width:800px){.ex-grid{grid-template-columns:1fr;}}
+.edt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:14px;}
+.edt-card{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:right;background:#fff;border:1.5px solid #F3C2B0;border-radius:14px;padding:12px;cursor:pointer;font-family:Assistant,sans-serif;}
+.edt-card:hover,.edt-card.on{background:#FFF1EB;border-color:#FC5028;}
+.edt-ic{font-size:24px;} .edt-card b{font:800 15px Heebo,sans-serif;color:#2b2220;} .edt-card small{color:#7A6A66;font-size:12px;line-height:1.4;} .edt-card em{font-style:normal;color:#FC5028;font-weight:700;font-size:12px;}
+.edt-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 10px;} .edt-head h3{margin:0;font:800 18px Heebo,sans-serif;color:#8E033C;}
+.edt-q{flex:1;min-width:180px;border:1px solid #F3C2B0;border-radius:999px;padding:6px 12px;font:14px Assistant,sans-serif;}
+.edt-g{border:1px solid #f6dcd2;border-radius:10px;margin-bottom:6px;background:#fff;} .edt-g summary{cursor:pointer;padding:8px 12px;font:700 14px Heebo,sans-serif;} .edt-g summary small{color:#7A6A66;font-weight:400;}
 .gantt-d.past { opacity:.62; }
 .gantt-d .gd-ck { position:absolute; bottom:0; left:2px; font-size:10px; font-weight:900; color:#047857; line-height:1; }
 .gantt-d.has-ev .gd-ck { color:#fff; text-shadow:0 0 2px rgba(0,0,0,.55); }
@@ -1492,6 +1517,7 @@ const NEW_TABS = [
   {id:'groups',   icon:'👥', label:'ניהול קבוצה'},
   {id:'attendance',icon:'✅', label:'נוכחות'},
   {id:'pedagogy', icon:'📚', label:'מעקב לימודי'},
+  {id:'companion',icon:'🎨', label:'תוכנית מלווה'},
   {id:'eduplan',  icon:'🎓', label:'תוכנית חינוכית'},
   {id:'bodies',   icon:'🧭', label:'גופי מנהיגות'},
   {id:'graduates',icon:'🎖️', label:'בוגרים'},
@@ -1537,8 +1563,9 @@ const MONTHS9 = ['ספטמבר','אוקטובר','נובמבר','דצמבר','י
 const RCLR = {none:'#cbd5e1',green:'#059669',yellow:'#eab308',orange:'#ea580c',red:'#dc2626'};
 
 function avatar(s,size,clr){
-  return s.p ? `<img src="${s.p}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;border:3px solid ${clr};flex-shrink:0;">`
-    : `<div style="width:${size}px;height:${size}px;border-radius:50%;flex-shrink:0;background:${clr}22;border:3px solid ${clr};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${Math.round(size/3.4)}px;color:${clr};">${s.n.split(' ').slice(0,2).map(w=>w[0]).join('')}</div>`;
+  const da=`data-av="${String(s.n).replace(/"/g,'&quot;')}" data-avs="${size}" data-avc="${clr}"`;
+  return s.p ? `<img ${da} src="${s.p}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;border:3px solid ${clr};flex-shrink:0;">`
+    : `<div ${da} style="width:${size}px;height:${size}px;border-radius:50%;flex-shrink:0;background:${clr}22;border:3px solid ${clr};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${Math.round(size/3.4)}px;color:${clr};">${s.n.split(' ').slice(0,2).map(w=>w[0]).join('')}</div>`;
 }
 
 /* ── תמונות החניכים ── */
@@ -1564,6 +1591,12 @@ function refreshPhotos(){
     if(!s||!s.p) return;
     const first=c.firstElementChild;
     if(first) first.outerHTML=avatar(s,54,GRP_CLR[s.g]||'#94a3b8');
+  });
+  /* כל שאר המקומות שמציגים תמונת חניך (אלפוני הקבוצות, גופי מנהיגות וכו') */
+  const ph=window.PHOTOS||{};
+  document.querySelectorAll('[data-av]').forEach(el=>{
+    if(el.tagName==='IMG') return; const n=el.dataset.av, d=ph[n]; if(!d) return;
+    el.outerHTML=avatar({n,p:d},+el.dataset.avs||50,el.dataset.avc||'#94a3b8');
   });
 }
 /* קליטת תמונות מסמרט קמפוס — רק מהאתר של מבואות ים, ורק לרכז */
@@ -1712,6 +1745,72 @@ function viewLimudiLayer(){
       </div>${limTable(all,true)}</div>
   </div></div>`;
 }
+/* ═══════════ מעקב לימודי לפי שכבה (יא / יב / אקדמיה) + מבחנים צפויים ═══════════ */
+function limRamzorStrip(rows){
+  const lv=['אדום','כתום','צהוב','ירוק'], n=rows.length||1;
+  const bar=lv.map(k=>{ const c=rows.filter(r=>r['רמה']===k).length; return c?`<span style="width:${c*100/n}%;background:${LIM_LV[k]}" title="${k}: ${c}">${c}</span>`:''; }).join('');
+  const who=['אדום','כתום'].map(k=>{ const rs=rows.filter(r=>r['רמה']===k).sort((a,b)=>(+b['ניקוד_סיכון']||0)-(+a['ניקוד_סיכון']||0));
+    return rs.length?`<div class="lim-who"><b style="color:${LIM_LV[k]}">${k} (${rs.length}):</b> ${rs.map(r=>`<span class="lim-chip" style="border-color:${LIM_LV[k]}">${limEsc(r['שם'])}</span>`).join('')}</div>`:''; }).join('');
+  return `<div class="lim-strip">${bar}</div>${who||'<div style="color:#2E8B57;font-size:13px;">✓ אין חניכים באדום או בכתום</div>'}`;
+}
+function limInsights(rows,title){
+  if(!rows.length) return '';
+  const n=rows.length, c=k=>rows.filter(r=>r['רמה']===k).length;
+  const avgAb=Math.round(rows.reduce((s,r)=>s+(+r['אחוז_חיסור']||0),0)/n*10)/10;
+  const hab=limCount(rows,'היעדרות_במקצוע'), low=limCount(rows,'ציונים_נמוכים'), bag=limCount(rows,'בגרות_מתחת_55');
+  const hiAb=rows.filter(r=>(+r['אחוז_חיסור']||0)>=20).length;
+  const zeros=rows.reduce((s,r)=>s+(+r['ציוני_אפס']||0),0);
+  const top=[...rows].sort((a,b)=>(+b['ניקוד_סיכון']||0)-(+a['ניקוד_סיכון']||0)).slice(0,5).filter(r=>(+r['ניקוד_סיכון']||0)>0);
+  const pct=v=>Math.round(v*100/n);
+  const L=[
+    `<b>${pct(c('אדום')+c('כתום'))}%</b> מ${title} באדום או בכתום (${c('אדום')} באדום, ${c('כתום')} בכתום); ${pct(c('ירוק'))}% בירוק.`,
+    `ממוצע החיסורים בשכבה: <b>${avgAb}%</b>${hiAb?` · ${hiAb} חניכים עם 20% חיסורים ומעלה`:''}.`,
+    hab.length?`המקצוע עם הכי הרבה חניכים שנעדרים 40%+ משיעוריו: <b>${limEsc(hab[0][0])}</b> (${hab[0][1]} חניכים)${hab[1]?`, אחריו ${limEsc(hab[1][0])} (${hab[1][1]})`:''}.`:'',
+    low.length?`הכי הרבה ציונים מתחת ל-55: <b>${limEsc(low[0][0])}</b> (${low[0][1]} חניכים)${low[1]?`, ${limEsc(low[1][0])} (${low[1][1]})`:''}${zeros?` · ${zeros} מהם ציוני 0 (בדרך כלל עבודה שלא הוגשה)`:''}.`:'',
+    bag.length?`בגרויות מתחת ל-55: ${bag.slice(0,3).map(([k,v])=>`${limEsc(k)} (${v})`).join(', ')}.`:'',
+    top.length?`בסיכון הגבוה ביותר: ${top.map(r=>`<b>${limEsc(r['שם'])}</b>`).join(', ')}.`:''
+  ].filter(Boolean);
+  return `<ul class="lim-ins">${L.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+}
+function viewLimudiFor(groups, title){
+  const L=window.LIMUDI;
+  if(!ME||ME.mode!=='admin') return info('🔒',`מעקב לימודי — ${title}`,'הלשונית הזאת זמינה לרכז. המדריכים רואים את המצב הלימודי של הקבוצה שלהם תחת <b>ניהול קבוצה ← מצב לימודי</b>.');
+  if(!L||!L.students) return info('📚',`מעקב לימודי — ${title}`,'עדיין לא נטענו נתונים מסמרט סקול. הם מתעדכנים פעם בשבוע.');
+  const all=[], seen=new Set(), miss=[];
+  const grp=groups.map(([g,names])=>{ const r=limRows(names); r.rows.forEach(x=>{ if(!seen.has(x['שם'])){ seen.add(x['שם']); all.push(x); } }); miss.push(...r.miss); return [g,r.rows]; });
+  const gt=groups.length>1?`<div class="panel"><div class="panel-h"><h2>👥 לפי קבוצה</h2></div><div class="panel-b" style="overflow-x:auto"><table class="lim-gt"><thead><tr><th>קבוצה</th><th>חניכים</th><th>אדום</th><th>כתום</th><th>צהוב</th><th>ירוק</th><th>חיסור ממוצע</th></tr></thead><tbody>
+    ${grp.map(([g,rs])=>{ const c=k=>rs.filter(r=>r['רמה']===k).length, av=rs.length?Math.round(rs.reduce((s,r)=>s+(+r['אחוז_חיסור']||0),0)/rs.length*10)/10:'—';
+      return `<tr><td><b>${limEsc(g)}</b></td><td>${rs.length}</td>${['אדום','כתום','צהוב','ירוק'].map(k=>`<td style="color:${LIM_LV[k]};font-weight:700">${c(k)}</td>`).join('')}<td>${av}%</td></tr>`; }).join('')}</tbody></table></div></div>`:'';
+  const hab=limCount(all,'היעדרות_במקצוע'), low=limCount(all,'ציונים_נמוכים'), bag=limCount(all,'בגרות_מתחת_55');
+  return info('📚',`מעקב לימודי — ${limEsc(title)}`, limStamp())
+    + limTiles(all)
+    + `<div class="panel"><div class="panel-h"><h2>🚦 רמזור לימודי</h2></div><div class="panel-b">${limRamzorStrip(all)}</div></div>`
+    + `<div class="panel"><div class="panel-h"><h2>💡 תובנות</h2></div><div class="panel-b">${limInsights(all,title)}</div></div>`
+    + `<div class="panel"><div class="panel-h"><h2>📊 גרפים מרכזיים</h2></div><div class="panel-b"><div class="lim-charts">
+        <div><h3>היעדרות 40%+ לפי מקצוע</h3>${limBars(hab,'#8E033C','חניכים')}</div>
+        <div><h3>ציונים מתחת ל-55 לפי מקצוע</h3>${limBars(low,'#FC5028','חניכים')}</div>
+        <div><h3>בגרויות מתחת ל-55</h3>${limBars(bag,'#C0261F','חניכים')}</div></div></div></div>`
+    + gt
+    + `<div class="panel"><div class="panel-h"><h2>📋 החניכים לפי רמת סיכון (${all.length})</h2></div><div class="panel-b">${limTable(all,true)}</div></div>`
+    + (miss.length?`<div class="info-box" style="background:#fdf1d6;border-color:#f0c674;"><div class="icon">❓</div><div><b>לא נמצאו בסמרט סקול (${miss.length}):</b> ${miss.map(limEsc).join(' · ')}</div></div>`:'');
+}
+/* מבחנים צפויים — מיומני בית הספר (school_cal.json) */
+let EXAMS_CACHE=null;
+const EXAM_RX=/מבחן|בחינ|בגרות|בוחן|מתכונ|מבדק|מועד [אב]/;
+window.renderExams=async function(){
+  const el=document.getElementById('examsBody'); if(!el) return;
+  if(!EXAMS_CACHE){ try{ EXAMS_CACHE=await (await fetch('school_cal.json',{cache:'no-cache'})).json(); }catch(e){ el.innerHTML='<div style="color:var(--text3)">טעינת לוח המבחנים נכשלה.</div>'; return; } }
+  const t=new Date(), today=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  const ex=EXAMS_CACHE.ev.filter(x=>(x.l==='sch_ya'||x.l==='sch_yb')&&x.e>=today&&EXAM_RX.test(x.t));
+  const D=['א','ב','ג','ד','ה','ו','ש'], sh=s=>{ const [y,m,d]=s.split('-'); return `${+d}.${+m}`; };
+  const week=s=>{ const x=new Date(s+'T12:00:00'); x.setDate(x.getDate()-x.getDay()); return x.toISOString().slice(0,10); };
+  const col=(lay,ttl,clr)=>{ const L=ex.filter(x=>x.l===lay); const by={};
+    L.forEach(x=>{ (by[week(x.s)]=by[week(x.s)]||[]).push(x); });
+    return `<div class="ex-col"><h3 style="color:${clr}">${ttl} <small>(${L.length})</small></h3>${Object.keys(by).sort().map(w=>`<div class="ex-wk"><div class="ex-wh">שבוע ${sh(w)}${w<=today?' · השבוע':''}</div>
+      ${by[w].map(x=>{ const dd=new Date(x.s+'T12:00:00'); return `<div class="ex-r" style="--c:${clr}"><span class="ex-d">יום ${D[dd.getDay()]}' ${sh(x.s)}${x.e!==x.s?'–'+sh(x.e):''}</span><span>${limEsc(x.t)}</span></div>`; }).join('')}</div>`).join('')||'<div style="color:var(--text3)">אין מבחנים צפויים</div>'}</div>`; };
+  el.innerHTML=`<div class="ex-grid">${col('sch_ya',"📘 שכבת יא'",'#6d28d9')}${col('sch_yb',"📗 שכבת יב'",'#2563eb')}</div>
+    <div style="font-size:12px;color:var(--text3);margin-top:8px">מקור: לוחות המבחנים של בית הספר רמות ים${EXAMS_CACHE.updated?` · עודכן ${new Date(EXAMS_CACHE.updated).toLocaleDateString('he-IL')}`:''}. כל האירועים מופיעים גם ביומן ← לוח שנה.</div>`;
+};
 function viewRamzor(names, title){
   const rows = names.map(s=>{
     const i = ramzorIdxOf(s.n); const r = i>=0 ? RAMZOR_DATA_NEW[i] : null;
@@ -3263,7 +3362,7 @@ function viewImportant(){
 window.renderImportant=async function(){
   const el=document.getElementById('impBody'); if(!el) return;
   const I=(await libLoadPub()).important||[];
-  el.innerHTML=I.map(x=>lbRow({...x,ext:(x.u.split('.').pop()||'')})).join('');
+  el.innerHTML=I.map(x=>lbRow({...x,ext:x.ext||(x.u.split('.').pop()||'')})).join('');
 };
 
 /* ---------- סיכומי שיחות (אזור מוגן) ---------- */
@@ -3990,10 +4089,11 @@ window.attdRender=async function(){
   if(typeof ME==='undefined'||!ME){ el.innerHTML=''; return; }
   if(!ATTD.days){ el.innerHTML='<div class="panel"><div class="panel-b ad-mut">טוען את נתוני הנוכחות…</div></div>'; await attdLoad(); }
   const admin=ME.mode==='admin', ks=adRange(), M=ATTD.meta;
+  const scl=`<a class="ad-sc" href="https://mevootyam.smart-campus.co.il/student-list" target="_blank" rel="noopener">🔗 נוכחות בסמרט קמפוס</a>`;
   const up=admin?`<label class="ad-up">📤 העלאת דוח נוכחות (אקסל מסמרט קמפוס)<input type="file" accept=".xlsx,.xls" hidden data-up></label>`:'';
   const head=`<div class="info-box" style="border-right:5px solid #FC5028"><div class="icon">📊</div><div style="flex:1">
     <b>דשבורד נוכחות — בוגרת</b><br><span style="font-size:13px">${M?`עודכן ${new Date(M.updated).toLocaleDateString('he-IL')} ${new Date(M.updated).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})} · מהקובץ ${adEsc(M.file)} · ${Object.keys(ATTD.days).length} ימים במאגר (${adShort(Object.keys(ATTD.days).sort()[0])}–${adShort(Object.keys(ATTD.days).sort().pop())})`:'עוד לא הועלה דוח.'}</span>
-    ${admin?`<div style="font-size:12.5px;color:#7A6A66;margin-top:4px">בסמרט קמפוס: נוכחות ← ייצוא "דוח נוכחות חניכים" לאקסל, ואז מעלים אותו כאן. כל העלאה מוסיפה את הימים שבקובץ ומעדכנת ימים קיימים.</div>`:''}</div>${up}</div>`;
+    ${admin?`<div style="font-size:12.5px;color:#7A6A66;margin-top:4px">בסמרט קמפוס: נוכחות ← ייצוא "דוח נוכחות חניכים" לאקסל, ואז מעלים אותו כאן. כל העלאה מוסיפה את הימים שבקובץ ומעדכנת ימים קיימים.</div>`:''}</div><div class="ad-btns">${scl}${up}</div></div>`;
   if(!ks.length){ el.innerHTML=head+(ATTD.err?`<div class="panel"><div class="panel-b ad-mut">שגיאה בטעינה: ${adEsc(ATTD.err)}</div></div>`:''); adBind(el); return; }
   const rows=adRows(ks), c=adCount(rows), stud=adStudents(rows);
   const groups=[...new Set(Object.values(ATTD.days).flat().map(x=>x[1]))].sort();
@@ -4066,6 +4166,41 @@ function adBind(el){
   el.querySelectorAll('[data-open]').forEach(t=>t.onclick=()=>{ ATTD.open=ATTD.open===t.dataset.open?null:t.dataset.open; rr(); });
   const q=el.querySelector('.ad-q'); if(q) q.oninput=()=>{ ATTD.q=q.value; const p=q.selectionStart; rr().then(()=>{ const n=el.querySelector('.ad-q'); if(n){ n.focus(); n.setSelectionRange(p,p); } }); };
 }
+
+
+/* ═══════════ מאגר נושאים לתוכנית החינוכית (edu_topics.json — קטלוג מהדרייב, נבנה ע"י Claude) ═══════════ */
+let EDT=null; const EDT_ST={k:null,q:''};
+const edtIc=x=>({pdf:'📕',doc:'📘',docx:'📘',ppt:'📙',pptx:'📙',pps:'📙',ppsx:'📙',xls:'📗',xlsx:'📗',mp4:'🎬',mov:'🎬',avi:'🎬',mkv:'🎬',mp3:'🎵',jpg:'🖼️',jpeg:'🖼️',png:'🖼️'}[x]||'📄');
+window.renderEduTopics=async function(){
+  const el=document.getElementById('eduTopicsBody'); if(!el) return;
+  if(!EDT){ try{ EDT=await (await fetch('edu_topics.json',{cache:'no-cache'})).json(); }catch(e){ el.textContent='טעינת המאגר נכשלה'; return; } }
+  const E=lbEsc, T=EDT.topics;
+  const cards=`<div class="edt-grid">${T.map((t,i)=>`<button class="edt-card${EDT_ST.k===i?' on':''}" data-t="${i}"><span class="edt-ic">${t.ic}</span><b>${E(t.t)}</b><small>${E(t.d)}</small><em>${t.files.length} קבצים</em></button>`).join('')}</div>`;
+  let list='';
+  if(EDT_ST.k!=null){ const t=T[EDT_ST.k], q=EDT_ST.q.trim();
+    const fl=t.files.filter(f=>!q||f.t.includes(q)||f.f.includes(q)); const by={};
+    fl.forEach(f=>{ (by[f.f||'כללי']=by[f.f||'כללי']||[]).push(f); });
+    list=`<div class="edt-head"><h3>${t.ic} ${E(t.t)}</h3><input class="edt-q" placeholder="🔍 חיפוש בנושא" value="${E(EDT_ST.q)}">
+      ${t.folder?`<a class="btn" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${E(t.folder)}">📂 התיקייה בדרייב</a>`:''}</div>
+      ${Object.keys(by).sort((a,b)=>a==='כללי'?-1:b==='כללי'?1:a.localeCompare(b,'he')).map(g=>`<details class="edt-g" ${q||Object.keys(by).length<=3?'open':''}><summary>${E(g)} <small>(${by[g].length})</small></summary>
+        ${by[g].map(f=>`<a class="lb-row" target="_blank" rel="noopener" href="https://drive.google.com/file/d/${E(f.id)}/view"><span class="lb-ic">${edtIc(f.x)}</span><span class="lb-t">${E(f.t)}</span><span class="lb-m">${f.x.toUpperCase()}</span></a>`).join('')}</details>`).join('')||'<div class="ad-mut">לא נמצאו קבצים</div>'}`;
+  }
+  el.innerHTML=cards+list+`<div style="font-size:12px;color:var(--text3);margin-top:10px">הקבצים נמצאים בדרייב של יובל (תיקיית "מבואות ים ← תוכנית חינוכית"). מי שאין לו גישה לתיקייה יתבקש לבקש הרשאה.</div>`;
+  el.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.t; EDT_ST.k=EDT_ST.k===i?null:i; EDT_ST.q=''; renderEduTopics(); });
+  const q=el.querySelector('.edt-q'); if(q) q.oninput=()=>{ EDT_ST.q=q.value; const p=q.selectionStart; renderEduTopics().then(()=>{ const n=el.querySelector('.edt-q'); if(n){ n.focus(); n.setSelectionRange(p,p);} }); };
+};
+
+
+/* ═══════════ בוגרים — מסמכי "היום שאחרי" וצידה לדרך (קישורים באזור המוגן, יש בהם פרטי חניכים) ═══════════ */
+const GRAD_DOCS_PATH='portal/bogeret/secure/grad_docs';
+window.gradDocsRender=async function(){
+  const el=document.getElementById('gradDocs'); if(!el||typeof ME==='undefined'||!ME) return;
+  let L=[]; try{ const {dbm,rdb}=await secureDb(); const s=await dbm.get(dbm.ref(rdb,GRAD_DOCS_PATH)); L=s.exists()?JSON.parse(s.val()):[]; }catch(e){}
+  if(!L.length){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="panel" style="margin-bottom:16px;border:2px solid #F3C2B0"><div class="panel-h" style="background:linear-gradient(90deg,#FFF1EB,#fff)"><h2>🧭 היום שאחרי — מסמכים ליציאה לדרך</h2></div><div class="panel-b">
+    ${L.map(x=>`<a class="lb-row" target="_blank" rel="noopener" href="${lbEsc(x.u)}"><span class="lb-ic">${x.ic||'📄'}</span><span class="lb-t">${lbEsc(x.t)}${x.d?`<small class="lb-d">${lbEsc(x.d)}</small>`:''}</span><span class="lb-m">🔒 ${lbEsc(x.m||'דרייב')}</span></a>`).join('')}
+    <div style="font-size:12px;color:var(--text3);margin-top:6px">הקישורים שמורים באזור המוגן כי בחלק מהמסמכים יש פרטי חניכים.</div></div></div>`;
+};
 
 /* ═══════════ לינקים חשובים ═══════════ */
 const LINKS=[
@@ -5129,6 +5264,7 @@ function reorganize(){
 
   /* ---------- 4. בוגרים ---------- */
   const gd=mkSec('graduates');
+  const gdDocs=document.createElement('div'); gdDocs.id='gradDocs'; gd.appendChild(gdDocs);
   while(old.graduates.firstChild) gd.appendChild(old.graduates.firstChild);
   main.appendChild(gd);
 
@@ -5175,18 +5311,36 @@ function reorganize(){
 
   /* ---------- מעקב לימודי + תוכנית חינוכית ---------- */
   const pd=mkSec('pedagogy');
-  const limTop=document.createElement('div'); limTop.innerHTML=viewLimudiLayer(); pd.appendChild(limTop);
-  while(old.pedagogy.firstChild) pd.appendChild(old.pedagogy.firstChild);
+  pd.appendChild(mkNav('pd',[{k:'all',label:'📊 מעקב לימודי כללי'},{k:'ya',label:"📘 מעקב לימודי יא'"},{k:'yb',label:"📗 מעקב לימודי יב'"},
+    {k:'acad',label:'🏀 מעקב לימודי אקדמיה לכדורסל'},{k:'exams',label:'📝 מבחנים צפויים'}], k=>{ pickIn(pd,'pd')(k); if(k==='exams') renderExams(); }));
+  const pAll=mkSub('pd-all',true);
+  pAll.innerHTML=viewLimudiLayer()||info('📚','מעקב לימודי כללי','התמונה הכוללת זמינה לרכז. הנתונים מתעדכנים מסמרט סקול פעם בשבוע.');
+  const pYa=mkSub('pd-ya'); pYa.innerHTML=viewLimudiFor(GROUPS_YA.map(g=>[g,stuOf(g)]),"שכבת יא'");
+  const pYb=mkSub('pd-yb'); pYb.innerHTML=viewLimudiFor([["קהילת יב'",stuOfLayer("יב'")]],"שכבת יב'");
+  const pAc=mkSub('pd-acad'); pAc.innerHTML=viewLimudiFor([['אקדמיה לכדורסל',ACAD_STUDENTS]],'האקדמיה לכדורסל');
+  const pEx=mkSub('pd-exams'); pEx.innerHTML=info('📝','מבחנים צפויים','כל המבחנים, הבחנים, המתכונות והמועדים מלוחות בית הספר, מהיום והלאה, לפי שכבה ושבוע.')
+    +`<div class="panel"><div class="panel-b" id="examsBody">טוען…</div></div>`;
+  [pAll,pYa,pYb,pAc,pEx].forEach(x=>pd.appendChild(x));
   main.appendChild(pd);
+  /* תוכנית מלווה — חוגי פנאי (עברו ממעקב לימודי) */
+  const cp=mkSec('companion');
+  cp.innerHTML=info('🎨','תוכנית מלווה','חוגי הפנאי של חניכי השכבה, הקבוצה ושתי בחירות הפנאי של כל חניך.');
+  while(old.pedagogy.firstChild) cp.appendChild(old.pedagogy.firstChild);
+  main.appendChild(cp);
   const ep=mkSec('eduplan');
+  ep.appendChild(mkNav('ep',[{k:'plan',label:'📊 תכנון מול ביצוע'},{k:'topics',label:'📚 מאגר נושאים'}], k=>{ pickIn(ep,'ep')(k); if(k==='topics') renderEduTopics(); }));
+  const epPlan=mkSub('ep-plan',true), epTopics=mkSub('ep-topics');
+  epTopics.innerHTML=info('📚','מאגר נושאים לפעולות','חומרים מוכנים מהדרייב לפי נושא: חגים ומועדים, אישים, מיניות בריאה, מורשת קרב, השכלה פיננסית ועוד. בוחרים נושא, מחפשים ופותחים.')
+    +`<div class="panel"><div class="panel-b" id="eduTopicsBody">טוען…</div></div>`;
   const epTop=document.createElement('div');
   epTop.innerHTML = info('📊','תכנון מול ביצוע — מבט שכבתי',
       'הנתונים מתגלגלים אוטומטית ממה שהמדריכים מזינים בכל קבוצה, תחת <b>ניהול קבוצה ← תוכנית חינוכית</b>.')
     + `<div class="panel" style="margin-bottom:16px;"><div class="panel-h"><h2>📊 תכנון מול ביצוע לפי קבוצה</h2>
         <button class="btn" onclick="refreshEduMain()">🔄 רענן</button></div>
        <div class="panel-b" id="eduMainBody"></div></div>`;
-  ep.appendChild(epTop);
-  while(old.edu.firstChild) ep.appendChild(old.edu.firstChild);
+  epPlan.appendChild(epTop);
+  while(old.edu.firstChild) epPlan.appendChild(old.edu.firstChild);
+  ep.appendChild(epPlan); ep.appendChild(epTopics);
   main.appendChild(ep);
 
   /* ---------- נוכחות — לשונית ראשית ---------- */
@@ -5214,6 +5368,7 @@ function reorganize(){
   if(window.scCalRender) scCalRender();
   if(window.pcalRender) pcalRender();
   if(window.attdRender) attdRender();
+  if(window.gradDocsRender) gradDocsRender();
   if(window.renderYaSept) renderYaSept();
   if(window.renderYaFiles) renderYaFiles();
   if(window.renderUsers) renderUsers();
@@ -5902,10 +6057,6 @@ function buildAllSections() {
   // 5. ATTENDANCE - קישור ישיר ל-Smart Campus
   h += `<div class="sec" id="sec-attendance">
     ${attBoardHTML()}
-    <div class="info-box"><div class="icon">✅</div><div><b>נוכחות חניכים</b><br>הנוכחות מתנהלת ב-Smart Campus — השכמה, כיבוי אורות וכל כניסה או יציאה מהכפר.</div></div>
-    <a href="https://mevootyam.smart-campus.co.il/student-list" target="_blank" class="link-card" style="padding:22px;">
-      <div class="ic" style="font-size:34px;">📊</div><div class="info"><h4 style="font-size:16px;">Smart Campus — רשימת תלמידים ונוכחות</h4><p>לחץ לפתיחה בלשונית חדשה</p></div>
-    </a>
   </div>`;
 
   // 6. RAMZOR - תצוגה ויזואלית
@@ -6802,9 +6953,9 @@ const ALPHON_ORDER={"יא'":1,"יב'":2};
 const ALPHON_LBL={"יא'":"שכבה י\u05f4א","יב'":"שכבה י\u05f4ב"};
 function alphonSep(layer){
   const lbl = layer==='__acad' ? 'אקדמיה לכדורסל' : (ALPHON_LBL[layer]||(layer?('שכבה '+layer):'ללא שכבה'));
-  return `<div class="alphon-sep" data-layer="${layer||''}" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;margin:10px 0 2px;">
-      <span style="font-weight:800;font-size:13px;color:#8E033C;white-space:nowrap;">${lbl}</span>
-      <span class="alphon-sep-n" style="font-size:11px;color:var(--t3);font-weight:600;white-space:nowrap;"></span>
+  return `<div class="alphon-sep" data-layer="${layer||''}" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;margin:18px 0 4px;">
+      <span style="font-family:Heebo,sans-serif;font-weight:800;font-size:22px;color:#8E033C;white-space:nowrap;">${lbl}</span>
+      <span class="alphon-sep-n" style="font-size:14px;color:var(--t3);font-weight:600;white-space:nowrap;"></span>
       <span style="flex:1;height:2px;background:linear-gradient(90deg,#F3C2B0,transparent);border-radius:2px;"></span>
     </div>`;
 }
