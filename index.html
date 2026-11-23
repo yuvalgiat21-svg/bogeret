@@ -525,6 +525,92 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 @media (max-width:900px){#sccal .calwrap{flex-direction:column}#sccal .layers{position:static;width:100%;flex:none}}
 #sccal .empty{text-align:center;padding:30px;color:#7A6A66;line-height:1.9}
 #sccal .pop{z-index:9000}
+/* ===== לוח שנה מאוחד ===== */
+#pcal{font-family:Assistant,Heebo,sans-serif;color:#2b2220;}
+#pcal .pc-bar0{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px;}
+#pcal .pc-pill{border:1px solid #F3C2B0;background:#fff;border-radius:999px;padding:6px 14px;font:600 14px Heebo,sans-serif;cursor:pointer;color:#2b2220;}
+#pcal .pc-pill:hover{background:#FFF1EB;}
+#pcal .pc-add{background:#FC5028;color:#fff;border-color:#FC5028;}
+#pcal .pc-add:hover{background:#e0441f;}
+#pcal .pc-title{font:800 19px Heebo,sans-serif;margin:0 6px;min-width:170px;color:#8E033C;}
+#pcal .pc-search{border:1px solid #F3C2B0;border-radius:999px;padding:6px 14px;font:14px Assistant,sans-serif;min-width:170px;flex:1;max-width:260px;}
+#pcal .pc-seg{display:inline-flex;border:1px solid #F3C2B0;border-radius:999px;overflow:hidden;}
+#pcal .pc-seg button{border:0;background:#fff;padding:6px 14px;font:600 14px Heebo,sans-serif;cursor:pointer;color:#7A6A66;}
+#pcal .pc-seg button.on{background:#FC5028;color:#fff;}
+#pcal .pc-wrap{display:flex;gap:14px;align-items:flex-start;}
+#pcal .pc-layers{width:225px;flex:none;background:#fff;border:1px solid #F3C2B0;border-radius:14px;padding:12px;position:sticky;top:10px;}
+#pcal .pc-lh{font:800 15px Heebo,sans-serif;margin-bottom:6px;color:#8E033C;}
+#pcal .pc-grp{border-top:1px solid #f6dcd2;padding-top:6px;margin-top:6px;}
+#pcal .pc-gh{display:flex;justify-content:space-between;font:700 13px Heebo,sans-serif;color:#7A6A66;margin-bottom:3px;}
+#pcal .pc-gh a{color:#FC5028;font-weight:600;font-size:12px;text-decoration:none;}
+#pcal .pc-layers label{display:flex;align-items:center;gap:6px;font-size:13.5px;padding:3px 0;cursor:pointer;}
+#pcal .pc-layers label small{margin-right:auto;color:#7A6A66;font-size:11px;}
+#pcal .pc-sw{width:12px;height:12px;border-radius:4px;flex:none;display:inline-block;}
+#pcal .pc-note{font-size:11.5px;color:#7A6A66;margin-top:8px;line-height:1.5;}
+#pcal .pc-main{flex:1;min-width:0;}
+#pcal .pc-foot{font-size:12px;color:#7A6A66;margin-top:8px;}
+#pcal .pc-empty{padding:30px;text-align:center;color:#7A6A66;}
+/* חודש */
+#pcal .pc-month{border:1px solid #F3C2B0;border-radius:14px;overflow:hidden;background:#fff;}
+#pcal .pc-mhead{display:grid;grid-template-columns:repeat(7,1fr);background:#FFF1EB;font:700 13px Heebo,sans-serif;text-align:center;}
+#pcal .pc-mhead div{padding:6px 0;}
+#pcal .pc-mhead .we{color:#8E033C;}
+#pcal .pc-week{position:relative;border-top:1px solid #f6dcd2;}
+#pcal .pc-cell{position:absolute;top:0;bottom:0;border-left:1px solid #f6dcd2;padding:3px 5px;box-sizing:border-box;}
+#pcal .pc-cell.we{background:#fffaf7;}
+#pcal .pc-cell.out{background:#faf7f6;opacity:.55;}
+#pcal .pc-cell.today{background:#fff1eb;box-shadow:inset 0 0 0 2px #FC5028;}
+#pcal .pc-num{display:flex;justify-content:space-between;align-items:baseline;gap:4px;font-size:10.5px;color:#7A6A66;white-space:nowrap;overflow:hidden;}
+#pcal .pc-num a{font:800 14px Heebo,sans-serif;color:#2b2220;text-decoration:none;}
+#pcal .pc-num span{overflow:hidden;text-overflow:ellipsis;}
+#pcal .pc-more{position:absolute;bottom:2px;right:5px;font-size:11px;color:#FC5028;font-weight:700;text-decoration:none;}
+#pcal .pc-bar{position:absolute;z-index:2;background:color-mix(in srgb,var(--c) 16%,#fff);border-right:3px solid var(--c);color:#2b2220;border-radius:5px;
+  font-size:11.5px;line-height:16px;padding:0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;box-sizing:border-box;}
+#pcal .pc-bar:hover{background:color-mix(in srgb,var(--c) 30%,#fff);}
+/* שבוע / יום */
+#pcal .pc-tg{border:1px solid #F3C2B0;border-radius:14px;overflow:hidden;background:#fff;}
+#pcal .pc-tghead,#pcal .pc-tgall,#pcal .pc-tgbody{display:grid;}
+#pcal .pc-tghead>div{padding:6px 4px;text-align:center;background:#FFF1EB;font-size:11px;color:#7A6A66;border-left:1px solid #f6dcd2;}
+#pcal .pc-tghead>div a{display:block;color:#2b2220;text-decoration:none;font-size:13.5px;}
+#pcal .pc-tghead>div.today{background:#FC5028;color:#fff;}
+#pcal .pc-tghead>div.today a{color:#fff;}
+#pcal .pc-tgall{border-top:1px solid #f6dcd2;border-bottom:2px solid #F3C2B0;}
+#pcal .pc-lbl{font-size:11px;color:#7A6A66;padding:4px;text-align:center;}
+#pcal .pc-allin{position:relative;}
+#pcal .pc-tgbody{max-height:620px;overflow-y:auto;}
+#pcal .pc-hours div{font-size:11px;color:#7A6A66;text-align:center;box-sizing:border-box;padding-top:2px;}
+#pcal .pc-col{position:relative;border-left:1px solid #f6dcd2;}
+#pcal .pc-col.today{background:#fffaf7;}
+#pcal .pc-hr{position:absolute;left:0;right:0;border-top:1px solid #f6ece8;}
+#pcal .pc-tev{position:absolute;z-index:2;background:color-mix(in srgb,var(--c) 18%,#fff);border-right:3px solid var(--c);border-radius:6px;font-size:11.5px;
+  padding:2px 5px;overflow:hidden;cursor:pointer;box-sizing:border-box;line-height:1.3;}
+#pcal .pc-tev:hover{background:color-mix(in srgb,var(--c) 32%,#fff);}
+/* רשימה */
+#pcal .pc-agenda section{background:#fff;border:1px solid #F3C2B0;border-radius:12px;padding:8px 12px;margin-bottom:8px;}
+#pcal .pc-agenda section.today{box-shadow:inset 0 0 0 2px #FC5028;}
+#pcal .pc-agenda h4{margin:0 0 6px;font:800 14px Heebo,sans-serif;color:#8E033C;}
+#pcal .pc-agenda h4 small{color:#7A6A66;font-weight:400;}
+#pcal .pc-li{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;border-top:1px dashed #f6dcd2;font-size:14px;}
+#pcal .pc-li:first-of-type{border-top:0;}
+#pcal .pc-li:hover{background:#FFF1EB;}
+#pcal .pc-tm{width:86px;flex:none;color:#7A6A66;font-size:12.5px;}
+#pcal .pc-t{flex:1;}
+#pcal .pc-li small{color:#7A6A66;font-size:11.5px;}
+/* חלונות */
+#pcal .pc-ov{position:fixed;inset:0;background:rgba(43,34,32,.35);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px;}
+#pcal .pc-pop{background:#fff;border-radius:16px;border-top:6px solid var(--c);padding:18px 20px;width:min(430px,100%);position:relative;box-shadow:0 12px 40px rgba(0,0,0,.25);line-height:1.7;font-size:14.5px;}
+#pcal .pc-pop h3{margin:2px 0 6px;font:800 19px Heebo,sans-serif;}
+#pcal .pc-x{position:absolute;left:12px;top:10px;border:0;background:none;font-size:18px;cursor:pointer;color:#7A6A66;}
+#pcal .pc-pl{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#7A6A66;}
+#pcal .pc-heb{color:#7A6A66;font-size:13px;}
+#pcal .pc-src{color:#7A6A66;font-size:12px;margin-top:6px;}
+#pcal .pc-acts{display:flex;gap:8px;margin-top:12px;}
+#pcal .pc-form label{display:block;font-size:13px;color:#7A6A66;margin-top:8px;}
+#pcal .pc-form input{display:block;width:100%;box-sizing:border-box;border:1px solid #F3C2B0;border-radius:8px;padding:7px 9px;font:14.5px Assistant,sans-serif;margin-top:2px;}
+#pcal .pc-row{display:flex;gap:10px;}
+#pcal .pc-row label{flex:1;}
+@media (max-width:900px){#pcal .pc-wrap{flex-direction:column;}#pcal .pc-layers{position:static;width:100%;box-sizing:border-box;}
+  #pcal .pc-num span{display:none;}#pcal .pc-bar{font-size:10.5px;padding:0 3px;}}
 .gantt-d.past { opacity:.62; }
 .gantt-d .gd-ck { position:absolute; bottom:0; left:2px; font-size:10px; font-weight:900; color:#047857; line-height:1; }
 .gantt-d.has-ev .gd-ck { color:#fff; text-shadow:0 0 2px rgba(0,0,0,.55); }
@@ -3487,6 +3573,257 @@ window.addEventListener('message', async (e)=>{
   }catch(err){ SCC_LASTSEQ=null; reply({ok:false, err:String((err&&err.message)||err)}); }
 });
 
+
+/* ═══════════ לוח שנה מאוחד — פנימייה, בית ספר וחגים (יום / שבוע / חודש / רשימה, עם שכבות מידע) ═══════════
+   מקורות: לוח שבתות ואירועים תשפ"ז (EVENTS_5787), יומני בית הספר רמות ים + חגים (school_cal.json, מתעדכן מ-tools/school_cal.py),
+   לו"ז רכז קבוע, ואירועים שהצוות מוסיף בפורטל (באזור המוגן). */
+const PCAL_PATH='portal/bogeret/secure/cal_custom';
+const PC_LAYERS=[
+  {id:'b_shabbat',g:'פנימייה',n:'שבתות בפנימייה',c:'#1d4ed8'},
+  {id:'b_holiday',g:'פנימייה',n:'חופשות ויציאות',c:'#15803d'},
+  {id:'b_bogeret',g:'פנימייה',n:'אירועי בוגרת',c:'#8E033C'},
+  {id:'b_milestone',g:'פנימייה',n:'ציוני דרך',c:'#b45309'},
+  {id:'b_event',g:'פנימייה',n:'אירועי פנימייה',c:'#0e7490'},
+  {id:'fixed',g:'פנימייה',n:'ישיבות קבועות (לו"ז רכז)',c:'#7A6A66',off:true},
+  {id:'sch_ya',g:'בית ספר',n:"יא' — מבחנים ואירועים",c:'#6d28d9'},
+  {id:'sch_yb',g:'בית ספר',n:"יב' — מבחנים ואירועים",c:'#2563eb'},
+  {id:'sch_all',g:'בית ספר',n:'בית-ספרי כללי',c:'#64748b'},
+  {id:'heb',g:'כללי',n:'חגים ומועדים',c:'#ca8a04'},
+  {id:'mine',g:'כללי',n:'אירועים שנוספו בפורטל',c:'#FC5028'},
+];
+const PCL=Object.fromEntries(PC_LAYERS.map(l=>[l.id,l]));
+const PC_DAYS=['א','ב','ג','ד','ה','ו','ש'];
+const PC_MON=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const pcPad=n=>String(n).padStart(2,'0');
+const pcIso=x=>`${x.getFullYear()}-${pcPad(x.getMonth()+1)}-${pcPad(x.getDate())}`;
+const pcDt=s=>new Date(s+'T12:00:00');
+const pcAdd=(s,n)=>{ const x=pcDt(s); x.setDate(x.getDate()+n); return pcIso(x); };
+const pcDays=(a,b)=>Math.round((pcDt(b)-pcDt(a))/864e5);
+const pcShort=s=>{ const [,m,d]=s.split('-'); return `${+d}.${+m}`; };
+const pcMins=hm=>{ const [h,m]=(hm||'0:0').split(':').map(Number); return h*60+m; };
+const pcEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let PC_HF=null; const PC_HEB={};
+const pcHeb=s=>{ if(PC_HEB[s]!==undefined) return PC_HEB[s];
+  try{ PC_HF=PC_HF||new Intl.DateTimeFormat('he-u-ca-hebrew',{day:'numeric',month:'long'}); PC_HEB[s]=PC_HF.format(pcDt(s)); }catch(e){ PC_HEB[s]=''; }
+  return PC_HEB[s]; };
+const PC={mode:'month', anchor:pcIso(new Date()), q:'', pop:null, form:null, ev:null, par:{}, custom:null, upd:null};
+let PC_PF=null;
+function pcPrefs(){ if(!PC_PF){ let p={}; try{ p=JSON.parse(localStorage.getItem('bogeret_pcal_prefs')||'{}')||{}; }catch(e){} PC_PF=p; }
+  const p=JSON.parse(JSON.stringify(PC_PF)); p.layers=p.layers||{}; return p; }
+function pcSavePrefs(ch){ PC_PF=Object.assign(pcPrefs(),ch); try{ localStorage.setItem('bogeret_pcal_prefs',JSON.stringify(PC_PF)); }catch(e){} }
+const pcLayerOn=(pf,id)=>pf.layers[id]!==undefined?pf.layers[id]:!PCL[id].off;
+const pcCanEdit=()=>typeof ME!=='undefined'&&ME&&(ME.mode==='admin'||ME.mode==='edit');
+
+/* "27-31.8" / "20.9-4.10" / "4.6" → [התחלה, סוף] */
+function pcParseD(d){
+  d=String(d||'').replace(/\s*והלאה/,'').trim(); let m;
+  const iso=(dd,mn)=>`${mn>=8?2026:2027}-${pcPad(mn)}-${pcPad(dd)}`;
+  if((m=d.match(/^(\d+)\.(\d+)-(\d+)\.(\d+)$/))) return [iso(+m[1],+m[2]),iso(+m[3],+m[4])];
+  if((m=d.match(/^(\d+)-(\d+)\.(\d+)$/))) return [iso(+m[1],+m[3]),iso(+m[2],+m[3])];
+  if((m=d.match(/^(\d+)\.(\d+)$/))) return [iso(+m[1],+m[2]),iso(+m[1],+m[2])];
+  return null;
+}
+const PC_FIXED=[ // יום בשבוע (0=א), שעה, סיום, שם
+  [0,'10:00','11:00','ישיבת צוות פנימייה'],[0,'11:00','12:00','ישיבת בוגרת'],[0,'12:00','14:00','מח"מ יב + מכלול סיום'],
+  [0,'21:00','22:00','ישיבת מובילים'],[4,'09:00','12:00','פורום מוביל']];
+
+async function pcLoad(){
+  if(PC.ev) return;
+  const ev=[];
+  (typeof EVENTS_5787!=='undefined'?EVENTS_5787:[]).forEach((e,i)=>{
+    const r=pcParseD(e.d); if(!r) return;
+    const note=[e.r?'אחריות: '+e.r:'', e.duty?'תורנות שבת: '+e.duty:''].filter(Boolean).join(' · ');
+    ev.push({k:'b'+i, s:r[0], e:r[1]<r[0]?r[0]:r[1], t:e.t, l:'b_'+(e.k||'event'), note, src:'לוח שבתות ואירועים תשפ"ז'});
+  });
+  try{
+    const r=await fetch('school_cal.json',{cache:'no-cache'}); const J=await r.json();
+    const grade=new Set(J.ev.filter(x=>x.l==='sch_ya'||x.l==='sch_yb').map(x=>x.t+'|'+x.s+'|'+x.e));
+    J.ev.forEach((x,i)=>{ if(x.l==='sch_all'&&grade.has(x.t+'|'+x.s+'|'+x.e)) return;
+      ev.push({k:'s'+i, s:x.s, e:x.e, t:x.t, l:x.l, tm:x.tm, et:x.et, p:x.p, src:x.l==='heb'?'לוח עברי (Hebcal)':'יומן בית הספר רמות ים'}); });
+    PC.par=J.par||{}; PC.upd=J.updated;
+  }catch(e){ console.warn('school_cal',e); }
+  /* ישיבות קבועות — כל שבוע בשנה, חוץ מימי חופשה */
+  const off=new Set(); ev.filter(x=>x.l==='b_holiday').forEach(x=>{ for(let d=x.s; d<=x.e; d=pcAdd(d,1)) off.add(d); });
+  for(let d='2026-09-06'; d<='2027-06-25'; d=pcAdd(d,1)){
+    if(off.has(d)) continue; const wd=pcDt(d).getDay();
+    PC_FIXED.forEach(([w,a,b,t],j)=>{ if(w===wd) ev.push({k:'f'+d+j, s:d, e:d, tm:a, et:b, t, l:'fixed', src:'לו"ז רכז עקרוני'}); });
+  }
+  PC.ev=ev;
+}
+async function pcLoadCustom(){
+  try{ const {dbm,rdb}=await secureDb(); const s=await dbm.get(dbm.ref(rdb,PCAL_PATH)); const v=s.exists()?s.val():{};
+    PC.custom=Object.entries(v).map(([id,x])=>({...x, k:'c_'+id, id, l:'mine', src:'נוסף בפורטל'+(x.by?' ע"י '+x.by:'')}));
+  }catch(e){ PC.custom=[]; }
+}
+const pcAll=()=>(PC.ev||[]).concat(PC.custom||[]);
+function pcVisible(pf){
+  const q=(PC.q||'').trim();
+  return pcAll().filter(e=>pcLayerOn(pf,e.l)).filter(e=>!q||e.t.includes(q)||(e.note||'').includes(q)||(e.p||'').includes(q));
+}
+const pcOver=(e,a,b)=>e.s<=b&&e.e>=a;
+const pcAllDay=e=>!e.tm||e.s!==e.e;
+const pcClr=e=>(PCL[e.l]||PCL.mine).c;
+function pcLanes(list,a,b){
+  const segs=list.map(e=>({e, c0:Math.max(0,pcDays(a,e.s)), c1:Math.min(pcDays(a,b),pcDays(a,e.e))}))
+    .sort((x,y)=>x.c0-y.c0||(y.c1-y.c0)-(x.c1-x.c0)||(x.e.tm||'').localeCompare(y.e.tm||''));
+  const ends=[]; segs.forEach(s=>{ let i=0; while(ends[i]!==undefined&&ends[i]>=s.c0) i++; ends[i]=s.c1; s.lane=i; });
+  return segs;
+}
+const pcBar=(s,n,top,h)=>`<div class="pc-bar" data-k="${pcEsc(s.e.k)}" title="${pcEsc(s.e.t)}"
+  style="top:${top}px;height:${h}px;right:calc(${s.c0*100/n}% + 2px);width:calc(${(s.c1-s.c0+1)*100/n}% - 4px);--c:${pcClr(s.e)}">${s.e.tm&&s.e.s===s.e.e?`<b>${s.e.tm}</b> `:''}${pcEsc(s.e.t)}</div>`;
+
+function pcMonth(list,anchor,today){
+  const x=pcDt(anchor), first=pcIso(new Date(x.getFullYear(),x.getMonth(),1));
+  const start=pcAdd(first,-pcDt(first).getDay()), mo=x.getMonth();
+  const MAXL=4, LH=19, TOP=30;
+  let h=`<div class="pc-mhead">${PC_DAYS.map((d,i)=>`<div class="${i>=5?'we':''}">${d}'</div>`).join('')}</div>`;
+  for(let w=0; w<6; w++){
+    const a=pcAdd(start,w*7), b=pcAdd(a,6); if(w>3&&pcDt(a).getMonth()!==mo) break;
+    const segs=pcLanes(list.filter(e=>pcOver(e,a,b)),a,b), hid=Array(7).fill(0);
+    segs.filter(s=>s.lane>=MAXL).forEach(s=>{ for(let c=s.c0;c<=s.c1;c++) hid[c]++; });
+    h+=`<div class="pc-week" style="height:${TOP+MAXL*LH+20}px">${Array.from({length:7},(_,c)=>{ const day=pcAdd(a,c), dx=pcDt(day);
+      return `<div class="pc-cell${dx.getMonth()!==mo?' out':''}${day===today?' today':''}${c>=5?' we':''}" data-day="${day}" style="right:${c*100/7}%;width:${100/7}%">
+        <div class="pc-num"><a href="#" data-goday="${day}">${dx.getDate()}</a><span>${pcEsc(pcHeb(day))}${PC.par[day]?' · '+pcEsc(PC.par[day].replace('פרשת ','')):''}</span></div>
+        ${hid[c]?`<a href="#" class="pc-more" data-goday="${day}">+${hid[c]} נוספים</a>`:''}</div>`; }).join('')}
+      ${segs.filter(s=>s.lane<MAXL).map(s=>pcBar(s,7,TOP+s.lane*LH,LH-3)).join('')}</div>`;
+  }
+  return `<div class="pc-month">${h}</div>`;
+}
+function pcTimeGrid(list,a,n,today){
+  const b=pcAdd(a,n-1), H0=7, H1=24, HPX=42, LH=20;
+  const top=pcLanes(list.filter(e=>pcAllDay(e)&&pcOver(e,a,b)),a,b), nl=top.reduce((m,s)=>Math.max(m,s.lane+1),0);
+  const cols=Array.from({length:n},(_,c)=>pcAdd(a,c));
+  const timed=list.filter(e=>!pcAllDay(e)&&e.s>=a&&e.s<=b);
+  const gcol=`grid-template-columns:50px repeat(${n},1fr)`;
+  const head=`<div class="pc-tghead" style="${gcol}"><div></div>${cols.map(day=>{ const x=pcDt(day);
+    return `<div class="${day===today?'today':''}${x.getDay()>=5?' we':''}"><a href="#" data-goday="${day}"><b>${PC_DAYS[x.getDay()]}' ${x.getDate()}.${x.getMonth()+1}</b></a><span>${pcEsc(pcHeb(day))}${PC.par[day]?' · '+pcEsc(PC.par[day]):''}</span></div>`; }).join('')}</div>`;
+  const alld=`<div class="pc-tgall" style="${gcol}"><div class="pc-lbl">כל היום</div><div class="pc-allin" style="grid-column:2/-1;height:${Math.max(1,nl)*LH+6}px">${top.map(s=>pcBar(s,n,3+s.lane*LH,LH-3)).join('')}</div></div>`;
+  const hours=Array.from({length:H1-H0},(_,i)=>H0+i);
+  const body=cols.map(day=>{
+    const evs=timed.filter(e=>e.s===day).sort((x,y)=>pcMins(x.tm)-pcMins(y.tm)); const ce=[];
+    evs.forEach(e=>{ const s=Math.max(pcMins(e.tm),H0*60), t=e.et?Math.max(pcMins(e.et),s+30):s+60; e._s=s; e._t=t; let i=0; while(ce[i]!==undefined&&ce[i]>s) i++; ce[i]=t; e._c=i; });
+    const nc=Math.max(1,ce.length);
+    return `<div class="pc-col${day===today?' today':''}" style="height:${(H1-H0)*HPX}px">${hours.map(h=>`<div class="pc-hr" style="top:${(h-H0)*HPX}px"></div>`).join('')}
+      ${evs.map(e=>`<div class="pc-tev" data-k="${pcEsc(e.k)}" style="top:${(e._s-H0*60)/60*HPX}px;height:${Math.max(20,(e._t-e._s)/60*HPX-2)}px;right:${e._c*100/nc}%;width:calc(${100/nc}% - 3px);--c:${pcClr(e)}"><b dir="ltr">${e.tm}${e.et?'–'+e.et:''}</b> ${pcEsc(e.t)}</div>`).join('')}</div>`;
+  }).join('');
+  return `<div class="pc-tg">${head}${alld}<div class="pc-tgbody" style="${gcol}"><div class="pc-hours">${hours.map(h=>`<div style="height:${HPX}px">${pcPad(h)}:00</div>`).join('')}</div>${body}</div></div>`;
+}
+function pcList(list,a,today){
+  const b=pcAdd(a,41), by={};
+  list.filter(e=>pcOver(e,a,b)).forEach(e=>{ const d=e.s<a?a:e.s; (by[d]=by[d]||[]).push(e); });
+  const ks=Object.keys(by).sort(); if(!ks.length) return '<div class="pc-empty">אין אירועים ב-6 השבועות הקרובים בשכבות שנבחרו.</div>';
+  return `<div class="pc-agenda">${ks.map(d=>{ const x=pcDt(d);
+    return `<section class="${x.getDay()>=5?'we':''}${d===today?' today':''}"><h4>${d===today?'היום · ':''}יום ${PC_DAYS[x.getDay()]}' ${pcShort(d)} <small>${pcEsc(pcHeb(d))}${PC.par[d]?' · '+pcEsc(PC.par[d]):''}</small></h4>
+      ${by[d].sort((p,q)=>(p.tm||'').localeCompare(q.tm||'')).map(e=>`<div class="pc-li" data-k="${pcEsc(e.k)}"><span class="pc-sw" style="background:${pcClr(e)}"></span>
+        <span class="pc-tm">${e.tm&&e.s===e.e?e.tm:(e.s!==e.e?pcShort(e.s)+'–'+pcShort(e.e):'כל היום')}</span><span class="pc-t">${pcEsc(e.t)}</span><small>${pcEsc((PCL[e.l]||{}).n||'')}</small></div>`).join('')}</section>`; }).join('')}</div>`;
+}
+function pcTitle(mode,a){
+  const x=pcDt(a);
+  if(mode==='month') return `${PC_MON[x.getMonth()]} ${x.getFullYear()}`;
+  if(mode==='day') return `יום ${PC_DAYS[x.getDay()]}' · ${x.getDate()} ב${PC_MON[x.getMonth()]} ${x.getFullYear()}`;
+  if(mode==='week'){ const s=pcAdd(a,-x.getDay()); return `שבוע ${pcShort(s)}–${pcShort(pcAdd(s,6))}`; }
+  return `מ-${pcShort(a)} · 6 שבועות`;
+}
+function pcStep(mode,a,n){
+  if(mode==='month'){ const x=pcDt(a); return pcIso(new Date(x.getFullYear(),x.getMonth()+n,1)); }
+  return pcAdd(a,n*(mode==='day'?1:mode==='week'?7:42));
+}
+function pcPanel(pf){
+  const cnt={}; pcAll().forEach(e=>cnt[e.l]=(cnt[e.l]||0)+1);
+  const groups=[...new Set(PC_LAYERS.map(l=>l.g))];
+  return `<aside class="pc-layers"><div class="pc-lh">שכבות מידע</div>
+    ${groups.map(g=>`<div class="pc-grp"><div class="pc-gh">${g}<span><a href="#" data-grp="${g}" data-on="1">הכול</a> · <a href="#" data-grp="${g}" data-on="0">כלום</a></span></div>
+      ${PC_LAYERS.filter(l=>l.g===g).map(l=>`<label><input type="checkbox" data-layer="${l.id}" ${pcLayerOn(pf,l.id)?'checked':''}><span class="pc-sw" style="background:${l.c}"></span>${l.n}<small>${cnt[l.id]||0}</small></label>`).join('')}</div>`).join('')}
+    <div class="pc-note">הבחירה נשמרת במכשיר הזה. כדי למנוע הצפה כדאי להשאיר דלוקות רק את השכבות שרלוונטיות עכשיו.</div></aside>`;
+}
+function pcDetails(k){
+  const e=pcAll().find(x=>x.k===k); if(!e) return '';
+  const L=PCL[e.l]||PCL.mine, mine=e.l==='mine', canDel=mine&&typeof ME!=='undefined'&&ME&&(ME.mode==='admin'||e.uid===ME.id);
+  const when=e.s===e.e?`יום ${PC_DAYS[pcDt(e.s).getDay()]}' ${pcShort(e.s)}.${pcDt(e.s).getFullYear()}`:`${pcShort(e.s)} – ${pcShort(e.e)}.${pcDt(e.e).getFullYear()} (${pcDays(e.s,e.e)+1} ימים)`;
+  return `<div class="pc-ov" data-close="1"><div class="pc-pop" style="--c:${L.c}">
+    <button class="pc-x" data-close="1">✕</button>
+    <div class="pc-pl"><span class="pc-sw" style="background:${L.c}"></span>${L.n}</div>
+    <h3>${pcEsc(e.t)}</h3>
+    <div>🗓️ ${when}${e.tm?` · 🕘 <span dir="ltr">${e.tm}${e.et?'–'+e.et:''}</span>`:''}</div>
+    <div class="pc-heb">${pcEsc(pcHeb(e.s))}</div>
+    ${e.p?`<div>📍 ${pcEsc(e.p)}</div>`:''}${e.note?`<div>📝 ${pcEsc(e.note)}</div>`:''}
+    <div class="pc-src">מקור: ${pcEsc(e.src||'')}</div>
+    ${canDel?`<div class="pc-acts"><button class="btn" data-edit="${pcEsc(e.id)}">✏️ עריכה</button><button class="btn" data-del="${pcEsc(e.id)}" style="color:#b91c1c">🗑️ מחיקה</button></div>`:''}
+  </div></div>`;
+}
+function pcForm(){
+  const f=PC.form;
+  return `<div class="pc-ov"><form class="pc-pop pc-form" style="--c:#FC5028">
+    <button type="button" class="pc-x" data-close="1">✕</button><h3>${f.id?'עריכת אירוע':'➕ אירוע חדש'}</h3>
+    <label>שם האירוע<input name="t" required maxlength="120" value="${pcEsc(f.t||'')}"></label>
+    <div class="pc-row"><label>מתאריך<input type="date" name="s" required value="${f.s}"></label><label>עד תאריך<input type="date" name="e" value="${f.e||f.s}"></label></div>
+    <div class="pc-row"><label>שעה (לא חובה)<input type="time" name="tm" value="${f.tm||''}"></label><label>עד שעה<input type="time" name="et" value="${f.et||''}"></label></div>
+    <label>מקום<input name="p" maxlength="80" value="${pcEsc(f.p||'')}"></label>
+    <label>הערה<input name="note" maxlength="200" value="${pcEsc(f.note||'')}"></label>
+    <div class="pc-note">האירוע נשמר באזור המוגן ומוצג לכל הצוות המחובר, בשכבה "אירועים שנוספו בפורטל". לא לכתוב פרטים אישיים של חניכים.</div>
+    <div class="pc-acts"><button class="btn" type="submit" style="background:#FC5028;color:#fff;border-color:#FC5028">שמירה</button><button class="btn" type="button" data-close="1">ביטול</button></div>
+  </form></div>`;
+}
+async function pcSave(fd){
+  const o={t:fd.get('t').trim(), s:fd.get('s'), e:fd.get('e')||fd.get('s')};
+  if(!o.t||!o.s) return; if(o.e<o.s) o.e=o.s;
+  ['tm','et','p','note'].forEach(k=>{ const v=(fd.get(k)||'').trim(); if(v) o[k]=v; });
+  if(!o.tm) delete o.et;
+  const id=PC.form.id||(Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+  const old=(PC.custom||[]).find(x=>x.id===id);
+  o.by=old?old.by:(ME&&ME.n||''); o.uid=old?old.uid:(ME&&ME.id||''); o.at=new Date().toISOString();
+  const {dbm,rdb}=await secureDb(); await dbm.set(dbm.ref(rdb,PCAL_PATH+'/'+id), o);
+  PC.custom=(PC.custom||[]).filter(x=>x.id!==id).concat([{...o,k:'c_'+id,id,l:'mine',src:'נוסף בפורטל'+(o.by?' ע"י '+o.by:'')}]);
+  PC.form=null; PC.anchor=o.s;
+}
+async function pcDel(id){
+  if(!confirm('למחוק את האירוע מהיומן?')) return;
+  const {dbm,rdb}=await secureDb(); await dbm.remove(dbm.ref(rdb,PCAL_PATH+'/'+id));
+  PC.custom=(PC.custom||[]).filter(x=>x.id!==id); PC.pop=null;
+}
+window.pcalRender=async function(){
+  const el=document.getElementById('pcal'); if(!el) return;
+  if(!PC.ev){ el.innerHTML='<div class="pc-empty">טוען את לוח השנה…</div>'; await pcLoad(); }
+  if(PC.custom===null && typeof ME!=='undefined' && ME){ PC.custom=undefined; pcLoadCustom().then(()=>pcalRender()); }
+  const pf=pcPrefs(); if(pf.mode&&!PC._m){ PC.mode=pf.mode; PC._m=1; }
+  const today=pcIso(new Date()), list=pcVisible(pf), M=PC.mode, A=PC.anchor;
+  const modes=[['day','יום'],['week','שבוע'],['month','חודש'],['list','רשימה']];
+  let view;
+  if(M==='month') view=pcMonth(list,A,today);
+  else if(M==='week') view=pcTimeGrid(list,pcAdd(A,-pcDt(A).getDay()),7,today);
+  else if(M==='day') view=pcTimeGrid(list,A,1,today);
+  else view=pcList(list,A,today);
+  el.innerHTML=`<div class="pc-bar0">
+      <button class="pc-pill" data-nav="0">היום</button>
+      <button class="pc-pill" data-nav="-1" title="הקודם">›</button><button class="pc-pill" data-nav="1" title="הבא">‹</button>
+      <h3 class="pc-title">${pcTitle(M,A)}</h3>
+      <input class="pc-search" placeholder="🔍 חיפוש אירוע" value="${pcEsc(PC.q)}">
+      <span class="pc-seg">${modes.map(([k,l])=>`<button class="${M===k?'on':''}" data-mode="${k}">${l}</button>`).join('')}</span>
+      ${pcCanEdit()?'<button class="pc-pill pc-add" data-new="1">➕ אירוע חדש</button>':''}
+    </div>
+    <div class="pc-wrap">${pcPanel(pf)}<div class="pc-main">${view}
+      <p class="pc-foot">מקורות: לוח שבתות ואירועים תשפ"ז · יומני בית הספר רמות ים${PC.upd?` (עודכנו ${new Date(PC.upd).toLocaleDateString('he-IL')})`:''} · לוח עברי · לו"ז רכז · אירועים שנוספו בפורטל. לחיצה על אירוע פותחת פרטים; לחיצה על מספר היום פותחת את היום.</p></div></div>
+    ${PC.form?pcForm():PC.pop?pcDetails(PC.pop):''}`;
+  const rr=()=>pcalRender();
+  el.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{ PC.mode=b.dataset.mode; pcSavePrefs({mode:PC.mode}); rr(); });
+  el.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{ const n=+b.dataset.nav; PC.anchor=n?pcStep(PC.mode,PC.anchor,n):pcIso(new Date()); rr(); });
+  el.querySelectorAll('[data-goday]').forEach(b=>b.onclick=e=>{ e.preventDefault(); e.stopPropagation(); PC.anchor=b.dataset.goday; PC.mode='day'; rr(); });
+  el.querySelectorAll('[data-k]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); PC.pop=b.dataset.k; rr(); });
+  el.querySelectorAll('[data-close]').forEach(b=>b.onclick=e=>{ if(e.target!==b) return; PC.pop=null; PC.form=null; rr(); });
+  el.querySelectorAll('input[data-layer]').forEach(b=>b.onchange=()=>{ const p=pcPrefs(); p.layers[b.dataset.layer]=b.checked; pcSavePrefs({layers:p.layers}); rr(); });
+  el.querySelectorAll('[data-grp]').forEach(a=>a.onclick=e=>{ e.preventDefault(); const p=pcPrefs(), on=a.dataset.on==='1';
+    PC_LAYERS.filter(l=>l.g===a.dataset.grp).forEach(l=>p.layers[l.id]=on); pcSavePrefs({layers:p.layers}); rr(); });
+  const nb=el.querySelector('[data-new]'); if(nb) nb.onclick=()=>{ PC.form={s:PC.mode==='day'?PC.anchor:pcIso(new Date())}; PC.pop=null; rr(); };
+  el.querySelectorAll('.pc-cell[data-day]').forEach(c=>c.ondblclick=()=>{ if(!pcCanEdit()) return; PC.form={s:c.dataset.day}; rr(); });
+  el.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{ const x=(PC.custom||[]).find(y=>y.id===b.dataset.edit); if(x){ PC.form={...x}; PC.pop=null; rr(); } });
+  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{ try{ await pcDel(b.dataset.del); }catch(err){ alert('המחיקה נכשלה: '+err.message); } rr(); });
+  const fm=el.querySelector('.pc-form'); if(fm) fm.onsubmit=async e=>{ e.preventDefault(); const bt=fm.querySelector('[type=submit]'); bt.disabled=true; bt.textContent='שומר…';
+    try{ await pcSave(new FormData(fm)); }catch(err){ alert('השמירה נכשלה: '+err.message); bt.disabled=false; bt.textContent='שמירה'; return; } rr(); };
+  const s=el.querySelector('.pc-search');
+  if(s) s.oninput=()=>{ PC.q=s.value; const pos=s.selectionStart; rr().then(()=>{ const n=el.querySelector('.pc-search'); if(n){ n.focus(); n.setSelectionRange(pos,pos); } }); };
+};
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&(PC.pop||PC.form)&&document.getElementById('pcal')){ PC.pop=null; PC.form=null; pcalRender(); } });
+
 /* ═══════════ לינקים חשובים ═══════════ */
 const LINKS=[
   {ic:'🏫',t:'סמרט קמפוס',d:'מערכת הפנימייה: תיק אישי, רשימות חניכים ונוכחות',u:'https://mevootyam.smart-campus.co.il'},
@@ -4390,13 +4727,8 @@ function reorganize(){
   wk.innerHTML=`<div class="panel" style="border:2px solid #f0c674;margin-bottom:16px;"><div class="panel-h" style="background:linear-gradient(90deg,#fff7e6,#fff);"><h2>💡 סיכום שבועי ותובנות</h2>
     <select id="wiWeek" class="btn" style="max-width:220px;" onchange="renderWeeklyInsights(this.value)"></select></div>
     <div class="panel-b" id="wiBody"><div style="color:var(--text2);font-size:13px;">טוען…</div></div></div>`;
-  sGen.insertBefore(wk, sGen.firstChild);
+  sGen.appendChild(wk); /* הנתונים הכלליים למעלה, התובנות אחריהם. ישיבת בוגרת נמצאת בחומרים מקצועיים */
   loadWeeklyInsights();
-  const mt=document.createElement('div'); mt.id='meetingLinks';
-  mt.innerHTML=`<div class="panel" style="border:2px solid #93c5fd;margin-bottom:16px;"><div class="panel-h" style="background:linear-gradient(90deg,#eff6ff,#fff);"><h2>📽️ ישיבת בוגרת השבועית — קישורים קבועים</h2></div>
-    <div class="panel-b" id="mtBody"><div style="color:var(--text2);font-size:13px;">טוען…</div></div></div>`;
-  sGen.insertBefore(mt, sGen.firstChild);
-  loadMeetingLinks();
   [sGen,sAlph,sGoals,sRam,sMed,sDiet,sFam,sVis,sRooms].forEach(x=>ov.appendChild(x));
   main.appendChild(ov);
 
@@ -4636,6 +4968,7 @@ function reorganize(){
   if(window.renderImportant) renderImportant();
   if(window.renderTripLib) renderTripLib();
   if(window.scCalRender) scCalRender();
+  if(window.pcalRender) pcalRender();
   if(window.renderYaSept) renderYaSept();
   if(window.renderYaFiles) renderYaFiles();
   if(window.renderUsers) renderUsers();
@@ -5134,15 +5467,14 @@ function buildAllSections() {
 
   h += `<div class="sec" id="sec-calendar">
     <div class="subnav" id="calSubnav">
-      <button class="active" onclick="subTab('cal','scgrid',this);scCalRender()">🗓️ לוח שנה — סמרט קמפוס</button>
+      <button class="active" onclick="subTab('cal','board',this);pcalRender()">🗓️ לוח שנה</button>
       <button onclick="subTab('cal','gantt',this)">📌 גאנט שנתי</button>
       <button onclick="subTab('cal','events',this)">🗓️ לוח שבתות ואירועים</button>
       <button onclick="subTab('cal','luz',this)">🕘 לו"ז רכז עקרוני</button>
-      <button onclick="subTab('cal','school',this)">🏫 יומן מתכלל — בי"ס ופנימייה</button>
     </div>
 
-    <!-- ===== לוח שנה מסמרט קמפוס ===== -->
-    <div class="subsec active" id="cal-scgrid"><div id="sccal"><div class="empty">טוען…</div></div></div>
+    <!-- ===== לוח שנה מאוחד: פנימייה, בית ספר, חגים ואירועי צוות ===== -->
+    <div class="subsec active" id="cal-board"><div id="pcal"><div class="pc-empty">טוען…</div></div></div>
 
     <!-- ===== גאנט ===== -->
     <div class="subsec" id="cal-gantt">
@@ -5239,54 +5571,6 @@ function buildAllSections() {
     </div></div>
     </div>
 
-    <!-- ===== יומן בית ספר ופנימייה ===== -->
-    <div class="subsec" id="cal-school">
-      <div class="info-box"><div class="icon">🏫</div><div><b>יומן מתכלל — בית ספר ופנימייה</b><br>לוחות המבחנים והאירועים של השכבה הבוגרת, מוטמעים ישירות מאתר רמות ים ומתעדכנים אוטומטית.</div></div>
-
-      <div class="subnav" id="schSubnav">
-        <button class="active" onclick="subTab2('sch','ya',this)">📘 יא'</button>
-        <button onclick="subTab2('sch','yb',this)">📗 יב'</button>
-        <button onclick="subTab2('sch','all',this)">🏫 בית-ספרי כללי</button>
-        <button onclick="subTab2('sch','links',this)">🔗 קישורים וסנכרון</button>
-      </div>
-
-      <div class="subsec active" id="sch-ya">
-        <div class="panel"><div class="panel-h"><h2>📘 לוח מבחנים ואירועים — יא'</h2><a href="https://sites.google.com/view/ramot-yam/לוח-מבחנים-ואירועים/שכבת-ריף-יא" target="_blank" class="btn">↗ פתח באתר בית הספר</a></div><div class="panel-b" style="padding:0;">
-          <iframe src="https://sites.google.com/view/ramot-yam/לוח-מבחנים-ואירועים/שכבת-ריף-יא" style="width:100%;height:720px;border:none;border-radius:0 0 14px 14px;"></iframe>
-        </div></div>
-      </div>
-
-      <div class="subsec" id="sch-yb">
-        <div class="panel"><div class="panel-h"><h2>📗 לוח מבחנים ואירועים — יב'</h2><a href="https://sites.google.com/view/ramot-yam/לוח-מבחנים-ואירועים/שכבת-מפרש-יב" target="_blank" class="btn">↗ פתח באתר בית הספר</a></div><div class="panel-b" style="padding:0;">
-          <iframe src="https://sites.google.com/view/ramot-yam/לוח-מבחנים-ואירועים/שכבת-מפרש-יב" style="width:100%;height:720px;border:none;border-radius:0 0 14px 14px;"></iframe>
-        </div></div>
-      </div>
-
-      <div class="subsec" id="sch-all">
-        <div class="panel"><div class="panel-h"><h2>🏫 לוח אירועים בית-ספרי כללי</h2><a href="https://sites.google.com/view/ramot-yam/לוח-מבחנים-ואירועים/לוח-אירועים-בית-ספרי" target="_blank" class="btn">↗ פתח באתר בית הספר</a></div><div class="panel-b" style="padding:0;">
-          <iframe src="https://sites.google.com/view/ramot-yam/לוח-מבחנים-ואירועים/לוח-אירועים-בית-ספרי" style="width:100%;height:720px;border:none;border-radius:0 0 14px 14px;"></iframe>
-        </div></div>
-      </div>
-
-      <div class="subsec" id="sch-links">
-        <div class="panel" style="margin-bottom:14px;"><div class="panel-h"><h2>🔗 קישורים ישירים</h2></div><div class="panel-b">
-          <a href="https://sites.google.com/view/ramot-yam/לוח-מבחנים-ואירועים" target="_blank" class="link-card">
-            <div class="ic">🏫</div><div class="info"><h4>אתר רמות ים — לוח מבחנים ואירועים</h4><p>עמוד האב של כל השכבות</p></div></a>
-          <a href="https://sites.google.com/view/ramot-yam/לוח-מבחנים-ואירועים/שכבת-ריף-יא" target="_blank" class="link-card">
-            <div class="ic">📘</div><div class="info"><h4>לוח שכבת יא'</h4><p>מבחנים ואירועים</p></div></a>
-          <a href="https://sites.google.com/view/ramot-yam/לוח-מבחנים-ואירועים/שכבת-מפרש-יב" target="_blank" class="link-card">
-            <div class="ic">📗</div><div class="info"><h4>לוח שכבת יב'</h4><p>מבחנים ואירועים</p></div></a>
-          <a href="https://sites.google.com/view/ramot-yam/לוח-מבחנים-ואירועים/לוח-אירועים-בית-ספרי" target="_blank" class="link-card">
-            <div class="ic">🏫</div><div class="info"><h4>לוח בית-ספרי כללי</h4><p>אירועים לכלל בית הספר</p></div></a>
-          <a href="https://calendar.google.com" target="_blank" class="link-card">
-            <div class="ic">🗓️</div><div class="info"><h4>היומן האישי שלי — Google Calendar</h4><p>פתיחה בלשונית חדשה</p></div></a>
-        </div></div>
-
-        <div class="info-box" style="background:#fdf1d6;border-color:#f0c674;border-right-color:#b45309;"><div class="icon">🔄</div><div><b>סנכרון יומנים — בהמשך</b><br>
-          כאן ייבנה סנכרון דו-כיווני של כל היומנים למקום אחד: יומני Google של יא' ויב', לוחות בית הספר ולוח האירועים הפנימייתי.<br>
-          <span style="font-size:12px;color:var(--text2);">מזהי היומנים כבר קיימים אצלנו. השלב הבא: חיבור ל-Google Calendar API והצגת תצוגה מאוחדת.</span></div></div>
-      </div>
-    </div>
   </div>
   </div>`;
 
