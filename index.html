@@ -611,6 +611,47 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 #pcal .pc-row label{flex:1;}
 @media (max-width:900px){#pcal .pc-wrap{flex-direction:column;}#pcal .pc-layers{position:static;width:100%;box-sizing:border-box;}
   #pcal .pc-num span{display:none;}#pcal .pc-bar{font-size:10.5px;padding:0 3px;}}
+/* ===== דשבורד נוכחות ===== */
+#attdash{font-family:Assistant,Heebo,sans-serif;}
+#attdash .info-box{align-items:center;}
+#attdash .ad-up{background:#FC5028;color:#fff;border-radius:999px;padding:9px 16px;font:700 14px Heebo,sans-serif;cursor:pointer;white-space:nowrap;}
+#attdash .ad-up:hover{background:#e0441f;}
+#attdash .ad-filt{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0;}
+#attdash .ad-seg{display:inline-flex;border:1px solid #F3C2B0;border-radius:999px;overflow:hidden;background:#fff;}
+#attdash .ad-seg button{border:0;background:#fff;padding:6px 13px;font:600 13.5px Heebo,sans-serif;cursor:pointer;color:#7A6A66;}
+#attdash .ad-seg button.on{background:#FC5028;color:#fff;}
+#attdash .ad-sel,#attdash .ad-q{border:1px solid #F3C2B0;border-radius:999px;padding:6px 12px;font:14px Assistant,sans-serif;background:#fff;}
+#attdash .ad-q{min-width:200px;}
+#attdash .ad-mut{color:#7A6A66;}
+#attdash .cards .val.bad,#attdash .bad{color:#dc2626;}
+#attdash .cards .val.mid,#attdash .mid{color:#d97706;}
+#attdash .cards .val.ok,#attdash .ok{color:#059669;}
+#attdash .cards .lbl small{color:#7A6A66;font-weight:400;font-size:11.5px;}
+#attdash .ad-scroll{overflow-x:auto;}
+#attdash .ad-tbl{width:100%;border-collapse:collapse;font-size:14px;}
+#attdash .ad-tbl th{background:#FFF1EB;text-align:right;padding:7px 9px;font:700 13px Heebo,sans-serif;white-space:nowrap;}
+#attdash .ad-tbl td{padding:7px 9px;border-top:1px solid #f6dcd2;vertical-align:top;}
+#attdash .ad-st tbody tr[data-open]{cursor:pointer;}
+#attdash .ad-st tbody tr[data-open]:hover,#attdash .ad-st tr.open{background:#FFF1EB;}
+#attdash .ad-u{color:#b45309;}
+#attdash .ad-chip{display:inline-block;font-size:12px;border-radius:999px;padding:1px 8px;margin:3px 0 0 4px;}
+#attdash .ad-chip.a{background:#fee2e2;color:#991b1b;}
+#attdash .ad-chip.j{background:#f1ece9;color:#5b4d49;}
+#attdash .ad-det{display:inline;} #attdash .ad-det summary{display:inline;cursor:pointer;list-style:none;} #attdash .ad-det[open] summary .ad-chip{background:#e8dfdb;}
+#attdash .ad-dayrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px;font-size:12.5px;}
+#attdash .ad-two{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;}
+#attdash .ad-hb{display:flex;align-items:center;gap:8px;font-size:13.5px;margin:5px 0;}
+#attdash .ad-hl{width:96px;flex:none;}
+#attdash .ad-ht{flex:1;background:#f6ece8;border-radius:6px;height:12px;overflow:hidden;}
+#attdash .ad-ht i{display:block;height:100%;border-radius:6px;}
+#attdash .ad-hb small{color:#7A6A66;font-size:11.5px;width:96px;}
+#attdash .ad-lg{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:#7A6A66;margin-top:6px;}
+#attdash .ad-lg i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-left:4px;}
+#attdash .ad-strip{display:flex;flex-wrap:wrap;gap:4px;}
+#attdash .ad-strip span{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:#7A6A66;}
+#attdash .ad-strip i,#attdash .ad-lg i.p{width:14px;height:10px;border-radius:3px;display:block;}
+#attdash i.p{background:#10b981;} #attdash i.j{background:#cbbfba;} #attdash i.a{background:#dc2626;} #attdash i.u{background:#fff;border:1.5px dashed #d97706;box-sizing:border-box;} #attdash i.n{background:#f3efed;}
+@media (max-width:900px){#attdash .ad-two{grid-template-columns:1fr;}#attdash .info-box{flex-wrap:wrap;}#attdash .ad-up{width:100%;text-align:center;}}
 .gantt-d.past { opacity:.62; }
 .gantt-d .gd-ck { position:absolute; bottom:0; left:2px; font-size:10px; font-weight:900; color:#047857; line-height:1; }
 .gantt-d.has-ev .gd-ck { color:#fff; text-shadow:0 0 2px rgba(0,0,0,.55); }
@@ -3824,6 +3865,208 @@ window.pcalRender=async function(){
 };
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&(PC.pop||PC.form)&&document.getElementById('pcal')){ PC.pop=null; PC.form=null; pcalRender(); } });
 
+
+/* ═══════════ דשבורד נוכחות — מדוח האקסל שמייצאים מסמרט קמפוס ═══════════
+   הרכז מעלה את "דוח נוכחות חניכים" (xlsx) בכפתור. הקובץ נקרא בדפדפן בלבד, נשמרים רק דיווחי בוגרת,
+   כל יום בצומת משלו באזור המוגן (portal/bogeret/secure/att_sc/days/<תאריך>). העלאה חוזרת מעדכנת את הימים שבקובץ. */
+const ATTD_PATH='portal/bogeret/secure/att_sc';
+const ATTD_OK_REASONS=['מוצדקת','חופש/חג'];   // לא נספרות כהיעדרות מדאיגה (הכרעת יובל 23.11.2026)
+const ATTD={days:null, meta:null, period:14, group:'', slot:'', day:null, q:'', open:null};
+const adEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const adPct=(a,b)=>b?Math.round(a*100/b):null;
+const adFp=v=>v==null?'—':v+'%';
+const adShort=s=>{ const [,m,d]=s.split('-'); return `${+d}.${+m}`; };
+const AD_DAYS=['א','ב','ג','ד','ה','ו','ש'];
+const adWd=s=>AD_DAYS[new Date(s+'T12:00:00').getDay()];
+/* שורה: [משבצת m/e, קבוצה, שם, נוכח 1/0/-1, סיבה, הערה, מדווח, בזמן 1/0/-1, שעת דיווח] */
+async function attdLoad(force){
+  if(ATTD.days&&!force) return;
+  try{ const {dbm,rdb}=await secureDb(); const s=await dbm.get(dbm.ref(rdb,ATTD_PATH)); const v=s.exists()?s.val():{};
+    ATTD.meta=v.meta?JSON.parse(v.meta):null;
+    ATTD.days=Object.fromEntries(Object.entries(v.days||{}).map(([k,x])=>[k,JSON.parse(x)]));
+  }catch(e){ ATTD.days={}; ATTD.err=String(e.message||e); }
+}
+function adLoadXLSX(){
+  if(window.XLSX) return Promise.resolve();
+  return new Promise((res,rej)=>{ const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload=res; s.onerror=()=>rej(new Error('טעינת קורא האקסל נכשלה')); document.head.appendChild(s); });
+}
+function adIsoDate(v){
+  if(typeof v==='number'){ const d=new Date(Math.round((v-25569)*864e5)); return d.toISOString().slice(0,10); }
+  const m=String(v||'').trim().match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/); return m?`${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`:null;
+}
+async function attdUpload(file){
+  if(!ME||ME.mode!=='admin') throw new Error('רק הרכז יכול לעדכן');
+  await adLoadXLSX();
+  const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:null});
+  const H=(rows[0]||[]).map(x=>String(x||'').trim()), ix=n=>H.findIndex(h=>h.startsWith(n));
+  const C={d:ix('תאריך'),tm:ix('שעה'),rep:ix('שם הדיווח'),g:ix('קבוצה'),n:ix('שם החניך'),p:ix('נוכח'),r:ix('סיבה'),note:ix('הערות'),by:ix('המדווח'),at:ix('שעת דיווח')};
+  if(C.d<0||C.rep<0||C.n<0||C.p<0) throw new Error('זה לא נראה כמו "דוח נוכחות חניכים" מסמרט קמפוס (חסרות עמודות)');
+  const tCol=H.length>C.at+1?C.at+1:-1; // העמודה שאחרי "שעת דיווח": בזמן / באיחור
+  const now=new Date(), todayIso=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`, nowHM=now.toTimeString().slice(0,5);
+  const days={}; let n=0, skipped=0;
+  rows.slice(1).forEach(r=>{
+    const rep=String(r[C.rep]||''); if(!rep.includes('בוגרת')) return;
+    const d=adIsoDate(r[C.d]); if(!d) return;
+    const pv=String(r[C.p]||'').trim(), p=pv==='כן'?1:pv==='לא'?0:-1;
+    const tm=String(r[C.tm]||'').slice(0,5);
+    if(p===-1&&(d>todayIso||(d===todayIso&&tm>nowHM))){ skipped++; return; } // דיווח שעוד לא הגיע זמנו
+    const tv=tCol>=0?String(r[tCol]||''):'', on=tv==='בזמן'?1:tv==='באיחור'?0:-1;
+    (days[d]=days[d]||[]).push([rep.includes('ערב')?'e':'m', String(r[C.g]||'').trim(), String(r[C.n]||'').trim(), p,
+      String(r[C.r]||'').trim(), String(r[C.note]||'').trim().slice(0,120), String(r[C.by]||'').trim(), on, String(r[C.at]||'').trim()]);
+    n++;
+  });
+  const ks=Object.keys(days).sort(); if(!ks.length) throw new Error('לא נמצאו בקובץ דיווחי נוכחות של בוגרת');
+  const {dbm,rdb}=await secureDb(), upd={};
+  ks.forEach(k=>upd['days/'+k]=JSON.stringify(days[k]));
+  const meta={updated:new Date().toISOString(), by:ME.n||'', file:file.name, from:ks[0], to:ks[ks.length-1]};
+  upd.meta=JSON.stringify(meta);
+  await dbm.update(dbm.ref(rdb,ATTD_PATH), upd);
+  ATTD.days=null; ATTD.day=null; await attdLoad(true);
+  return {days:ks.length, rows:n, skipped, from:ks[0], to:ks[ks.length-1]};
+}
+/* סטטוס של שורה */
+const adSt=x=>x[3]===1?'p':x[3]===0?(ATTD_OK_REASONS.includes(x[4])?'j':'a'):'u'; // נוכח / נעדר מוצדק / נעדר מדאיג / לא דווח
+function adRange(){
+  const all=Object.keys(ATTD.days||{}).sort(); if(!all.length) return [];
+  return ATTD.period?all.slice(-ATTD.period):all;
+}
+function adRows(ks){
+  const out=[]; ks.forEach(k=>(ATTD.days[k]||[]).forEach(x=>{
+    if(ATTD.group&&x[1]!==ATTD.group) return; if(ATTD.slot&&x[0]!==ATTD.slot) return; out.push([k,...x]); })); return out;
+}
+function adCount(list){ const c={p:0,j:0,a:0,u:0}; list.forEach(x=>c[adSt(x.slice(1))]++); c.rep=c.p+c.j+c.a; c.t=c.rep+c.u; return c; }
+function adBarH(items,max,clr){ // פסים אופקיים
+  return items.map(([l,v,sub])=>`<div class="ad-hb"><span class="ad-hl">${adEsc(l)}</span><span class="ad-ht"><i style="width:${max?Math.max(2,v*100/max):0}%;background:${clr}"></i></span><b>${v}</b>${sub?`<small>${sub}</small>`:''}</div>`).join('');
+}
+function adTrend(ks){
+  if(!ks.length) return '';
+  const W=Math.max(560,ks.length*38), H=190, P=28, bw=(W-P*2)/ks.length;
+  const y=v=>H-P-(v/100)*(H-P*2);
+  let bars='', labels='';
+  ks.forEach((k,i)=>{
+    const rows=(ATTD.days[k]||[]).filter(x=>!ATTD.group||x[1]===ATTD.group);
+    ['m','e'].forEach((s,j)=>{ if(ATTD.slot&&ATTD.slot!==s) return;
+      const c=adCount(rows.filter(x=>x[0]===s).map(x=>[k,...x])); const v=adPct(c.p,c.rep);
+      const x0=P+i*bw+4+j*(bw-8)/2, w=(bw-8)/2-2;
+      if(v==null){ bars+=`<rect x="${x0}" y="${H-P-6}" width="${w}" height="6" fill="#e5dedb"><title>${adShort(k)} ${s==='m'?'בוקר':'ערב'}: לא דווח</title></rect>`; return; }
+      bars+=`<rect x="${x0}" y="${y(v)}" width="${w}" height="${H-P-y(v)}" rx="3" fill="${s==='m'?'#FC5028':'#8E033C'}" opacity="${c.u?0.55:1}"><title>${adShort(k)} ${s==='m'?'בוקר':'ערב'}: ${v}% נוכחות (${c.p}/${c.rep})${c.u?` · ${c.u} לא דווחו`:''}</title></rect>`;
+    });
+    labels+=`<text x="${P+i*bw+bw/2}" y="${H-P+14}" font-size="10" text-anchor="middle" fill="#7A6A66">${adShort(k)}</text><text x="${P+i*bw+bw/2}" y="${H-P+25}" font-size="9" text-anchor="middle" fill="#a89b97">${adWd(k)}'</text>`;
+  });
+  const grid=[50,75,100].map(v=>`<line x1="${P}" x2="${W-P}" y1="${y(v)}" y2="${y(v)}" stroke="#f1e4df"/><text x="${W-P+4}" y="${y(v)+3}" font-size="10" fill="#a89b97">${v}%</text>`).join('');
+  return `<div class="ad-scroll"><svg viewBox="0 0 ${W} ${H+4}" width="${W}" height="${H+4}" style="direction:ltr">${grid}${bars}${labels}</svg></div>
+    <div class="ad-lg"><span><i style="background:#FC5028"></i>בוקר</span><span><i style="background:#8E033C"></i>ערב</span><span><i style="background:#FC5028;opacity:.55"></i>חלק מהדיווחים לא מולאו</span><span><i style="background:#e5dedb"></i>לא דווח בכלל</span></div>`;
+}
+function adSnapshot(day){
+  const rows=(ATTD.days[day]||[]).filter(x=>!ATTD.group||x[1]===ATTD.group);
+  const groups=[...new Set(rows.map(x=>x[1]))].sort();
+  const cell=(g,s)=>{ const r=rows.filter(x=>x[1]===g&&x[0]===s); if(!r.length) return '<td class="ad-mut">—</td>';
+    const c=adCount(r.map(x=>[day,...x])), v=adPct(c.p,c.rep);
+    const bad=r.filter(x=>x[3]===0&&!ATTD_OK_REASONS.includes(x[4])), ok=r.filter(x=>x[3]===0&&ATTD_OK_REASONS.includes(x[4]));
+    const abs=bad.map(x=>`<span class="ad-chip a" title="${adEsc(x[5])}">${adEsc(x[2])}${x[4]?' · '+adEsc(x[4]):''}</span>`).join('')
+      +(ok.length?`<details class="ad-det"><summary><span class="ad-chip j">${ok.length} מוצדקות</span></summary>${ok.map(x=>`<span class="ad-chip j" title="${adEsc(x[5])}">${adEsc(x[2])}${x[5]?' · '+adEsc(x[5]):''}</span>`).join('')}</details>`:'');
+    return `<td>${v==null?'<span class="ad-mut">לא דווח</span>':`<b class="${v<80?'bad':v<90?'mid':'ok'}">${v}%</b> <small>${c.p}/${c.rep}</small>`}${c.u&&c.rep?` <small class="ad-u">${c.u} לא דווחו</small>`:''}<div>${abs}</div></td>`; };
+  const ks=Object.keys(ATTD.days).sort();
+  return `<div class="ad-dayrow"><select class="ad-sel" data-day>${ks.slice().reverse().map(k=>`<option value="${k}" ${k===day?'selected':''}>יום ${adWd(k)}' ${adShort(k)}</option>`).join('')}</select>
+    <small class="ad-mut">בתאים: אחוז הנוכחים מתוך מי שדווח, שמות הנעדרים בהיעדרות מדאיגה, ומספר המוצדקות (לחיצה פותחת את השמות).</small></div>
+    <div class="ad-scroll"><table class="ad-tbl"><thead><tr><th>קבוצה</th><th>☀️ בוקר</th><th>🌙 ערב</th></tr></thead>
+    <tbody>${groups.map(g=>`<tr><td><b>${adEsc(g)}</b></td>${cell(g,'m')}${cell(g,'e')}</tr>`).join('')}</tbody></table></div>`;
+}
+function adStudents(rows){
+  const S={};
+  rows.forEach(x=>{ const k=x[3]+'|'+x[2], s=S[k]=S[k]||{n:x[3],g:x[2],p:0,j:0,a:0,u:0,rs:{}}; const st=adSt(x.slice(1)); s[st]++; if(x[4]===0&&x[5]) s.rs[x[5]]=(s.rs[x[5]]||0)+1; });
+  return Object.values(S).map(s=>({...s, rep:s.p+s.j+s.a, pct:adPct(s.p,s.p+s.a)}));
+}
+function adStrip(name,group,ks){
+  return `<div class="ad-strip">${ks.map(k=>{ const r=(ATTD.days[k]||[]).filter(x=>x[2]===name&&x[1]===group);
+    const sq=s=>{ const x=r.find(y=>y[0]===s); if(!x) return '<i class="n"></i>'; const st=adSt(x);
+      return `<i class="${st}" title="${adShort(k)} ${s==='m'?'בוקר':'ערב'}: ${st==='p'?'נוכח/ת':st==='u'?'לא דווח':'נעדר/ת · '+adEsc(x[4])}${x[5]?' · '+adEsc(x[5]):''}"></i>`; };
+    return `<span><small>${adShort(k)}</small>${sq('m')}${sq('e')}</span>`; }).join('')}</div>`;
+}
+window.attdRender=async function(){
+  const el=document.getElementById('attdash'); if(!el) return;
+  if(typeof ME==='undefined'||!ME){ el.innerHTML=''; return; }
+  if(!ATTD.days){ el.innerHTML='<div class="panel"><div class="panel-b ad-mut">טוען את נתוני הנוכחות…</div></div>'; await attdLoad(); }
+  const admin=ME.mode==='admin', ks=adRange(), M=ATTD.meta;
+  const up=admin?`<label class="ad-up">📤 העלאת דוח נוכחות (אקסל מסמרט קמפוס)<input type="file" accept=".xlsx,.xls" hidden data-up></label>`:'';
+  const head=`<div class="info-box" style="border-right:5px solid #FC5028"><div class="icon">📊</div><div style="flex:1">
+    <b>דשבורד נוכחות — בוגרת</b><br><span style="font-size:13px">${M?`עודכן ${new Date(M.updated).toLocaleDateString('he-IL')} ${new Date(M.updated).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})} · מהקובץ ${adEsc(M.file)} · ${Object.keys(ATTD.days).length} ימים במאגר (${adShort(Object.keys(ATTD.days).sort()[0])}–${adShort(Object.keys(ATTD.days).sort().pop())})`:'עוד לא הועלה דוח.'}</span>
+    ${admin?`<div style="font-size:12.5px;color:#7A6A66;margin-top:4px">בסמרט קמפוס: נוכחות ← ייצוא "דוח נוכחות חניכים" לאקסל, ואז מעלים אותו כאן. כל העלאה מוסיפה את הימים שבקובץ ומעדכנת ימים קיימים.</div>`:''}</div>${up}</div>`;
+  if(!ks.length){ el.innerHTML=head+(ATTD.err?`<div class="panel"><div class="panel-b ad-mut">שגיאה בטעינה: ${adEsc(ATTD.err)}</div></div>`:''); adBind(el); return; }
+  const rows=adRows(ks), c=adCount(rows), stud=adStudents(rows);
+  const groups=[...new Set(Object.values(ATTD.days).flat().map(x=>x[1]))].sort();
+  if(!ATTD.day||!ATTD.days[ATTD.day]) ATTD.day=Object.keys(ATTD.days).sort().pop();
+  const filled=rows.filter(x=>x[4]!==-1), onT=filled.filter(x=>x[8]===1).length, lateR=filled.filter(x=>x[8]===0).length;
+  const watch=stud.filter(s=>s.a>=2).length;
+  const kpi=(ic,v,l,cls,sub)=>`<div class="card"><div class="icon">${ic}</div><div class="val ${cls||''}">${v}</div><div class="lbl">${l}${sub?`<br><small>${sub}</small>`:''}</div></div>`;
+  const pres=adPct(c.p,c.p+c.a), presAll=adPct(c.p,c.rep), cov=adPct(c.rep,c.t), ont=adPct(onT,onT+lateR);
+  const filt=`<div class="ad-filt">
+    <span class="ad-seg">${[[7,'שבוע'],[14,'שבועיים'],[30,'חודש'],[0,'הכול']].map(([v,l])=>`<button class="${ATTD.period===v?'on':''}" data-per="${v}">${l}</button>`).join('')}</span>
+    <select class="ad-sel" data-grp><option value="">כל הקבוצות</option>${groups.map(g=>`<option ${ATTD.group===g?'selected':''}>${adEsc(g)}</option>`).join('')}</select>
+    <span class="ad-seg">${[['','בוקר+ערב'],['m','בוקר'],['e','ערב']].map(([v,l])=>`<button class="${ATTD.slot===v?'on':''}" data-slot="${v}">${l}</button>`).join('')}</span>
+    <small class="ad-mut">${ks.length} ימי דיווח: ${adShort(ks[0])}–${adShort(ks[ks.length-1])}</small></div>`;
+  /* קבוצות */
+  const gt=groups.filter(g=>!ATTD.group||g===ATTD.group).map(g=>{ const r=rows.filter(x=>x[2]===g), cc=adCount(r), f=r.filter(x=>x[4]!==-1), o=f.filter(x=>x[8]===1).length, l=f.filter(x=>x[8]===0).length, v=adPct(cc.p,cc.p+cc.a);
+    return `<tr><td><b>${adEsc(g)}</b></td><td><b class="${v<80?'bad':v<90?'mid':'ok'}">${v==null?'—':v+'%'}</b></td><td>${cc.a}</td><td>${cc.j}</td><td>${adFp(adPct(cc.u,cc.t))}</td><td>${adFp(adPct(o,o+l))}</td></tr>`; }).join('');
+  /* סיבות */
+  const rc={}; rows.filter(x=>x[4]===0).forEach(x=>{ const k=x[5]||'ללא סיבה'; rc[k]=(rc[k]||0)+1; });
+  const rcl=Object.entries(rc).sort((a,b)=>b[1]-a[1]);
+  /* ימים בשבוע */
+  const wd={}; rows.forEach(x=>{ const d=adWd(x[0]); (wd[d]=wd[d]||[]).push(x); });
+  const wdl=AD_DAYS.filter(d=>wd[d]).map(d=>{ const cc=adCount(wd[d]); return [d+"'", adPct(cc.p,cc.rep)||0, `${adPct(cc.u,cc.t)}% לא דווחו`]; });
+  /* חניכים */
+  const q=ATTD.q.trim();
+  const sl=stud.filter(s=>!q||s.n.includes(q)).sort((a,b)=>b.a-a.a||(a.pct??101)-(b.pct??101)||b.u-a.u).slice(0,q?200:40);
+  const st=`<div class="ad-filt"><input class="ad-q" placeholder="🔍 חיפוש חניך/ה" value="${adEsc(ATTD.q)}"><small class="ad-mut">ממוין לפי היעדרויות מדאיגות. לחיצה על שורה מציגה את הרצף יום-יום.</small></div>
+    <div class="ad-scroll"><table class="ad-tbl ad-st"><thead><tr><th>חניך/ה</th><th>קבוצה</th><th>נוכחות*</th><th>מדאיגות</th><th>מוצדקות</th><th>לא דווח</th><th>סיבות</th></tr></thead><tbody>
+    ${sl.map(s=>{ const key=s.g+'|'+s.n; return `<tr data-open="${adEsc(key)}" class="${ATTD.open===key?'open':''}"><td><b>${adEsc(s.n)}</b></td><td>${adEsc(s.g)}</td>
+      <td><b class="${s.pct<75?'bad':s.pct<90?'mid':'ok'}">${s.pct==null?'—':s.pct+'%'}</b></td><td>${s.a?`<b class="bad">${s.a}</b>`:0}</td><td>${s.j}</td><td>${s.u}</td>
+      <td><small>${Object.entries(s.rs).map(([r,n])=>adEsc(r)+' ×'+n).join(' · ')}</small></td></tr>
+      ${ATTD.open===key?`<tr class="ad-op"><td colspan="7">${adStrip(s.n,s.g,ks)}</td></tr>`:''}`; }).join('')}</tbody></table></div>
+    <div class="ad-lg"><span><i class="p"></i>נוכח/ת</span><span><i class="j"></i>נעדר/ת מוצדק</span><span><i class="a"></i>נעדר/ת מדאיג</span><span><i class="u"></i>לא דווח</span><span><i class="n"></i>אין דיווח ביום הזה</span></div>`;
+  /* מדווחים — רכז בלבד */
+  let staff='';
+  if(admin){ const R={}; rows.forEach(x=>{ if(x[4]===-1||!x[7]) return; const k=x[7]; const s=R[k]=R[k]||{n:k,f:0,o:0,l:0,days:new Set()}; s.f++; if(x[8]===1) s.o++; if(x[8]===0) s.l++; s.days.add(x[0]+x[1]); });
+    staff=`<div class="panel"><div class="panel-h"><h2>🧑‍🏫 משמעת דיווח — צוות (לרכז בלבד)</h2></div><div class="panel-b ad-scroll"><table class="ad-tbl"><thead><tr><th>מדווח/ת</th><th>דיווחים (משבצות)</th><th>בזמן</th><th>באיחור</th></tr></thead><tbody>
+      ${Object.values(R).sort((a,b)=>b.days.size-a.days.size).map(s=>{ const v=adPct(s.o,s.o+s.l); return `<tr><td><b>${adEsc(s.n)}</b></td><td>${s.days.size}</td><td><b class="${v<60?'bad':v<85?'mid':'ok'}">${adFp(v)}</b></td><td>${s.l}</td></tr>`; }).join('')}
+      </tbody></table><div class="ad-mut" style="font-size:12px;margin-top:6px">"בזמן / באיחור" לפי סמרט קמפוס: האם הדיווח מולא בזמן שנקבע לו.</div></div></div>`; }
+  el.innerHTML=head+filt+`<div class="cards">
+      ${kpi('✅',adFp(pres),'נוכחות (בלי מוצדקות)',pres<85?'bad':pres<92?'mid':'ok',`כולל מוצדקות: ${adFp(presAll)}`)}
+      ${kpi('🔴',c.a,'היעדרויות מדאיגות','bad','בלי "מוצדקת" ו"חופש/חג"')}
+      ${kpi('⚪',c.j,'היעדרויות מוצדקות','', 'טיולים, משלחות וכו\'')}
+      ${kpi('📝',cov==null?'—':cov+'%','דיווחים שמולאו',cov<90?'bad':'',`${c.u} לא מולאו`)}
+      ${kpi('⏱️',ont==null?'—':ont+'%','דיווחים בזמן',ont<70?'bad':ont<90?'mid':'ok')}
+      ${kpi('👀',watch,'חניכים למעקב','mid','2 היעדרויות מדאיגות ומעלה')}
+    </div>
+    <div class="panel"><div class="panel-h"><h2>📸 תמונת יום לפי קבוצה</h2></div><div class="panel-b">${adSnapshot(ATTD.day)}</div></div>
+    <div class="panel"><div class="panel-h"><h2>📈 כמה מהחניכים נמצאים בכפר — יום-יום</h2></div><div class="panel-b">${adTrend(ks)}</div></div>
+    <div class="ad-two">
+      <div class="panel"><div class="panel-h"><h2>👥 השוואה בין קבוצות</h2></div><div class="panel-b ad-scroll"><table class="ad-tbl"><thead><tr><th>קבוצה</th><th>נוכחות*</th><th>מדאיגות</th><th>מוצדקות</th><th>לא דווח</th><th>בזמן</th></tr></thead><tbody>${gt}</tbody></table></div></div>
+      <div class="panel"><div class="panel-h"><h2>🧾 סיבות היעדרות</h2></div><div class="panel-b">${rcl.length?adBarH(rcl,rcl[0][1],'#8E033C'):'<span class="ad-mut">אין היעדרויות בטווח</span>'}
+        <h4 style="margin:14px 0 6px;font:700 14px Heebo">נוכחות לפי יום בשבוע</h4>${adBarH(wdl,100,'#FC5028').replace(/<b>(\d+)<\/b>/g,'<b>$1%</b>')}</div></div>
+    </div>
+    <div class="panel"><div class="panel-h"><h2>👀 חניכים — היעדרויות בטווח</h2></div><div class="panel-b">${st}</div></div>
+    ${staff}
+    <div class="ad-mut" style="font-size:12px;margin:4px 0 16px">היעדרות "מוצדקת" או "חופש/חג" לא נספרת כמדאיגה. * נוכחות = נוכחים מתוך נוכחים + נעדרים בהיעדרות מדאיגה (בלי המוצדקות). הגרף היומי מראה כמה מהחניכים שדווחו נמצאים בכפר בפועל. הנתונים נשמרים באזור המוגן בלבד.</div>`;
+  adBind(el);
+};
+function adBind(el){
+  const rr=()=>attdRender();
+  const up=el.querySelector('[data-up]');
+  if(up) up.onchange=async()=>{ const f=up.files[0]; if(!f) return; const lb=up.parentElement; lb.firstChild.textContent='⏳ קורא ושומר…';
+    try{ const r=await attdUpload(f); alert(`נשמרו ${r.rows} דיווחי בוגרת מ-${r.days} ימים (${adShort(r.from)}–${adShort(r.to)}).${r.skipped?`\n${r.skipped} דיווחים שעוד לא הגיע זמנם לא נשמרו.`:''}`); }
+    catch(e){ alert('ההעלאה נכשלה: '+(e.message||e)); }
+    rr(); };
+  el.querySelectorAll('[data-per]').forEach(b=>b.onclick=()=>{ ATTD.period=+b.dataset.per; rr(); });
+  el.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{ ATTD.slot=b.dataset.slot; rr(); });
+  const g=el.querySelector('[data-grp]'); if(g) g.onchange=()=>{ ATTD.group=g.value; rr(); };
+  const d=el.querySelector('[data-day]'); if(d) d.onchange=()=>{ ATTD.day=d.value; rr(); };
+  el.querySelectorAll('[data-open]').forEach(t=>t.onclick=()=>{ ATTD.open=ATTD.open===t.dataset.open?null:t.dataset.open; rr(); });
+  const q=el.querySelector('.ad-q'); if(q) q.oninput=()=>{ ATTD.q=q.value; const p=q.selectionStart; rr().then(()=>{ const n=el.querySelector('.ad-q'); if(n){ n.focus(); n.setSelectionRange(p,p); } }); };
+}
+
 /* ═══════════ לינקים חשובים ═══════════ */
 const LINKS=[
   {ic:'🏫',t:'סמרט קמפוס',d:'מערכת הפנימייה: תיק אישי, רשימות חניכים ונוכחות',u:'https://mevootyam.smart-campus.co.il'},
@@ -4948,6 +5191,7 @@ function reorganize(){
 
   /* ---------- נוכחות — לשונית ראשית ---------- */
   const at=mkSec('attendance');
+  const atd=document.createElement('div'); atd.id='attdash'; at.appendChild(atd);
   while(old.attendance.firstChild) at.appendChild(old.attendance.firstChild);
   main.appendChild(at);
 
@@ -4969,6 +5213,7 @@ function reorganize(){
   if(window.renderTripLib) renderTripLib();
   if(window.scCalRender) scCalRender();
   if(window.pcalRender) pcalRender();
+  if(window.attdRender) attdRender();
   if(window.renderYaSept) renderYaSept();
   if(window.renderYaFiles) renderYaFiles();
   if(window.renderUsers) renderUsers();
