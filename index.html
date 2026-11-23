@@ -428,7 +428,9 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 .lb-ct{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} .lb-cs{font-size:11.5px;color:#7A6A66;}
 .lb-cb{display:flex;flex-direction:column;gap:4px;} .lb-cb .btn{padding:4px 10px;font-size:11.5px;text-align:center;}
 .lb-row{display:flex;align-items:center;gap:9px;padding:8px 10px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;}
-.lb-row:hover{background:#FFF1EB;} .lb-ic{font-size:17px;flex-shrink:0;} .lb-t{flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lb-row:hover{background:#FFF1EB;} .lb-main{display:flex;align-items:center;gap:9px;flex:1;min-width:0;text-decoration:none;color:inherit;}
+.lb-dl{text-decoration:none;font-size:15px;padding:2px 6px;border-radius:6px;opacity:.75;} .lb-dl:hover{background:#F3C2B0;opacity:1;}
+.lb-d{display:block;font-size:11px;color:#7A6A66;white-space:normal;} .lb-ic{font-size:17px;flex-shrink:0;} .lb-t{flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lb-m{font-size:11px;color:#7A6A66;white-space:nowrap;}
 .lb-cat{border:1px solid #F3C2B0;border-radius:12px;margin-bottom:9px;background:#fff;overflow:hidden;}
 .lb-cat summary{cursor:pointer;padding:11px 14px;font-family:'Heebo';font-weight:800;font-size:14px;background:#FFF1EB;list-style-position:inside;}
@@ -2965,6 +2967,10 @@ const LB_EXT={pdf:'📕',doc:'📘',docx:'📘',xls:'📗',xlsx:'📗',ppt:'📙
 const lbIc=e=>LB_EXT[(e||'').toLowerCase()]||'📄';
 const lbDate=s=>{ if(!s) return ''; const [y,m,d]=s.split('-'); return `${+d}.${+m}.${y.slice(2)}`; };
 const lbHref=u=>/^https?:/.test(u)?u:encodeURI(u);
+const LB_OFFICE=/\.(docx?|xlsx?|pptx?)$/i;
+/* קובצי וורד/אקסל/פאוורפוינט נפתחים לצפייה בדפדפן דרך הצפיין של מיקרוסופט */
+const lbOpen=u=>{ if(/^https?:/.test(u)||!LB_OFFICE.test(u)) return lbHref(u);
+  return 'https://view.officeapps.live.com/op/view.aspx?src='+encodeURIComponent(new URL(lbHref(u),location.href).href); };
 async function libLoadPub(){
   if(LIBPUB) return LIBPUB;
   try{ const r=await fetch('library.json?v='+Date.now(),{cache:'no-store'}); if(r.ok) LIBPUB=await r.json(); }catch(e){}
@@ -2975,10 +2981,34 @@ async function libLoadMeet(){
   try{ const r=await fetch('meeting.json?v='+Date.now(),{cache:'no-store'}); if(r.ok) LIBMEET=await r.json(); }catch(e){}
   return LIBMEET||{archive:[]};
 }
+/* שיחות פתיחה עם הצוות — לרכז בלבד: נשמרות בצומת נפרד שרק הרכז טוען */
+const LIB_RAKAZ_PATH='portal/bogeret/secure/library_rakaz';
+const LIB_RAKAZ_CATS=['staff'];
+const libIsAdmin=()=>typeof ME!=='undefined'&&ME&&ME.mode==='admin';
+async function libSaveSplit(dbm,rdb,obj){
+  const all=obj.summaries||[];
+  const pub={...obj, summaries:all.filter(x=>!LIB_RAKAZ_CATS.includes(x.cat))};
+  const rk=all.filter(x=>LIB_RAKAZ_CATS.includes(x.cat));
+  await dbm.set(dbm.ref(rdb,LIB_RAKAZ_PATH), JSON.stringify({updated:obj.updated, summaries:rk}));
+  await dbm.set(dbm.ref(rdb,LIB_SEC_PATH), JSON.stringify(pub));
+  return pub;
+}
 async function libLoadSec(){
   if(window.SECLIB!==undefined) return window.SECLIB;
-  try{ const {dbm,rdb}=await secureDb(); const s=await dbm.get(dbm.ref(rdb,LIB_SEC_PATH)); window.SECLIB=s.exists()?JSON.parse(s.val()):null; }
-  catch(e){ window.SECLIB=null; }
+  try{
+    const {dbm,rdb}=await secureDb(); const s=await dbm.get(dbm.ref(rdb,LIB_SEC_PATH));
+    let L=s.exists()?JSON.parse(s.val()):null;
+    if(L && libIsAdmin()){
+      const r=await dbm.get(dbm.ref(rdb,LIB_RAKAZ_PATH)); const rk=r.exists()?JSON.parse(r.val()).summaries:[];
+      const merged=L.summaries.concat(rk.filter(o=>!L.summaries.some(x=>x.u===o.u))).sort((a,b)=>b.date.localeCompare(a.date));
+      /* העברה חד-פעמית: שיחות צוות שנשארו בצומת המשותף עוברות לצומת של הרכז */
+      if(L.summaries.some(x=>LIB_RAKAZ_CATS.includes(x.cat))) await libSaveSplit(dbm,rdb,{...L, summaries:merged});
+      L={...L, summaries:merged};
+    } else if(L){
+      L={...L, summaries:L.summaries.filter(x=>!LIB_RAKAZ_CATS.includes(x.cat))};
+    }
+    window.SECLIB=L;
+  }catch(e){ window.SECLIB=null; }
   return window.SECLIB;
 }
 window.libUploadSec=function(){
@@ -2987,15 +3017,17 @@ window.libUploadSec=function(){
   inp.onchange=async()=>{ try{
       const obj=JSON.parse(await inp.files[0].text());
       if(!obj.summaries||!obj.trips) throw new Error('זה לא הקובץ הנכון — צריך secure_library.json');
-      const {dbm,rdb}=await secureDb(); await dbm.set(dbm.ref(rdb,LIB_SEC_PATH), JSON.stringify(obj));
+      const {dbm,rdb}=await secureDb(); await libSaveSplit(dbm,rdb,obj);
       window.SECLIB=obj; alert(`נשמר באזור המוגן ✓ — ${obj.summaries.length} סיכומים, ${obj.trips.length} קבצי טיולים`);
       renderSumLib(); renderTripLib();
     }catch(e){ alert('השמירה נכשלה: '+(e.message||e)); } };
   inp.click();
 };
-const lbRow=(x,lock)=>`<a href="${lbEsc(lbHref(x.u))}" target="_blank" rel="noopener" class="lb-row">
-    <span class="lb-ic">${lbIc(x.ext)}</span><span class="lb-t">${lbEsc(x.t)}</span>
-    <span class="lb-m">${lock?'🔒 ':''}${x.big||/^https?:/.test(x.u)?'דרייב · ':''}${(x.ext||'').toUpperCase()}${x.date?' · '+lbDate(x.date):''}</span></a>`;
+const lbRow=(x,lock)=>{ const local=!/^https?:/.test(x.u);
+  return `<div class="lb-row"><a class="lb-main" href="${lbEsc(lbOpen(x.u))}" target="_blank" rel="noopener">
+    <span class="lb-ic">${x.ic||lbIc(x.ext)}</span><span class="lb-t">${lbEsc(x.t)}${x.d?`<small class="lb-d">${lbEsc(x.d)}</small>`:''}</span>
+    <span class="lb-m">${lock?'🔒 ':''}${local?'':'דרייב · '}${(x.ext||'').toUpperCase()}${x.date?' · '+lbDate(x.date):''}</span></a>
+    ${local?`<a class="lb-dl" href="${lbEsc(lbHref(x.u))}" download title="הורדה">⬇️</a>`:''}</div>`; };
 const lbChips=(id,items,cur,fn)=>`<div class="lb-chips" id="${id}">${items.map(c=>`<button class="lb-chip${c.k===cur?' on':''}" onclick="${fn}('${c.k}')">${c.ic||''} ${lbEsc(c.l)}${c.n!=null?` <b>${c.n}</b>`:''}</button>`).join('')}</div>`;
 
 /* ---------- ישיבות בוגרת לפי שנים וחודשים ---------- */
@@ -3030,10 +3062,7 @@ function viewImportant(){
 window.renderImportant=async function(){
   const el=document.getElementById('impBody'); if(!el) return;
   const I=(await libLoadPub()).important||[];
-  el.innerHTML=`<div class="lb-imp">${I.map(x=>{ const img=/\.(jpe?g|png)$/i.test(x.u), vid=/\.mp4$/i.test(x.u);
-    return `<div class="lb-impc"><a href="${lbEsc(lbHref(x.u))}" target="_blank" rel="noopener" class="lb-impv">${img?`<img src="${lbEsc(lbHref(x.u))}" alt="${lbEsc(x.t)}" loading="lazy">`:vid?`<video src="${lbEsc(lbHref(x.u))}" preload="metadata" muted></video><span class="lb-play">▶</span>`:`<span style="font-size:46px;">${x.ic}</span>`}</a>
-      <div class="lb-impt">${x.ic} ${lbEsc(x.t)}</div><div class="lb-cs">${lbEsc(x.d)}</div>
-      <div style="display:flex;gap:6px;margin-top:8px;"><a class="btn" href="${lbEsc(lbHref(x.u))}" target="_blank" rel="noopener">↗ פתח</a><a class="btn btn-secondary" href="${lbEsc(lbHref(x.u))}" download>⬇️ הורד</a></div></div>`; }).join('')}</div>`;
+  el.innerHTML=I.map(x=>lbRow({...x,ext:(x.u.split('.').pop()||'')})).join('');
 };
 
 /* ---------- סיכומי שיחות (אזור מוגן) ---------- */
@@ -3051,7 +3080,7 @@ window.renderSumLib=async function(){
   if(!L){ el.innerHTML=`<div class="lb-empty">🔒 סיכומי השיחות נמצאים באזור המוגן.${ME&&ME.mode==='admin'?'<br>עוד לא הועלו — לחצו "עדכון מהקובץ של Claude" ובחרו את <b>secure_library.json</b>.':'<br>הם יופיעו כאן אחרי שהרכז יעלה אותם.'}</div>`; return; }
   const q=(document.getElementById('knSearch')||{}).value||'';
   const S=L.summaries.filter(x=>(KN_C==='all'||x.cat===KN_C)&&(!q||x.t.includes(q)));
-  const cats=[{k:'all',ic:'📚',l:'הכול',n:L.summaries.length}].concat(L.sum_cats.map(c=>({...c,n:L.summaries.filter(x=>x.cat===c.k).length})));
+  const cats=[{k:'all',ic:'📚',l:'הכול',n:L.summaries.length}].concat(L.sum_cats.map(c=>({...c,l:c.l+(LIB_RAKAZ_CATS.includes(c.k)?' (לרכז בלבד)':''),n:L.summaries.filter(x=>x.cat===c.k).length})).filter(c=>c.n));
   const months=[...new Set(S.map(x=>x.month))];
   el.innerHTML=lbChips('knC',cats,KN_C,'knPick')
    + (months.length?months.map(m=>`<div class="lb-month"><div class="lb-mh">📅 ${lbEsc(m)}</div>
@@ -3150,9 +3179,9 @@ window.renderFiles=function(){
     </div>`).join('')}</div>`;
 };
 function viewFiles(){
-  return info('📁','קבצים ולינקים חשובים',
+  return info('📁','קבצים נוספים',
     'הדבק את הקישור לכל קובץ בשדה שמתחתיו — הכפתור "פתח" יופיע אוטומטית. הקישורים נשמרים בדפדפן.')
-   + `<div class="panel"><div class="panel-h"><h2>📁 קבצים ולינקים</h2>
+   + `<div class="panel"><div class="panel-h"><h2>📁 קבצים נוספים</h2>
       <button class="btn" onclick="fileAdd()">➕ הוסף קובץ</button></div>
       <div class="panel-b" id="filesBody"></div></div>`;
 }
@@ -4174,7 +4203,7 @@ function reorganize(){
 
   /* ---------- 5. חומרים מקצועיים ---------- */
   const pr=mkSec('prof');
-  const prItems=[{k:'safety',label:'⛑️ בטיחות וטיולים'},{k:'meetings',label:'🗂️ ישיבות בוגרת'},{k:'knowledge',label:'🧠 סיכומי שיחות'},{k:'bluebook',label:'📘 הספר הכחול'},{k:'files',label:'📁 קבצים חשובים ולינקים'}];
+  const prItems=[{k:'safety',label:'⛑️ בטיחות וטיולים'},{k:'meetings',label:'🗂️ ישיבות בוגרת'},{k:'knowledge',label:'🧠 סיכומי שיחות'},{k:'bluebook',label:'📘 הספר הכחול'},{k:'files',label:'📁 קבצים חשובים'}];
   pr.appendChild(mkNav('pr',prItems,k=>{ pickIn(pr,'pr')(k);
     if(k==='meetings') renderMeetArchive(); if(k==='knowledge') renderSumLib(); if(k==='files') renderImportant(); if(k==='safety') renderTripLib(); }));
   /* פינוי בחירום — לשונית עצמאית בבר העליון */
@@ -4207,7 +4236,7 @@ function reorganize(){
           <a class="btn" href="docs/blue-book.pdf" download="קובץ נהלים - הספר הכחול.pdf">⬇️ הורד</a>
         </div></div>
        <div class="panel-b" style="padding:0;"><a href="docs/blue-book.pdf#page=6" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>חברי ועדת הנהלים</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 6</span></a><a href="docs/blue-book.pdf#page=7" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>פתח דבר</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 7</span></a><a href="docs/blue-book.pdf#page=8" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>מבוא</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 8</span></a><a href="docs/blue-book.pdf#page=10" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>א. המשנה החינוכית ("החזון")</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 10</span></a><a href="docs/blue-book.pdf#page=11" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ב. התכנית החינוכית בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 11</span></a><a href="docs/blue-book.pdf#page=14" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ג. הפעילות בשגרת היום-יום בכפר הנוער</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 14</span></a><a href="docs/blue-book.pdf#page=17" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ד. כוח אדם בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 17</span></a><a href="docs/blue-book.pdf#page=40" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ה. קבלה וליווי החניך בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 40</span></a><a href="docs/blue-book.pdf#page=45" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ו. נהלי עזיבת / העברת / השעיית / הוצאת חניך מהפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 45</span></a><a href="docs/blue-book.pdf#page=50" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ז. איכות החיים ורווחת הפרט בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 50</span></a><a href="docs/blue-book.pdf#page=61" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ח. ביטחון, בטיחות, שע"ח</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 61</span></a><a href="docs/blue-book.pdf#page=64" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ט. נספחים</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 64</span></a></div></div>`;
-  pS.innerHTML=viewMokedTeva()+viewTripLib().replace('class="panel" style="margin-top:16px;"','class="panel"')+'<div style="height:16px"></div>'+viewTrips();
+  pS.innerHTML=viewTripLib().replace('class="panel" style="margin-top:16px;"','class="panel" style="margin-bottom:16px;"')+viewMokedTeva()+viewTrips();
   [pS,pM,pK,pB,pF].forEach(x=>pr.appendChild(x));
   main.appendChild(pr);
   const lk=mkSec('links'); lk.innerHTML=viewLinks(); main.appendChild(lk);
