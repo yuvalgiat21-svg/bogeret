@@ -416,6 +416,43 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
   font-family:'Rubik'; font-size:11.5px; font-weight:600; color:#8496ab; background:#e6ecf4;
   position:relative; transition:transform .12s, box-shadow .12s; }
 .gantt-d.pad { background:transparent; }
+.lb-search{border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Heebo';font-size:13px;min-width:190px;}
+.lb-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.lb-chip{border:1.5px solid #F3C2B0;background:#fff;color:#7A6A66;border-radius:99px;padding:5px 12px;font-family:'Heebo';font-size:12.5px;font-weight:700;cursor:pointer;}
+.lb-chip b{color:#FC5028;margin-inline-start:3px;} .lb-chip.on{background:#FC5028;border-color:#FC5028;color:#fff;} .lb-chip.on b{color:#fff;}
+.lb-month{margin-bottom:14px;} .lb-mh{font-family:'Heebo';font-weight:800;font-size:14px;color:#8E033C;margin:10px 0 6px;}
+.lb-sub{font-weight:700;font-size:12.5px;color:#7A6A66;margin:8px 4px 3px;}
+.lb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;}
+.lb-card{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #F3C2B0;border-radius:12px;padding:10px 12px;}
+.lb-cd{background:#FFF1EB;color:#FC5028;font-weight:800;font-family:'Heebo';border-radius:9px;padding:8px 9px;min-width:62px;text-align:center;font-size:13px;}
+.lb-ct{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} .lb-cs{font-size:11.5px;color:#7A6A66;}
+.lb-cb{display:flex;flex-direction:column;gap:4px;} .lb-cb .btn{padding:4px 10px;font-size:11.5px;text-align:center;}
+.lb-row{display:flex;align-items:center;gap:9px;padding:8px 10px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;}
+.lb-row:hover{background:#FFF1EB;} .lb-ic{font-size:17px;flex-shrink:0;} .lb-t{flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lb-m{font-size:11px;color:#7A6A66;white-space:nowrap;}
+.lb-cat{border:1px solid #F3C2B0;border-radius:12px;margin-bottom:9px;background:#fff;overflow:hidden;}
+.lb-cat summary{cursor:pointer;padding:11px 14px;font-family:'Heebo';font-weight:800;font-size:14px;background:#FFF1EB;list-style-position:inside;}
+.lb-cat summary b{color:#FC5028;margin-inline-start:4px;} .lb-catb{padding:4px 8px 8px;max-height:520px;overflow:auto;}
+.lb-note{font-size:12.5px;color:#7A6A66;background:#FFF1EB;border-radius:10px;padding:9px 12px;margin-bottom:12px;}
+.lb-empty{text-align:center;padding:26px;color:#7A6A66;font-size:13.5px;line-height:1.8;} .lb-foot{font-size:11px;color:#7A6A66;margin-top:10px;}
+.lb-imp{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.lb-impc{background:#fff;border:1px solid #F3C2B0;border-top:5px solid #FC5028;border-radius:13px;padding:10px;}
+.lb-impv{display:flex;align-items:center;justify-content:center;height:150px;border-radius:9px;background:#FFF1EB;overflow:hidden;position:relative;margin-bottom:8px;}
+.lb-impv img,.lb-impv video{width:100%;height:100%;object-fit:cover;object-position:top;}
+.lb-play{position:absolute;font-size:30px;color:#fff;background:rgba(252,80,40,.85);border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;}
+.lb-impt{font-family:'Heebo';font-weight:800;font-size:14px;}
+@media (max-width:600px){ .lb-grid{grid-template-columns:1fr;} .lb-search{min-width:0;width:100%;} .lb-m{display:none;} }
+.lb-links{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.lb-link{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #F3C2B0;border-right:6px solid #FC5028;border-radius:14px;padding:18px;text-decoration:none;color:inherit;transition:transform .12s,box-shadow .12s;}
+.lb-link:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(252,80,40,.18);}
+.lb-link.off{border-right-color:#F3C2B0;opacity:.7;}
+.lb-lic{font-size:30px;width:54px;height:54px;border-radius:14px;background:#FFF1EB;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.lb-link b{display:block;font-family:'Heebo';font-size:16px;} .lb-link small{display:block;font-size:12px;color:#7A6A66;margin-top:2px;}
+.lb-go{margin-inline-start:auto;font-size:20px;color:#FC5028;font-weight:800;}
+.gantt-d.past { opacity:.62; }
+.gantt-d .gd-ck { position:absolute; bottom:0; left:2px; font-size:10px; font-weight:900; color:#047857; line-height:1; }
+.gantt-d.has-ev .gd-ck { color:#fff; text-shadow:0 0 2px rgba(0,0,0,.55); }
+.gantt-d.today { outline:3px solid #FC5028; outline-offset:1px; opacity:1; font-weight:900; }
 .gantt-d.sat { background:#dde6f2; }
 .gantt-d.has-ev { color:#fff; font-weight:800; cursor:pointer; box-shadow:0 1px 4px rgba(15,30,46,.18); }
 .gantt-d.has-ev:hover { transform:translateY(-2px) scale(1.12); box-shadow:0 6px 16px rgba(15,30,46,.35); z-index:20; }
@@ -1256,6 +1293,7 @@ const NEW_TABS = [
   {id:'bodies',   icon:'🧭', label:'גופי מנהיגות'},
   {id:'graduates',icon:'🎖️', label:'בוגרים'},
   {id:'prof',     icon:'📚', label:'חומרים מקצועיים'},
+  {id:'links',    icon:'🔗', label:'לינקים חשובים'},
   {id:'evacplan', icon:'🚨', label:'פינוי בחירום'},
   {id:'users',    icon:'🔐', label:'משתמשים', admin:true},
 ];
@@ -2916,6 +2954,156 @@ function viewTrips(){
       <div class="panel-b" id="tripsBody"></div></div>`;
 }
 
+/* ═══════════ ספריית ידע: ישיבות, סיכומי שיחות, קבצים חשובים, חומרי טיולים ═══════════
+   library.json  — חומרים כלליים (לא רגישים) שנמצאים בתוך הריפו, בתיקייה docs/
+   meeting.json  — archive: כל מצגות ישיבות בוגרת לפי שנים וחודשים
+   אזור מוגן: portal/bogeret/secure/library — סיכומי שיחות וחומרי טיולים עם שמות (קישורים לדרייב), לצוות המחובר בלבד */
+const LIB_SEC_PATH='portal/bogeret/secure/library';
+let LIBPUB=null, LIBMEET=null;
+const lbEsc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LB_EXT={pdf:'📕',doc:'📘',docx:'📘',xls:'📗',xlsx:'📗',ppt:'📙',pptx:'📙',jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',mp4:'🎬',m4a:'🎧',gdoc:'📘',gsheet:'📗',gform:'📝',gslides:'📙',html:'🌐'};
+const lbIc=e=>LB_EXT[(e||'').toLowerCase()]||'📄';
+const lbDate=s=>{ if(!s) return ''; const [y,m,d]=s.split('-'); return `${+d}.${+m}.${y.slice(2)}`; };
+const lbHref=u=>/^https?:/.test(u)?u:encodeURI(u);
+async function libLoadPub(){
+  if(LIBPUB) return LIBPUB;
+  try{ const r=await fetch('library.json?v='+Date.now(),{cache:'no-store'}); if(r.ok) LIBPUB=await r.json(); }catch(e){}
+  return LIBPUB||{important:[],trips:[],trip_cats:[]};
+}
+async function libLoadMeet(){
+  if(LIBMEET) return LIBMEET;
+  try{ const r=await fetch('meeting.json?v='+Date.now(),{cache:'no-store'}); if(r.ok) LIBMEET=await r.json(); }catch(e){}
+  return LIBMEET||{archive:[]};
+}
+async function libLoadSec(){
+  if(window.SECLIB!==undefined) return window.SECLIB;
+  try{ const {dbm,rdb}=await secureDb(); const s=await dbm.get(dbm.ref(rdb,LIB_SEC_PATH)); window.SECLIB=s.exists()?JSON.parse(s.val()):null; }
+  catch(e){ window.SECLIB=null; }
+  return window.SECLIB;
+}
+window.libUploadSec=function(){
+  if(!ME||ME.mode!=='admin') return alert('רק לרכז');
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=async()=>{ try{
+      const obj=JSON.parse(await inp.files[0].text());
+      if(!obj.summaries||!obj.trips) throw new Error('זה לא הקובץ הנכון — צריך secure_library.json');
+      const {dbm,rdb}=await secureDb(); await dbm.set(dbm.ref(rdb,LIB_SEC_PATH), JSON.stringify(obj));
+      window.SECLIB=obj; alert(`נשמר באזור המוגן ✓ — ${obj.summaries.length} סיכומים, ${obj.trips.length} קבצי טיולים`);
+      renderKnowledge(); renderTripLib();
+    }catch(e){ alert('השמירה נכשלה: '+(e.message||e)); } };
+  inp.click();
+};
+const lbRow=(x,lock)=>`<a href="${lbEsc(lbHref(x.u))}" target="_blank" rel="noopener" class="lb-row">
+    <span class="lb-ic">${lbIc(x.ext)}</span><span class="lb-t">${lbEsc(x.t)}</span>
+    <span class="lb-m">${lock?'🔒 ':''}${x.big||/^https?:/.test(x.u)?'דרייב · ':''}${(x.ext||'').toUpperCase()}${x.date?' · '+lbDate(x.date):''}</span></a>`;
+const lbChips=(id,items,cur,fn)=>`<div class="lb-chips" id="${id}">${items.map(c=>`<button class="lb-chip${c.k===cur?' on':''}" onclick="${fn}('${c.k}')">${c.ic||''} ${lbEsc(c.l)}${c.n!=null?` <b>${c.n}</b>`:''}</button>`).join('')}</div>`;
+
+/* ---------- ישיבות בוגרת לפי שנים וחודשים ---------- */
+let MT_Y=null;
+function viewMeetArchive(){
+  return info('🗂️','ישיבות בוגרת — ארכיון',
+    'כל מצגות ישיבת בוגרת, מסודרות לפי שנת לימודים וחודש. "צפייה" פותח את המצגת בקנבה; "PowerPoint" פותח את העותק השמור בדרייב (למי שיש הרשאה).')
+   + `<div class="panel"><div class="panel-h"><h2>🗂️ ארכיון ישיבות בוגרת</h2><input id="mtSearch" class="lb-search" placeholder="🔎 חיפוש לפי תאריך…" oninput="renderMeetArchive()"></div><div class="panel-b" id="mtArchBody">טוען…</div></div>`;
+}
+window.mtPickY=y=>{ MT_Y=y; renderMeetArchive(); };
+window.renderMeetArchive=async function(){
+  const el=document.getElementById('mtArchBody'); if(!el) return;
+  const A=(await libLoadMeet()).archive||[];
+  if(!A.length){ el.innerHTML='אין עדיין ישיבות בארכיון.'; return; }
+  const years=[...new Set(A.map(x=>x.year))];
+  if(!MT_Y||!years.includes(MT_Y)) MT_Y=years[0];
+  const q=(document.getElementById('mtSearch')||{}).value||'';
+  const list=A.filter(x=>q?(x.label+' '+x.title+' '+x.month).includes(q):x.year===MT_Y);
+  const months=[...new Set(list.map(x=>x.month))];
+  el.innerHTML = (q?'':lbChips('mtY',years.map(y=>({k:y,l:y,n:A.filter(x=>x.year===y).length})),MT_Y,'mtPickY'))
+   + (months.length?months.map(m=>`<div class="lb-month"><div class="lb-mh">📅 ${lbEsc(m)}</div><div class="lb-grid">
+      ${list.filter(x=>x.month===m).map(x=>`<div class="lb-card"><div class="lb-cd">${lbEsc(x.label)}</div>
+        <div style="flex:1;min-width:0;"><div class="lb-ct">${lbEsc(x.title)}</div>${x.pages?`<div class="lb-cs">${x.pages} שקפים</div>`:''}</div>
+        <div class="lb-cb">${x.view?`<a class="btn" href="${lbEsc(x.view)}" target="_blank" rel="noopener">צפייה</a>`:''}${x.drive?`<a class="btn btn-secondary" href="${lbEsc(x.drive)}" target="_blank" rel="noopener">PowerPoint</a>`:''}</div></div>`).join('')}
+     </div></div>`).join(''):'<div style="color:var(--text2)">לא נמצאו ישיבות.</div>');
+};
+
+/* ---------- קבצים חשובים לשימוש קבוע ---------- */
+function viewImportant(){
+  return `<div class="panel" style="margin-bottom:16px;"><div class="panel-h"><h2>⭐ קבצים חשובים לשימוש קבוע</h2></div><div class="panel-b" id="impBody">טוען…</div></div>`;
+}
+window.renderImportant=async function(){
+  const el=document.getElementById('impBody'); if(!el) return;
+  const I=(await libLoadPub()).important||[];
+  el.innerHTML=`<div class="lb-imp">${I.map(x=>{ const img=/\.(jpe?g|png)$/i.test(x.u), vid=/\.mp4$/i.test(x.u);
+    return `<div class="lb-impc"><a href="${lbEsc(lbHref(x.u))}" target="_blank" rel="noopener" class="lb-impv">${img?`<img src="${lbEsc(lbHref(x.u))}" alt="${lbEsc(x.t)}" loading="lazy">`:vid?`<video src="${lbEsc(lbHref(x.u))}" preload="metadata" muted></video><span class="lb-play">▶</span>`:`<span style="font-size:46px;">${x.ic}</span>`}</a>
+      <div class="lb-impt">${x.ic} ${lbEsc(x.t)}</div><div class="lb-cs">${lbEsc(x.d)}</div>
+      <div style="display:flex;gap:6px;margin-top:8px;"><a class="btn" href="${lbEsc(lbHref(x.u))}" target="_blank" rel="noopener">↗ פתח</a><a class="btn btn-secondary" href="${lbEsc(lbHref(x.u))}" download>⬇️ הורד</a></div></div>`; }).join('')}</div>`;
+};
+
+/* ---------- סיכומי שיחות (אזור מוגן) ---------- */
+let KN_C='all';
+function viewKnowledge(){
+  return info('🧠','סיכומי שיחות — שימור ידע',
+    'כל סיכומי השיחות מתחילת השנה, לפי סוג השיחה ולפי חודש. הרשימה שמורה באזור המוגן ומוצגת רק לצוות המחובר. לחיצה פותחת את הסיכום בדרייב.')
+   + `<div class="panel"><div class="panel-h"><h2>🧠 סיכומי שיחות</h2><div style="display:flex;gap:8px;flex-wrap:wrap;"><input id="knSearch" class="lb-search" placeholder="🔎 שם / נושא…" oninput="renderKnowledge()">
+      ${(typeof ME!=='undefined'&&ME&&ME.mode==='admin')?'<button class="btn btn-secondary" onclick="libUploadSec()">⬆️ עדכון מהקובץ של Claude</button>':''}</div></div><div class="panel-b" id="knBody">טוען…</div></div>`;
+}
+window.knPick=k=>{ KN_C=k; renderKnowledge(); };
+window.renderKnowledge=async function(){
+  const el=document.getElementById('knBody'); if(!el) return;
+  const L=await libLoadSec();
+  if(!L){ el.innerHTML=`<div class="lb-empty">🔒 סיכומי השיחות נמצאים באזור המוגן.${ME&&ME.mode==='admin'?'<br>עוד לא הועלו — לחצו "עדכון מהקובץ של Claude" ובחרו את <b>secure_library.json</b>.':'<br>הם יופיעו כאן אחרי שהרכז יעלה אותם.'}</div>`; return; }
+  const q=(document.getElementById('knSearch')||{}).value||'';
+  const S=L.summaries.filter(x=>(KN_C==='all'||x.cat===KN_C)&&(!q||x.t.includes(q)));
+  const cats=[{k:'all',ic:'📚',l:'הכול',n:L.summaries.length}].concat(L.sum_cats.map(c=>({...c,n:L.summaries.filter(x=>x.cat===c.k).length})));
+  const months=[...new Set(S.map(x=>x.month))];
+  el.innerHTML=lbChips('knC',cats,KN_C,'knPick')
+   + (months.length?months.map(m=>`<div class="lb-month"><div class="lb-mh">📅 ${lbEsc(m)}</div>
+      ${S.filter(x=>x.month===m).map(x=>{const c=L.sum_cats.find(c=>c.k===x.cat)||{};
+        return lbRow({...x,t:(KN_C==='all'?(c.ic||'')+' ':'')+x.t},true);}).join('')}</div>`).join(''):'<div style="color:var(--text2)">לא נמצאו סיכומים.</div>')
+   + `<div class="lb-foot">עודכן ${lbEsc(L.updated||'')}</div>`;
+};
+
+/* ---------- חומרי בטיחות וטיולים ---------- */
+let TL_C='all';
+function viewTripLib(){
+  return `<div class="panel" style="margin-top:16px;"><div class="panel-h"><h2>📚 ספריית חומרי טיולים ובטיחות</h2>
+      <input id="tlSearch" class="lb-search" placeholder="🔎 חיפוש: נחל, חוזר, אישור…" oninput="renderTripLib()"></div>
+    <div class="panel-b"><div class="lb-note">כל החומרים מהשנים כרכז טיולים, מסודרים לפי נושא. חומרים כלליים (חוזרים, טפסים, מפות, הדרכה) נפתחים ישר מהפורטל.
+      תיקי טיול, אישורים וחומרי ביטחון שיש בהם שמות מסומנים ב-🔒, מוצגים רק לצוות המחובר ונפתחים בדרייב.</div><div id="tlBody">טוען…</div></div></div>`;
+}
+window.tlPick=k=>{ TL_C=k; renderTripLib(); };
+window.renderTripLib=async function(){
+  const el=document.getElementById('tlBody'); if(!el) return;
+  const P=await libLoadPub(); const L=(typeof ME!=='undefined'&&ME)?await libLoadSec():null;
+  const all=(P.trips||[]).map(x=>({...x,lock:false})).concat(((L&&L.trips)||[]).map(x=>({...x,lock:true})));
+  const q=(document.getElementById('tlSearch')||{}).value||'';
+  const F=all.filter(x=>(TL_C==='all'||x.cat===TL_C)&&(!q||(x.t+' '+(x.grp||'')).includes(q)));
+  const cats=P.trip_cats||[];
+  el.innerHTML=lbChips('tlC',[{k:'all',ic:'📚',l:'הכול',n:all.length}].concat(cats.map(c=>({...c,n:all.filter(x=>x.cat===c.k).length})).filter(c=>c.n)),TL_C,'tlPick')
+   + cats.filter(c=>F.some(x=>x.cat===c.k)).map(c=>{
+      const items=F.filter(x=>x.cat===c.k);
+      let body;
+      if(c.k==='trips'){
+        const years=[...new Set(items.map(x=>x.year))];
+        body=years.map(y=>{ const yi=items.filter(x=>x.year===y); const g=[...new Set(yi.map(x=>x.grp))];
+          return `<div class="lb-mh">📅 ${lbEsc(y)} <span class="lb-cs">(${yi.length})</span></div>`+g.map(gn=>`<div class="lb-sub">📁 ${lbEsc(gn)}</div>`+yi.filter(x=>x.grp===gn).map(x=>lbRow(x,x.lock)).join('')).join(''); }).join('');
+      } else body=items.map(x=>lbRow(x,x.lock)).join('');
+      return `<details class="lb-cat"${TL_C!=='all'||q?' open':''}><summary>${c.ic} ${lbEsc(c.l)} <b>${items.length}</b></summary><div class="lb-catb">${body}</div></details>`;
+    }).join('')
+   + (!L?`<div class="lb-note" style="margin-top:10px;">🔒 תיקי הטיולים, האישורים וחומרי הביטחון יופיעו כאן אחרי התחברות${ME&&ME.mode==='admin'?' והעלאת הקובץ באזור "סיכומי שיחות"':''}.</div>`:'');
+};
+
+/* ═══════════ לינקים חשובים ═══════════ */
+const LINKS=[
+  {ic:'🏫',t:'סמרט קמפוס',d:'מערכת הפנימייה: תיק אישי, רשימות חניכים ונוכחות',u:'https://mevootyam.smart-campus.co.il'},
+  {ic:'📚',t:'סמרט סקול',d:'מערכת בית הספר: ציונים, מערכת שעות והודעות',u:'https://www.smartschool.co.il'},
+  {ic:'🔧',t:'תחזוקנית',d:'פניות תחזוקה ותקלות',u:''},
+  {ic:'🏘️',t:'שריון מתחמים',d:'הזמנת מתחמים וחדרים בכפר (גיליון משותף)',u:'https://docs.google.com/spreadsheets/d/17g_UWjBBaSHq0mQ-5ZhvlgTLnZ0hyqxt4jaW5oajWkk/edit'},
+];
+function viewLinks(){
+  return info('🔗','לינקים חשובים','המערכות שמשתמשים בהן כל יום. לחיצה על כרטיס פותחת את המערכת בלשונית חדשה.')
+   + `<div class="lb-links">${LINKS.map(x=>x.u
+      ? `<a class="lb-link" href="${x.u}" target="_blank" rel="noopener"><span class="lb-lic">${x.ic}</span><span><b>${x.t}</b><small>${x.d}</small></span><span class="lb-go">↗</span></a>`
+      : `<div class="lb-link off"><span class="lb-lic">${x.ic}</span><span><b>${x.t}</b><small>${x.d}<br>הקישור עוד לא הוגדר</small></span></div>`).join('')}</div>`;
+}
+
 /* ═══════════ קבצים ולינקים ═══════════ */
 const FILES_KEY='bogeret_files_v1';
 const FILES_DEF=[
@@ -2923,8 +3111,6 @@ const FILES_DEF=[
   {ic:'📜',t:'מסמך רשמי עתיד',d:'נייר מכתבים ומסמכי הרשת',u:''},
   {ic:'📖',t:'תקנון פנימייה תשפ"ג',d:'התקנון המלא של הפנימייה',u:''},
   {ic:'📊',t:'מצגת ליום פתוח',d:'מצגת ההצגה למשפחות ולמועמדים',u:''},
-  {ic:'🔧',t:'תחזוקנית',d:'טופס פניות תחזוקה ותקלות',u:''},
-  {ic:'🏛️',t:'שריון מתחמים',d:'טופס הזמנת חדרים ומתחמים',u:''}
 ];
 function filesLoad(){ try{const r=localStorage.getItem(FILES_KEY); if(r) return JSON.parse(r);}catch(e){} return JSON.parse(JSON.stringify(FILES_DEF)); }
 function filesSave(o){ try{localStorage.setItem(FILES_KEY,JSON.stringify(o));}catch(e){} }
@@ -3768,7 +3954,7 @@ function reorganize(){
   const ov=mkSec('overview');
   const ovItems=[{k:'general',label:'📊 נתונים כלליים'},{k:'alphon',label:'📋 אלפון חניכים'},
     {k:'goals',label:'🎯 מטרות ויעדים'},{k:'ramzor',label:'🚦 רמזור נשירה'},
-    {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},{k:'rooms',label:'🏠 שיבוץ חדרים'}];
+    {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},{k:'family',label:'👨‍👩‍👧 פרטי משפחה'},{k:'visits',label:'🏡 ביקורי בית'},{k:'rooms',label:'🏠 שיבוץ חדרים'}];
   ov.appendChild(mkNav('ov',ovItems,pickIn(ov,'ov')));
   const sGen=mkSub('ov-general',true);
   while(old.overview.firstChild) sGen.appendChild(old.overview.firstChild);
@@ -3790,7 +3976,17 @@ function reorganize(){
   const sRooms=mkSub('ov-rooms'); sRooms.innerHTML=viewRoomsAll();
   const sAlph=mkSub('ov-alphon');
   while(old.alphon.firstChild) sAlph.appendChild(old.alphon.firstChild);
-  while(old.personal.firstChild) sAlph.appendChild(old.personal.firstChild);
+  /* הרשימות שהיו מתחת לאלפון עוברות ללשוניות שלהן */
+  const sFam=mkSub('ov-family'), sVis=mkSub('ov-visits');
+  sFam.innerHTML=info('👨‍👩‍👧','פרטי משפחה — שכבת י"ב','פרטי ההורים, טלפונים וסטטוס משפחתי של חניכי י"ב.');
+  sVis.innerHTML=info('🏡','ביקורי בית — מבט שכבתי','ריכוז ביקורי הבית. המעקב השוטף לכל קבוצה נמצא תחת <b>ניהול קבוצה ← ביקורי בית</b>.');
+  [...old.personal.querySelectorAll(':scope > .panel')].forEach(pn=>{
+    const h=(pn.querySelector('h2')||{}).textContent||'';
+    if(h.includes('רפואי')) sMed.appendChild(pn);
+    else if(h.includes('צמחונים')||h.includes('אלרגיות')) sDiet.appendChild(pn);
+    else if(h.includes('ביקורי בית')) sVis.appendChild(pn);
+    else if(h.includes('פירוט חניכים')) sFam.appendChild(pn);
+  });
   /* ---------- 💡 סיכום שבועי ותובנות (מתעדכן כל חמישי מ-insights.json) ---------- */
   const wk=document.createElement('div'); wk.id='weeklyInsights';
   wk.innerHTML=`<div class="panel" style="border:2px solid #f0c674;margin-bottom:16px;"><div class="panel-h" style="background:linear-gradient(90deg,#fff7e6,#fff);"><h2>💡 סיכום שבועי ותובנות</h2>
@@ -3803,7 +3999,7 @@ function reorganize(){
     <div class="panel-b" id="mtBody"><div style="color:var(--text2);font-size:13px;">טוען…</div></div></div>`;
   sGen.insertBefore(mt, sGen.firstChild);
   loadMeetingLinks();
-  [sGen,sAlph,sGoals,sRam,sMed,sDiet,sRooms].forEach(x=>ov.appendChild(x));
+  [sGen,sAlph,sGoals,sRam,sMed,sDiet,sFam,sVis,sRooms].forEach(x=>ov.appendChild(x));
   main.appendChild(ov);
 
   /* ---------- 2. יומן ---------- */
@@ -3965,8 +4161,9 @@ function reorganize(){
 
   /* ---------- 5. חומרים מקצועיים ---------- */
   const pr=mkSec('prof');
-  const prItems=[{k:'safety',label:'⛑️ בטיחות וטיולים'},{k:'bluebook',label:'📘 הספר הכחול'},{k:'files',label:'📁 קבצים ולינקים'}];
-  pr.appendChild(mkNav('pr',prItems,pickIn(pr,'pr')));
+  const prItems=[{k:'safety',label:'⛑️ בטיחות וטיולים'},{k:'meetings',label:'🗂️ ישיבות בוגרת'},{k:'knowledge',label:'🧠 סיכומי שיחות'},{k:'bluebook',label:'📘 הספר הכחול'},{k:'files',label:'📁 קבצים חשובים ולינקים'}];
+  pr.appendChild(mkNav('pr',prItems,k=>{ pickIn(pr,'pr')(k);
+    if(k==='meetings') renderMeetArchive(); if(k==='knowledge') renderKnowledge(); if(k==='files') renderImportant(); if(k==='safety') renderTripLib(); }));
   /* פינוי בחירום — לשונית עצמאית בבר העליון */
   const ev=mkSec('evacplan');
   ev.appendChild(mkNav('ev',[{k:'routes',label:'🗺️ מסלולים ומפה'},{k:'live',label:'📡 מעקב חי'},{k:'lists',label:'🚌 רשימות נוסעים'},{k:'cities',label:'📍 חניכי בוגרת לפי יישוב'}],k=>{ pickIn(ev,'ev')(k); if(k==='live') evLiveInit(); }));
@@ -3985,7 +4182,9 @@ function reorganize(){
   pS.innerHTML = info('⛑️','בטיחות וטיולים',
     'ריכוז נהלים, אישורים וטפסים לטיולים ולפעילויות. לחיצה על "הוסף" תיצור רשומה חדשה.')
     + `<div class="panel"><div class="panel-h"><h2>⛑️ נהלים וטפסים</h2><button class="btn" onclick="addKnowledge('safety')">➕ הוסף</button></div><div class="panel-b" id="kn-body-safety"></div></div>`;
-  const pF=mkSub('pr-files'); pF.innerHTML=viewFiles();
+  const pF=mkSub('pr-files'); pF.innerHTML=viewImportant()+viewFiles();
+  const pM=mkSub('pr-meetings'); pM.innerHTML=viewMeetArchive();
+  const pK=mkSub('pr-knowledge'); pK.innerHTML=viewKnowledge();
   const pB=mkSub('pr-bluebook');
   pB.innerHTML = info('📘','הספר הכחול – קובץ נהלים לפנימייה החינוכית בכפר הנוער',
     'משרד החינוך, המינהל לחינוך התיישבותי, פנימייתי ועליית הנוער. מהדורה שנייה, תשס"ז (2007). לחיצה על פרק פותחת את הקובץ בעמוד שלו.')
@@ -3995,9 +4194,10 @@ function reorganize(){
           <a class="btn" href="docs/blue-book.pdf" download="קובץ נהלים - הספר הכחול.pdf">⬇️ הורד</a>
         </div></div>
        <div class="panel-b" style="padding:0;"><a href="docs/blue-book.pdf#page=6" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>חברי ועדת הנהלים</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 6</span></a><a href="docs/blue-book.pdf#page=7" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>פתח דבר</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 7</span></a><a href="docs/blue-book.pdf#page=8" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>מבוא</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 8</span></a><a href="docs/blue-book.pdf#page=10" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>א. המשנה החינוכית ("החזון")</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 10</span></a><a href="docs/blue-book.pdf#page=11" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ב. התכנית החינוכית בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 11</span></a><a href="docs/blue-book.pdf#page=14" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ג. הפעילות בשגרת היום-יום בכפר הנוער</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 14</span></a><a href="docs/blue-book.pdf#page=17" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ד. כוח אדם בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 17</span></a><a href="docs/blue-book.pdf#page=40" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ה. קבלה וליווי החניך בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 40</span></a><a href="docs/blue-book.pdf#page=45" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ו. נהלי עזיבת / העברת / השעיית / הוצאת חניך מהפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 45</span></a><a href="docs/blue-book.pdf#page=50" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ז. איכות החיים ורווחת הפרט בפנימייה</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 50</span></a><a href="docs/blue-book.pdf#page=61" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ח. ביטחון, בטיחות, שע"ח</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 61</span></a><a href="docs/blue-book.pdf#page=64" target="_blank" rel="noopener" style="display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid #F3C2B0;text-decoration:none;color:inherit;"><span>ט. נספחים</span><span style="color:#FC5028;font-weight:700;white-space:nowrap;">עמ' 64</span></a></div></div>`;
-  pS.innerHTML=viewTrips();
-  [pS,pB,pF].forEach(x=>pr.appendChild(x));
+  pS.innerHTML=viewTrips()+viewTripLib();
+  [pS,pM,pK,pB,pF].forEach(x=>pr.appendChild(x));
   main.appendChild(pr);
+  const lk=mkSec('links'); lk.innerHTML=viewLinks(); main.appendChild(lk);
   main.appendChild(ev);
 
   /* ---------- מעקב לימודי + תוכנית חינוכית ---------- */
@@ -4035,6 +4235,8 @@ function reorganize(){
   if(window.renderEvacLists) renderEvacLists();
   if(window.renderTrips) renderTrips();
   if(window.renderFiles) renderFiles();
+  if(window.renderImportant) renderImportant();
+  if(window.renderTripLib) renderTripLib();
   if(window.renderYaSept) renderYaSept();
   if(window.renderYaFiles) renderYaFiles();
   if(window.renderUsers) renderUsers();
@@ -4563,6 +4765,9 @@ function buildAllSections() {
             for(let d=1;d<=dd;d++){
               const wd=(off+d-1)%7;
               const evs=GANTT_5787[mn+'-'+d];
+              const _dt=new Date(YR(mn),mn-1,d), _t0=new Date(); _t0.setHours(0,0,0,0);
+              const _past=_dt<_t0, _today=_dt.getTime()===_t0.getTime();
+              const _pc=(_past?' past':'')+(_today?' today':''), _ck=_past?'<span class="gd-ck">✓</span>':'';
               if(evs&&evs.length){
                 const clr=KIND_CLR[evs[0][1]]||'#0e7490';
                 const det=evs.map(e=>{
@@ -4573,8 +4778,8 @@ function buildAllSections() {
                     ${ev.r?`<div class="tt-r"><b>אחריות:</b> ${ev.r}</div>`:''}
                     ${ev.duty?`<div class="tt-r"><b>תורנות שבת:</b> ${ev.duty}</div>`:''}
                   </div>`;}).join('');
-                cells.push(`<div class="gantt-d has-ev${evs.length>1?' multi':''}" style="background:${clr}">${d}<div class="gantt-tt"><div class="tt-h">יום ${DAYL[wd]}' · ${d}.${mn}</div>${det}</div></div>`);
-              } else cells.push(`<div class="gantt-d${wd===6?' sat':''}">${d}</div>`);
+                cells.push(`<div class="gantt-d has-ev${evs.length>1?' multi':''}${_pc}" style="background:${clr}">${d}${_ck}<div class="gantt-tt"><div class="tt-h">יום ${DAYL[wd]}' · ${d}.${mn}</div>${det}</div></div>`);
+              } else cells.push(`<div class="gantt-d${wd===6?' sat':''}${_pc}">${d}${_ck}</div>`);
             }
             while(cells.length % 7) cells.push('<div class="gantt-d pad"></div>');
             let weeks='';
@@ -4969,7 +5174,7 @@ function buildAllSections() {
     groupedStudents['אקדמיה'] = ACAD_STUDENTS.slice();
   
   h += `<div class="sec" id="sec-alphon">
-    <div class="info-box"><div class="icon">📋</div><div><b>אלפון חניכים - שכבה בוגרת</b><br>סה"כ ${STUDENTS_DATA.length} חניכים מחולקים ל-5 קבוצות. לחיצה על קבוצה תפילטר את התצוגה.</div></div>
+    <div class="info-box"><div class="icon">📋</div><div><b>אלפון חניכים - שכבה בוגרת</b><br><span id="alphon-total"></span> לחיצה על קבוצה תפילטר את התצוגה.</div></div>
     
     <div class="panel" style="margin-bottom:14px;">
       <div class="panel-h">
@@ -5763,6 +5968,10 @@ window.applyAlphonFilters = function() {
   }
 
   // עדכון מספר תוצאות
+  const totEl=document.getElementById('alphon-total');
+  if(totEl){ const cards=[...document.querySelectorAll('#alphon-grid .alphon-card')];
+    const grp=new Set(cards.map(c=>c.dataset.group).filter(Boolean));
+    totEl.textContent=`סה"כ ${cards.length} חניכים מחולקים ל-${grp.size} קבוצות.`; }
   const countEl = document.getElementById('alphon-count');
   if (countEl) {
     countEl.textContent = visibleCount + ' חניכים';

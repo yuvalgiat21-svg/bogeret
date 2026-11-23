@@ -7,14 +7,600 @@
     "edit": "https://www.canva.com/d/azT958bo7jEyK2z"
   },
   "previous": [
-    {"title": "ישיבת בוגרת תשפ\"ז 18.10.26", "view": "https://www.canva.com/d/Cmhg0XrjzGz57HG"},
-    {"title": "ישיבת בוגרת תשפ\"ז 11.10.26", "view": "https://www.canva.com/d/8OLCGUpwjjmvFTE"},
-    {"title": "ישיבת בוגרת תשפ\"ז 4.10.26", "view": "https://www.canva.com/d/SdncxPFp7lsMMsz"}
+    {
+      "title": "ישיבת בוגרת תשפ\"ז 18.10.26",
+      "view": "https://www.canva.com/d/Cmhg0XrjzGz57HG"
+    },
+    {
+      "title": "ישיבת בוגרת תשפ\"ז 11.10.26",
+      "view": "https://www.canva.com/d/8OLCGUpwjjmvFTE"
+    },
+    {
+      "title": "ישיבת בוגרת תשפ\"ז 4.10.26",
+      "view": "https://www.canva.com/d/SdncxPFp7lsMMsz"
+    }
   ],
   "fixed": [
-    {"icon": "📌", "title": "דגשים קבועים בוגרת", "desc": "הדגשים שחוזרים בכל ישיבה", "url": "https://www.canva.com/d/dX22YgI8dJx2HpO"},
-    {"icon": "🧭", "title": "הכשרת צוות בוגרת תשפ\"ז", "desc": "חומרי ההכשרה של השנה", "url": "https://www.canva.com/d/msO3vLOWggylXpR"},
-    {"icon": "💡", "title": "בנק השראה ולמידת עמיתים", "desc": "רעיונות לפתיחת ישיבה", "url": "https://claude.ai/artifact/RCAobWMdAt1yJ62WVjxTzc"}
+    {
+      "icon": "📌",
+      "title": "דגשים קבועים בוגרת",
+      "desc": "הדגשים שחוזרים בכל ישיבה",
+      "url": "https://www.canva.com/d/dX22YgI8dJx2HpO"
+    },
+    {
+      "icon": "🧭",
+      "title": "הכשרת צוות בוגרת תשפ\"ז",
+      "desc": "חומרי ההכשרה של השנה",
+      "url": "https://www.canva.com/d/msO3vLOWggylXpR"
+    },
+    {
+      "icon": "💡",
+      "title": "בנק השראה ולמידת עמיתים",
+      "desc": "רעיונות לפתיחת ישיבה",
+      "url": "https://claude.ai/artifact/RCAobWMdAt1yJ62WVjxTzc"
+    }
   ],
-  "folder": "https://www.canva.com/folder/FAHYQJUG8ts"
+  "folder": "https://www.canva.com/folder/FAHYQJUG8ts",
+  "archive": [
+    {
+      "date": "2026-11-22",
+      "label": "22.11.26",
+      "year": "תשפ\"ז",
+      "month": "נובמבר 2026",
+      "title": "ישיבת בוגרת תשפז 22.11.26",
+      "view": "https://www.canva.com/d/yspUnmjPX-oShjj",
+      "pages": 33,
+      "drive": ""
+    },
+    {
+      "date": "2026-11-15",
+      "label": "15.11.26",
+      "year": "תשפ\"ז",
+      "month": "נובמבר 2026",
+      "title": "ישיבת בוגרת 15.11.26",
+      "view": "https://www.canva.com/d/xaESFh6dm_3h1HZ",
+      "pages": 25,
+      "drive": "https://drive.google.com/open?id=1tNt611Q90ODk4JsQWrum5dyzRZ7ftzPQ"
+    },
+    {
+      "date": "2026-11-08",
+      "label": "8.11.26",
+      "year": "תשפ\"ז",
+      "month": "נובמבר 2026",
+      "title": "ישיבת בוגרת תשפ\"ז 8.11.26",
+      "view": "https://www.canva.com/d/aKcrVGVJlOjEjVz",
+      "pages": 27,
+      "drive": "https://drive.google.com/open?id=1IECQ4FqCJlSeNh2kygj2ZnUT1SYMNeij"
+    },
+    {
+      "date": "2026-11-01",
+      "label": "1.11.26",
+      "year": "תשפ\"ז",
+      "month": "נובמבר 2026",
+      "title": "ישיבת בוגרת תשפ\"ז 1.11.26",
+      "view": "https://www.canva.com/d/YWC80HxsutmgydU",
+      "pages": 28,
+      "drive": ""
+    },
+    {
+      "date": "2026-10-18",
+      "label": "18.10.26",
+      "year": "תשפ\"ז",
+      "month": "אוקטובר 2026",
+      "title": "ישיבת בוגרת תשפ\"ז 18.10.26",
+      "view": "https://www.canva.com/d/l0UW-QDpawvQKK8",
+      "pages": 24,
+      "drive": ""
+    },
+    {
+      "date": "2026-10-11",
+      "label": "11.10.26",
+      "year": "תשפ\"ז",
+      "month": "אוקטובר 2026",
+      "title": "ישיבת בוגרת תשפ\"ז 11.10.26",
+      "view": "https://www.canva.com/d/pLyTzU6HJn_XpUB",
+      "pages": 24,
+      "drive": ""
+    },
+    {
+      "date": "2026-10-04",
+      "label": "4.10.26",
+      "year": "תשפ\"ז",
+      "month": "אוקטובר 2026",
+      "title": "ישיבת בוגרת תשפ\"ז 4.10.26",
+      "view": "https://www.canva.com/d/Slz-nbK1ovmyV6H",
+      "pages": 36,
+      "drive": ""
+    },
+    {
+      "date": "2026-09-14",
+      "label": "14.9.26",
+      "year": "תשפ\"ז",
+      "month": "ספטמבר 2026",
+      "title": "ישיבת בוגרת תשפ\"ז 14.9.26",
+      "view": "https://www.canva.com/d/3QHsr9nUrJ9p_ST",
+      "pages": 18,
+      "drive": "https://drive.google.com/open?id=1udQUrmtqVgH6YnofguKEawEVBPtWANrR"
+    },
+    {
+      "date": "2026-05-09",
+      "label": "9.5.26",
+      "year": "תשפ\"ו",
+      "month": "מאי 2026",
+      "title": "ישיבת בוגרת תשפ\"ו-שבוע 19",
+      "view": "https://www.canva.com/d/Fs8nOYQPpi9iDx8",
+      "pages": 18,
+      "drive": ""
+    },
+    {
+      "date": "2026-05-02",
+      "label": "2.5.26",
+      "year": "תשפ\"ו",
+      "month": "מאי 2026",
+      "title": "ישיבת בוגרת תשפ''ו - שבוע 18",
+      "view": "https://www.canva.com/d/RnDnlMoYQqBLPiQ",
+      "pages": 16,
+      "drive": ""
+    },
+    {
+      "date": "2026-04-11",
+      "label": "11.4.26",
+      "year": "תשפ\"ו",
+      "month": "אפריל 2026",
+      "title": "ישיבת צוות בוגרת תשפ\"ו שבוע 15",
+      "view": "https://www.canva.com/d/_Up1ijOlHKdzVb2",
+      "pages": 14,
+      "drive": ""
+    },
+    {
+      "date": "2026-01-24",
+      "label": "24.1.26",
+      "year": "תשפ\"ו",
+      "month": "ינואר 2026",
+      "title": "ישיבת צוות בוגרת תשפ”ו שבוע 5",
+      "view": "https://www.canva.com/d/e1B8JKXu3llIl02",
+      "pages": 22,
+      "drive": ""
+    },
+    {
+      "date": "2025-12-07",
+      "label": "7.12.25",
+      "year": "תשפ\"ו",
+      "month": "דצמבר 2025",
+      "title": "ישיבת צוות בוגרת_7.12.25",
+      "view": "https://www.canva.com/d/s5azk1Y4Kt4St8E",
+      "pages": 15,
+      "drive": ""
+    },
+    {
+      "date": "2025-11-30",
+      "label": "30.11.25",
+      "year": "תשפ\"ו",
+      "month": "נובמבר 2025",
+      "title": "ישיבת צוות בוגרת תשפ''ו_30.11.25",
+      "view": "https://www.canva.com/d/0j4GLBq9nyJ8Y5v",
+      "pages": 16,
+      "drive": ""
+    },
+    {
+      "date": "2025-11-13",
+      "label": "13.11.25",
+      "year": "תשפ\"ו",
+      "month": "נובמבר 2025",
+      "title": "ישיבת צוות בוגרת תשפ”ו שבוע 47",
+      "view": "https://www.canva.com/d/J_IBmCr4MY1EFh8",
+      "pages": 18,
+      "drive": ""
+    },
+    {
+      "date": "2025-05-17",
+      "label": "17.5.25",
+      "year": "תשפ\"ה",
+      "month": "מאי 2025",
+      "title": "ישיבת צוות בוגרת תשפ\"ה שבוע 20",
+      "view": "https://www.canva.com/d/ky1BwGMFB44hnQJ",
+      "pages": 32,
+      "drive": ""
+    },
+    {
+      "date": "2025-05-10",
+      "label": "10.5.25",
+      "year": "תשפ\"ה",
+      "month": "מאי 2025",
+      "title": "ישיבת צוות בוגרת תשפ\"ה שבוע 19",
+      "view": "https://www.canva.com/d/k8wbDK-kGn_LtdG",
+      "pages": 26,
+      "drive": ""
+    },
+    {
+      "date": "2025-04-18",
+      "label": "18.4.25",
+      "year": "תשפ\"ה",
+      "month": "אפריל 2025",
+      "title": "ישיבת צוות בוגרת תשפ”ה שבוע 16",
+      "view": "https://www.canva.com/d/OhTwFjT52O81zMZ",
+      "pages": 43,
+      "drive": ""
+    },
+    {
+      "date": "2025-02-27",
+      "label": "27.2.25",
+      "year": "תשפ\"ה",
+      "month": "פברואר 2025",
+      "title": "ישיבת צוות בוגרת תשפ”ה שבוע 10",
+      "view": "https://www.canva.com/d/hDAJFmI1BLwJUjJ",
+      "pages": 41,
+      "drive": ""
+    },
+    {
+      "date": "2025-01-31",
+      "label": "31.1.25",
+      "year": "תשפ\"ה",
+      "month": "ינואר 2025",
+      "title": "ישיבת צוות בוגרת שבוע 6",
+      "view": "https://www.canva.com/d/MOoErHgMy0KKzf4",
+      "pages": 44,
+      "drive": ""
+    },
+    {
+      "date": "2025-01-11",
+      "label": "11.1.25",
+      "year": "תשפ\"ה",
+      "month": "ינואר 2025",
+      "title": "ישיבת צוות בוגרת תשפ”ה שבוע 3",
+      "view": "https://www.canva.com/d/YEMV7Nv8AepL_AU",
+      "pages": 26,
+      "drive": ""
+    },
+    {
+      "date": "2024-12-13",
+      "label": "13.12.24",
+      "year": "תשפ\"ה",
+      "month": "דצמבר 2024",
+      "title": "ישיבת צוות בוגרת תשפ”ה שבוע 51",
+      "view": "https://www.canva.com/d/0_DK13u8nYAVHwD",
+      "pages": 27,
+      "drive": ""
+    },
+    {
+      "date": "2024-11-30",
+      "label": "30.11.24",
+      "year": "תשפ\"ה",
+      "month": "נובמבר 2024",
+      "title": "ישיבת צוות בוגרת תשפ”ה שבוע 49",
+      "view": "https://www.canva.com/d/NTDYFP5K9p1VvBJ",
+      "pages": 29,
+      "drive": ""
+    },
+    {
+      "date": "2024-11-03",
+      "label": "3.11.24",
+      "year": "תשפ\"ה",
+      "month": "נובמבר 2024",
+      "title": "ישיבת צוות בוגרת_3.11.24",
+      "view": "https://www.canva.com/d/ejeM6zbcJRddzKm",
+      "pages": 31,
+      "drive": ""
+    },
+    {
+      "date": "2024-09-22",
+      "label": "22.9.24",
+      "year": "תשפ\"ה",
+      "month": "ספטמבר 2024",
+      "title": "ישיבת בוגרת_22.9.24",
+      "view": "https://www.canva.com/d/8yavedCVbVw5By4",
+      "pages": 27,
+      "drive": ""
+    },
+    {
+      "date": "2024-09-15",
+      "label": "15.9.24",
+      "year": "תשפ\"ה",
+      "month": "ספטמבר 2024",
+      "title": "ישיבת בוגרת_15.9.24",
+      "view": "https://www.canva.com/d/ADoXv08isn65-WK",
+      "pages": 33,
+      "drive": ""
+    },
+    {
+      "date": "2024-09-08",
+      "label": "8.9.24",
+      "year": "תשפ\"ה",
+      "month": "ספטמבר 2024",
+      "title": "ישיבת בוגרת_8.9.24",
+      "view": "https://www.canva.com/d/K2LLx4wzhid_Zyl",
+      "pages": 23,
+      "drive": ""
+    },
+    {
+      "date": "2024-06-09",
+      "label": "9.6.24",
+      "year": "תשפ\"ד",
+      "month": "יוני 2024",
+      "title": "ישיבת בוגרת_9.6.24",
+      "view": "https://www.canva.com/d/fAo4Uceb2ePD8da",
+      "pages": 40,
+      "drive": ""
+    },
+    {
+      "date": "2024-06-02",
+      "label": "2.6.24",
+      "year": "תשפ\"ד",
+      "month": "יוני 2024",
+      "title": "ישיבת בוגרת_2.6.24",
+      "view": "https://www.canva.com/d/m-bodBPve2R6K4m",
+      "pages": 28,
+      "drive": ""
+    },
+    {
+      "date": "2024-05-26",
+      "label": "26.5.24",
+      "year": "תשפ\"ד",
+      "month": "מאי 2024",
+      "title": "ישיבת בוגרת_26.5.24",
+      "view": "https://www.canva.com/d/3N0I9hOA-sMS_Yd",
+      "pages": 18,
+      "drive": ""
+    },
+    {
+      "date": "2024-05-19",
+      "label": "19.5.24",
+      "year": "תשפ\"ד",
+      "month": "מאי 2024",
+      "title": "ישיבת בוגרת_19.5.24",
+      "view": "https://www.canva.com/d/A81NcXMAn6i57Sh",
+      "pages": 26,
+      "drive": ""
+    },
+    {
+      "date": "2024-05-05",
+      "label": "5.5.24",
+      "year": "תשפ\"ד",
+      "month": "מאי 2024",
+      "title": "ישיבת בוגרת_5.5.24",
+      "view": "https://www.canva.com/d/yvwQYp8_Y71BCMI",
+      "pages": 29,
+      "drive": ""
+    },
+    {
+      "date": "2024-04-07",
+      "label": "7.4.24",
+      "year": "תשפ\"ד",
+      "month": "אפריל 2024",
+      "title": "ישיבת בוגרת_7.4.24",
+      "view": "https://www.canva.com/d/AsESbnBkn5EPhmW",
+      "pages": 24,
+      "drive": ""
+    },
+    {
+      "date": "2024-03-31",
+      "label": "31.3.24",
+      "year": "תשפ\"ד",
+      "month": "מרץ 2024",
+      "title": "ישיבת בוגרת_31.3.24",
+      "view": "https://www.canva.com/d/CbJDOlPrW9x0Va1",
+      "pages": 29,
+      "drive": ""
+    },
+    {
+      "date": "2023-11-05",
+      "label": "5.11.23",
+      "year": "תשפ\"ד",
+      "month": "נובמבר 2023",
+      "title": "ישיבת בוגרת_5.11.23",
+      "view": "https://www.canva.com/d/y5c23Vj3lLk-vdi",
+      "pages": 23,
+      "drive": ""
+    },
+    {
+      "date": "2023-10-09",
+      "label": "9.10.23",
+      "year": "תשפ\"ד",
+      "month": "אוקטובר 2023",
+      "title": "ישיבת בוגרת_9.10.23",
+      "view": "https://www.canva.com/d/QBNDvKS-jwS4MxA",
+      "pages": 15,
+      "drive": ""
+    },
+    {
+      "date": "2023-09-18",
+      "label": "18.9.23",
+      "year": "תשפ\"ד",
+      "month": "ספטמבר 2023",
+      "title": "ישיבת בוגרת_18.9.23",
+      "view": "https://www.canva.com/d/HKymtvG3_UNrtKv",
+      "pages": 14,
+      "drive": ""
+    },
+    {
+      "date": "2023-09-10",
+      "label": "10.9.23",
+      "year": "תשפ\"ד",
+      "month": "ספטמבר 2023",
+      "title": "ישיבת בוגרת 10.9.2023",
+      "view": "",
+      "pages": null,
+      "drive": "https://drive.google.com/open?id=1ufWtR2PAbmEq8LMrudM33MWMjp5300Dq"
+    },
+    {
+      "date": "2023-06-12",
+      "label": "12.6.23",
+      "year": "תשפ\"ג",
+      "month": "יוני 2023",
+      "title": "ישיבת צוות בוגרת 12.6.23",
+      "view": "https://www.canva.com/d/r7c9Uw-Sov8MP2G",
+      "pages": 19,
+      "drive": ""
+    },
+    {
+      "date": "2023-05-28",
+      "label": "28.5.23",
+      "year": "תשפ\"ג",
+      "month": "מאי 2023",
+      "title": "ישיבת צוות בוגרת 28.5.23",
+      "view": "https://www.canva.com/d/A4ytTyPa81J3gxx",
+      "pages": 28,
+      "drive": ""
+    },
+    {
+      "date": "2023-05-07",
+      "label": "7.5.23",
+      "year": "תשפ\"ג",
+      "month": "מאי 2023",
+      "title": "ישיבת צוות בוגרת 7.5.23",
+      "view": "https://www.canva.com/d/am31aborW5hfcb6",
+      "pages": 34,
+      "drive": ""
+    },
+    {
+      "date": "2023-04-30",
+      "label": "30.4.23",
+      "year": "תשפ\"ג",
+      "month": "אפריל 2023",
+      "title": "ישיבת צוות בוגרת_30.4.23",
+      "view": "https://www.canva.com/d/5R_DN3Nac9NYUuZ",
+      "pages": 19,
+      "drive": ""
+    },
+    {
+      "date": "2023-03-10",
+      "label": "10.3.23",
+      "year": "תשפ\"ג",
+      "month": "מרץ 2023",
+      "title": "ישיבת צוות בוגרת_16.4.23",
+      "view": "https://www.canva.com/d/b4__14NONJV78xP",
+      "pages": 33,
+      "drive": ""
+    },
+    {
+      "date": "2023-02-26",
+      "label": "26.2.23",
+      "year": "תשפ\"ג",
+      "month": "פברואר 2023",
+      "title": "ישיבת צוות בוגרת 26.2.23",
+      "view": "https://www.canva.com/d/AcQWYP09GZRdstt",
+      "pages": 23,
+      "drive": ""
+    },
+    {
+      "date": "2023-02-05",
+      "label": "5.2.23",
+      "year": "תשפ\"ג",
+      "month": "פברואר 2023",
+      "title": "ישיבת צוות בוגרת_5.2.23",
+      "view": "https://www.canva.com/d/AwXMwNC9md2BA6p",
+      "pages": 23,
+      "drive": ""
+    },
+    {
+      "date": "2023-01-22",
+      "label": "22.1.23",
+      "year": "תשפ\"ג",
+      "month": "ינואר 2023",
+      "title": "ישיבת צוות בוגרת_22.1.23",
+      "view": "https://www.canva.com/d/xmQJSSJ94ATrcXy",
+      "pages": 30,
+      "drive": ""
+    },
+    {
+      "date": "2023-01-15",
+      "label": "15.1.23",
+      "year": "תשפ\"ג",
+      "month": "ינואר 2023",
+      "title": "ישיבת צוות בוגרת_15.1.23",
+      "view": "https://www.canva.com/d/97wgXARn7e4EOzE",
+      "pages": 30,
+      "drive": ""
+    },
+    {
+      "date": "2023-01-08",
+      "label": "8.1.23",
+      "year": "תשפ\"ג",
+      "month": "ינואר 2023",
+      "title": "ישיבת צוות בוגרת_8.1.23",
+      "view": "https://www.canva.com/d/SjzvpKUkzNX0fHg",
+      "pages": 29,
+      "drive": ""
+    },
+    {
+      "date": "2022-12-18",
+      "label": "18.12.22",
+      "year": "תשפ\"ג",
+      "month": "דצמבר 2022",
+      "title": "ישיבת צוות בוגרת 18.12.22",
+      "view": "https://www.canva.com/d/iU5VTXlfBLiHVOl",
+      "pages": 25,
+      "drive": ""
+    },
+    {
+      "date": "2022-12-04",
+      "label": "4.12.22",
+      "year": "תשפ\"ג",
+      "month": "דצמבר 2022",
+      "title": "ישיבת צוות בוגרת_4.12.22",
+      "view": "https://www.canva.com/d/nC5c5VPbmWF5KCq",
+      "pages": 23,
+      "drive": ""
+    },
+    {
+      "date": "2022-11-20",
+      "label": "20.11.22",
+      "year": "תשפ\"ג",
+      "month": "נובמבר 2022",
+      "title": "ישיבת צוות בוגרת 20.11.22",
+      "view": "https://www.canva.com/d/rrYD6Tyloiqsabv",
+      "pages": 26,
+      "drive": ""
+    },
+    {
+      "date": "2022-11-13",
+      "label": "13.11.22",
+      "year": "תשפ\"ג",
+      "month": "נובמבר 2022",
+      "title": "ישיבת צוות בוגרת_13.11.22",
+      "view": "https://www.canva.com/d/V5CzybLK-YDbA9D",
+      "pages": 22,
+      "drive": ""
+    },
+    {
+      "date": "2022-10-30",
+      "label": "30.10.22",
+      "year": "תשפ\"ג",
+      "month": "אוקטובר 2022",
+      "title": "ישיבת צוות בוגרת_30.10.22",
+      "view": "https://www.canva.com/d/8UC5S88jb1o-7_7",
+      "pages": 26,
+      "drive": ""
+    },
+    {
+      "date": "2022-10-02",
+      "label": "2.10.22",
+      "year": "תשפ\"ג",
+      "month": "אוקטובר 2022",
+      "title": "ישיבת צוות בוגרת_2.10.22",
+      "view": "https://www.canva.com/d/gnTOWHBl1iwUvCX",
+      "pages": 26,
+      "drive": ""
+    },
+    {
+      "date": "2022-09-18",
+      "label": "18.9.22",
+      "year": "תשפ\"ג",
+      "month": "ספטמבר 2022",
+      "title": "ישיבת צוות בוגרת 18.9.22",
+      "view": "https://www.canva.com/d/uOn84kTA-C-jSWT",
+      "pages": 8,
+      "drive": ""
+    },
+    {
+      "date": "2022-09-11",
+      "label": "11.9.22",
+      "year": "תשפ\"ג",
+      "month": "ספטמבר 2022",
+      "title": "ישיבת צוות בוגרת_11.9.22",
+      "view": "https://www.canva.com/d/ZJWWSahbqSJKd49",
+      "pages": 8,
+      "drive": ""
+    }
+  ]
 }
