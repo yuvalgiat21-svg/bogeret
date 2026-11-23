@@ -677,6 +677,26 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 .edt-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 10px;} .edt-head h3{margin:0;font:800 18px Heebo,sans-serif;color:#8E033C;}
 .edt-q{flex:1;min-width:180px;border:1px solid #F3C2B0;border-radius:999px;padding:6px 12px;font:14px Assistant,sans-serif;}
 .edt-g{border:1px solid #f6dcd2;border-radius:10px;margin-bottom:6px;background:#fff;} .edt-g summary{cursor:pointer;padding:8px 12px;font:700 14px Heebo,sans-serif;} .edt-g summary small{color:#7A6A66;font-weight:400;}
+.fam-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0;}
+.fam-tile{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:1.5px solid #F3C2B0;border-top:5px solid var(--c);border-radius:14px;padding:12px 8px;cursor:pointer;font-family:Assistant,sans-serif;}
+.fam-tile span{font-size:20px;} .fam-tile b{font:800 26px Heebo,sans-serif;color:var(--c);} .fam-tile small{color:#7A6A66;font-size:12.5px;}
+.fam-tile.on,.fam-tile:hover{background:#FFF1EB;box-shadow:0 0 0 2px var(--c) inset;}
+.fam-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px;}
+.fam-q{flex:1;min-width:220px;border:1px solid #F3C2B0;border-radius:999px;padding:8px 14px;font:14.5px Assistant,sans-serif;}
+.fam-chips{display:flex;flex-wrap:wrap;gap:5px;} .fam-chips button{border:1px solid #F3C2B0;background:#fff;border-radius:999px;padding:5px 12px;font:600 13px Heebo,sans-serif;cursor:pointer;color:#7A6A66;}
+.fam-chips button.on{background:#FC5028;border-color:#FC5028;color:#fff;}
+.fam-gh{font:800 18px Heebo,sans-serif;color:#8E033C;margin:16px 0 8px;border-bottom:2px solid #F3C2B0;padding-bottom:4px;} .fam-gh small{color:#7A6A66;font-weight:600;font-size:13px;}
+.fam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px;}
+.fam-card{background:#fff;border:1px solid #F3C2B0;border-right:5px solid var(--g);border-radius:14px;padding:11px 12px;cursor:pointer;transition:box-shadow .15s;}
+.fam-card:hover{box-shadow:0 4px 14px rgba(142,3,60,.12);}
+.fam-top{display:flex;gap:10px;align-items:center;} .fam-who{flex:1;min-width:0;display:flex;flex-direction:column;}
+.fam-who b{font:800 15px Heebo,sans-serif;} .fam-who small{color:#7A6A66;font-size:12px;}
+.fam-st{flex:none;align-self:flex-start;font-size:11.5px;font-weight:700;color:var(--s);background:color-mix(in srgb,var(--s) 12%,#fff);border:1px solid color-mix(in srgb,var(--s) 40%,#fff);border-radius:999px;padding:2px 9px;max-width:110px;text-align:center;}
+.fam-ps{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px;}
+.fam-p{background:#FFF1EB;border-radius:10px;padding:6px 8px;display:flex;flex-direction:column;min-width:0;}
+.fam-r{font-size:11px;color:#7A6A66;font-weight:700;} .fam-n{font-weight:700;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fam-miss{opacity:.55;}
+.fam-tel{font-size:12.5px;color:#8E033C;text-decoration:none;direction:ltr;text-align:right;} a.fam-tel:hover{text-decoration:underline;}
 .gantt-d.past { opacity:.62; }
 .gantt-d .gd-ck { position:absolute; bottom:0; left:2px; font-size:10px; font-weight:900; color:#047857; line-height:1; }
 .gantt-d.has-ev .gd-ck { color:#fff; text-shadow:0 0 2px rgba(0,0,0,.55); }
@@ -4202,6 +4222,46 @@ window.gradDocsRender=async function(){
     <div style="font-size:12px;color:var(--text3);margin-top:6px">הקישורים שמורים באזור המוגן כי בחלק מהמסמכים יש פרטי חניכים.</div></div></div>`;
 };
 
+
+/* ═══════════ סקירה ← פרטי משפחה: כרטיס לכל חניך/ה עם ההורים, סינון וחיפוש ═══════════ */
+const FAM={q:'',f:''};
+function famStatus(st){ st=String(st||'').trim();
+  if(!st||st==='-') return {k:'none',l:'לא ידוע',c:'#94a3b8'};
+  if(/ברע|נפטר|ז"ל|יתום/.test(st)) return {k:'loss',l:st,c:'#8E033C'};
+  if(/גרוש|פרוד|חד.?הור/.test(st)) return {k:'div',l:st,c:'#FC5028'};
+  if(/נשוי|נשואים|ביחד|יחד/.test(st)) return {k:'mar',l:st,c:'#059669'};
+  return {k:'oth',l:st,c:'#7A6A66'}; }
+const famTel=p=>{ const d=String(p||'').replace(/[^\d+]/g,''); return d.length>=9?`<a class="fam-tel" href="tel:${d}" onclick="event.stopPropagation()">📞 ${lbEsc(p)}</a>`:(p&&p!=='-'?`<span class="fam-tel">${lbEsc(p)}</span>`:''); };
+window.famRender=function(){
+  const el=document.getElementById('famBody'); if(!el) return;
+  const L=(typeof D!=='undefined'&&D.studentsYB)||[];
+  if(!L.length){ el.innerHTML='<div class="panel"><div class="panel-b" style="color:var(--text3)">אין נתונים — הם נטענים מהאזור המוגן אחרי התחברות.</div></div>'; return; }
+  const E=lbEsc, groups=[...new Set(L.map(s=>s.group).filter(Boolean))].sort();
+  const has=v=>v&&v!=='-'&&String(v).trim();
+  const sex=s=>/^נ/.test(s.gender||'')?'f':/^ז/.test(s.gender||'')?'m':'';
+  const miss=s=>!has(s.father)||!has(s.mother)||!(has(s.motherPhone)||has(s.fatherPhone));
+  const F={'':()=>true, f:s=>sex(s)==='f', m:s=>sex(s)==='m', miss};
+  groups.forEach(g=>F['g:'+g]=s=>s.group===g);
+  const q=FAM.q.trim();
+  const list=L.filter(s=>(F[FAM.f]||F[''])(s)&&(!q||[s.name,s.city,s.father,s.mother,s.class].some(v=>String(v||'').includes(q))));
+  const tile=(k,ic,l,c)=>`<button class="fam-tile${FAM.f===k?' on':''}" data-f="${k}" style="--c:${c}"><span>${ic}</span><b>${L.filter(F[k]).length}</b><small>${l}</small></button>`;
+  const GC=['#0e7490','#b45309','#6d28d9','#15803d'];
+  const parent=(role,name,ph)=>(has(name)||has(ph))?`<div class="fam-p"><span class="fam-r">${role}</span><span class="fam-n">${E(has(name)?name:'—')}</span>${famTel(ph)}</div>`:`<div class="fam-p fam-miss"><span class="fam-r">${role}</span><span class="fam-n">אין פרטים</span></div>`;
+  const card=s=>{ const st=famStatus(s.parentStatus), sd=(typeof STUDENTS_DATA!=='undefined'&&STUDENTS_DATA.find(x=>x.n===s.name))||{n:s.name};
+    const gc=(typeof GRP_CLR!=='undefined'&&GRP_CLR[sd.g||s.group])||'#94a3b8', ix=typeof STUDENTS_DATA!=='undefined'?STUDENTS_DATA.indexOf(sd):-1;
+    return `<div class="fam-card" style="--g:${gc};--s:${st.c}" ${ix>=0?`onclick="showStudentDetails(${ix})"`:''}>
+      <div class="fam-top">${avatar(sd,52,gc)}<div class="fam-who"><b>${E(s.name)}</b><small>${E([s.class,s.city].filter(has).join(' · '))}</small>${famTel(s.phone)}</div>
+        ${st.k!=='none'?`<span class="fam-st" title="סטטוס משפחתי">${E(st.l)}</span>`:''}${miss(s)?'<span class="fam-st" style="--s:#b45309" title="חסרים פרטי הורה">⚠️ חסר</span>':''}</div>
+      <div class="fam-ps">${parent('אבא',s.father,s.fatherPhone)}${parent('אמא',s.mother,s.motherPhone)}</div></div>`; };
+  const byG={}; list.forEach(s=>{ const g=s.group||'ללא קבוצה'; (byG[g]=byG[g]||[]).push(s); });
+  el.innerHTML=`<div class="fam-tiles">${tile('','👥','כל חניכי י"ב','#8E033C')}${groups.map((g,i)=>tile('g:'+g,'🏠','קבוצת '+E(g),(typeof GRP_CLR!=='undefined'&&GRP_CLR[g])||GC[i%4])).join('')}${tile('f','👧','בנות','#db2777')}${tile('m','👦','בנים','#2563eb')}${tile('miss','⚠️','חסרים פרטי הורה','#b45309')}</div>
+    <div class="fam-bar"><input class="fam-q" placeholder="🔍 חיפוש: שם חניך/ה, עיר, כיתה או שם הורה" value="${E(FAM.q)}">
+      <small style="color:var(--text3)">${list.length} מתוך ${L.length} · לחיצה על ריבוע מסננת</small></div>
+    ${Object.keys(byG).sort().map(g=>`<h3 class="fam-gh">${E(g)} <small>(${byG[g].length})</small></h3><div class="fam-grid">${byG[g].sort((a,b)=>String(a.name).localeCompare(String(b.name),'he')).map(card).join('')}</div>`).join('')||'<div style="color:var(--text3);padding:20px">לא נמצאו חניכים</div>'}`;
+  el.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ FAM.f=FAM.f===b.dataset.f?'':b.dataset.f; famRender(); });
+  const qi=el.querySelector('.fam-q'); qi.oninput=()=>{ FAM.q=qi.value; const p=qi.selectionStart; famRender(); const n=el.querySelector('.fam-q'); n.focus(); n.setSelectionRange(p,p); };
+};
+
 /* ═══════════ לינקים חשובים ═══════════ */
 const LINKS=[
   {ic:'🏫',t:'סמרט קמפוס',d:'מערכת הפנימייה: תיק אישי, רשימות חניכים ונוכחות',u:'https://mevootyam.smart-campus.co.il'},
@@ -5091,14 +5151,14 @@ function reorganize(){
   while(old.alphon.firstChild) sAlph.appendChild(old.alphon.firstChild);
   /* הרשימות שהיו מתחת לאלפון עוברות ללשוניות שלהן */
   const sFam=mkSub('ov-family'), sVis=mkSub('ov-visits');
-  sFam.innerHTML=info('👨‍👩‍👧','פרטי משפחה — שכבת י"ב','פרטי ההורים, טלפונים וסטטוס משפחתי של חניכי י"ב.');
+  sFam.innerHTML=info('👨‍👩‍👧','פרטי משפחה — שכבת י"ב','פרטי ההורים, טלפונים וסטטוס משפחתי של חניכי י"ב. לחיצה על מספר טלפון מחייגת, ולחיצה על כרטיס פותחת את פרטי החניך/ה.')+'<div id="famBody"></div>';
   sVis.innerHTML=info('🏡','ביקורי בית — מבט שכבתי','ריכוז ביקורי הבית. המעקב השוטף לכל קבוצה נמצא תחת <b>ניהול קבוצה ← ביקורי בית</b>.');
   [...old.personal.querySelectorAll(':scope > .panel')].forEach(pn=>{
     const h=(pn.querySelector('h2')||{}).textContent||'';
     if(h.includes('רפואי')) sMed.appendChild(pn);
     else if(h.includes('צמחונים')||h.includes('אלרגיות')) sDiet.appendChild(pn);
     else if(h.includes('ביקורי בית')) sVis.appendChild(pn);
-    else if(h.includes('פירוט חניכים')) sFam.appendChild(pn);
+    else if(h.includes('פירוט חניכים')) pn.remove();  /* הוחלף בתצוגת כרטיסים (famRender) */
   });
   /* ---------- 💡 סיכום שבועי ותובנות (מתעדכן כל חמישי מ-insights.json) ---------- */
   const wk=document.createElement('div'); wk.id='weeklyInsights';
@@ -5108,6 +5168,7 @@ function reorganize(){
   sGen.appendChild(wk); /* הנתונים הכלליים למעלה, התובנות אחריהם. ישיבת בוגרת נמצאת בחומרים מקצועיים */
   loadWeeklyInsights();
   [sGen,sAlph,sGoals,sRam,sMed,sDiet,sFam,sVis,sRooms].forEach(x=>ov.appendChild(x));
+  setTimeout(()=>{ try{ famRender(); }catch(e){ console.warn('fam',e); } },0);
   main.appendChild(ov);
 
   /* ---------- 2. יומן ---------- */
