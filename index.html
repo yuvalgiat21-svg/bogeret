@@ -1072,7 +1072,11 @@ const USERS = [
   {id:'ido', eh:'166a5fee68c21c3a87e35091a2e19fafbdddeb2ea223de8c8897c91c1544d1f4', em:'id***@gmail.com',     n:'עידו ניסן',    r:'שינשין שחף',           mode:'view',  scope:'ya'},
   {id:'ami', eh:'54d4ed0cdec59959340a6fba5e5578059c8844db7d6db8559aa31450d7bfa67d', em:'am***@gmail.com',     n:'עמי גרינגרס',  r:'מדריך אקדמיה לכדורסל', mode:'edit',  scope:'academy'},
 ];
-const SCOPE_GROUPS = { all:null, ya:['שלדג','שחף','שיר'], yb:['yb'], academy:['academy'] };
+/* מרכז למידה — כשיגיעו המיילים יתווספו כאן (lcOnly = רואות רק את לשונית מרכז הלמידה):
+   {id:'lc_manager', eh:'<hash>', em:'..***@..', n:'<שם>', r:'מנהלת מרכז למידה', mode:'edit', scope:'all', lc:'manager', lcOnly:true},
+   {id:'lc_coord',   eh:'<hash>', em:'..***@..', n:'<שם>', r:'רכזת מרכז למידה',  mode:'edit', scope:'all', lc:'coord',   lcOnly:true},
+   {id:'paz',        eh:'<hash>', em:'..***@..', n:'פז',    r:'רכזת מח"מ',         mode:'edit', scope:'all', lc:'mahat',   lcOnly:true}, */
+const SCOPE_GROUPS ={ all:null, ya:['שלדג','שחף','שיר'], yb:['yb'], academy:['academy'] };
 
 var ME=null;
 async function sha(s){
@@ -1441,6 +1445,7 @@ const tabs = [
   {id:'overview',icon:'📊',label:'סקירה'},
   {id:'calendar',icon:'📅',label:'יומן'},
   {id:'pedagogy',icon:'📚',label:'לימודי'},
+  {id:'lc',icon:'🏫',label:'מרכז למידה'},
   {id:'edu',icon:'🎓',label:'חינוכי'},
   {id:'siyum',icon:'🎓',label:"מכלול סיום יב'"},
   {id:'graduates',icon:'🎖️',label:'בוגרים'},
@@ -5921,11 +5926,28 @@ function initApp() {
   nav.innerHTML = tabs.map(t => `<button onclick="show('${t.id}')" id="tab-${t.id}">${t.icon} ${t.label}</button>`).join('');
   buildAllSections();
   reorganize();
+  lcMount();
   if (window.renderGrads) renderGrads('');
-  show('overview');
+  if (ME && ME.lcOnly){ nav.querySelectorAll('button').forEach(b=>{ if(b.id!=='tab-lc') b.remove(); }); show('lc'); }
+  else show('overview');
+}
+
+/* ═══════ מרכז למידה (תגבורים, חוגים, אישורי יציאה) ═══════
+   המודול עצמו נמצא ב-lc.html ונפתח כאן בתוך מסגרת מאותו אתר.
+   הוא משתמש בכניסה של הפורטל, ברשימת החניכים ובאזור המוגן portal/bogeret/secure/lc.
+   תפקידים: מנהל/ת הפורטל רואה הכל · ME.lc = 'manager' | 'coord' | 'mahat' · אנשי צוות במצב עריכה = מדריכים (אישורי יציאה). */
+window.LC_BRIDGE = { me:()=>ME, students:()=>[...STUDENTS_DATA, ...ACAD_STUDENTS], db:()=>secureDb() };
+function lcRole(){ if(!ME) return null; if(ME.mode==='admin') return 'admin'; if(ME.lc) return ME.lc; if(ME.mode==='edit') return 'madrich'; return null; }
+function lcMount(){
+  if(!lcRole()){ const b=document.getElementById('tab-lc'); if(b) b.remove(); return; }
+  if(document.getElementById('sec-lc')) return;
+  const s=document.createElement('div'); s.className='sec'; s.id='sec-lc';
+  s.innerHTML='<iframe id="lcFrame" title="מרכז למידה" style="width:100%;height:calc(100vh - 150px);min-height:620px;border:0;border-radius:14px;background:#FBF6F3;display:block;"></iframe>';
+  document.getElementById('mainContent').appendChild(s);
 }
 
 function show(id) {
+  if (id==='lc'){ const f=document.getElementById('lcFrame'); if(f && !f.getAttribute('src')) f.setAttribute('src','lc.html?v=1'); }
   document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   const sec = document.getElementById('sec-'+id);

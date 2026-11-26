@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>מרכז למידה · תיאום תגבורים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--o:#FC5028;--b:#8E033C;--bg:#FFF1EB;--ln:#F3C2B0;--t2:#7A6A66;--tx:#2B1D1A;--ok:#1E9E6A;--warn:#D98E04;--err:#C0261F;
+ --sh:0 1px 2px rgba(142,3,60,.06),0 6px 18px rgba(142,3,60,.08);--r:14px}
+*{box-sizing:border-box}
+body{margin:0;font-family:Assistant,Arial,sans-serif;background:#FBF6F3;color:var(--tx);font-size:15px}
+h1,h2,h3,h4,.hd{font-family:Heebo,Arial,sans-serif;margin:0}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--ln);border-radius:10px;background:#fff;color:var(--tx)}
+input:focus,select:focus,textarea:focus{outline:2px solid #fc502855;border-color:var(--o)}
+header{background:linear-gradient(115deg,var(--o),var(--b));color:#fff;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+header .logo{font-family:Heebo;font-weight:800;font-size:20px;display:flex;align-items:center;gap:10px}
+header .logo small{font-weight:500;font-size:13px;opacity:.85;display:block}
+.seg{display:flex;background:rgba(255,255,255,.16);border-radius:12px;padding:4px;gap:4px;margin-inline-start:auto}
+.seg button{border:0;background:transparent;color:#fff;padding:7px 14px;border-radius:9px;font-weight:700;font-size:14px}
+.seg button.on{background:#fff;color:var(--b)}
+nav{display:flex;gap:6px;padding:10px 22px;background:#fff;border-bottom:1px solid var(--ln);overflow-x:auto;position:sticky;top:0;z-index:20}
+nav button{border:0;background:transparent;padding:8px 14px;border-radius:10px;font-weight:700;color:var(--t2);white-space:nowrap;font-size:14.5px}
+nav button.on{background:var(--bg);color:var(--b)}
+nav button .n{background:var(--o);color:#fff;border-radius:9px;padding:0 7px;font-size:12px;margin-inline-start:4px}
+main{padding:20px 22px 60px;max-width:1500px;margin:0 auto}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sp{flex:1}
+.btn{border:1px solid var(--ln);background:#fff;color:var(--tx);padding:8px 14px;border-radius:10px;font-weight:700;font-size:14px;display:inline-flex;gap:6px;align-items:center}
+.btn:hover{border-color:var(--o)}
+.btn.pri{background:var(--o);border-color:var(--o);color:#fff}
+.btn.pri:hover{background:#e54418}
+.btn.dk{background:var(--b);border-color:var(--b);color:#fff}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.danger{color:var(--err)}
+.panel{background:#fff;border:1px solid var(--ln);border-radius:var(--r);box-shadow:var(--sh);padding:16px}
+.panel h3{font-size:16px;color:var(--b);margin-bottom:10px}
+.grid{display:grid;gap:14px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.kpi{background:#fff;border:1px solid var(--ln);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh)}
+.kpi .v{font-family:Heebo;font-size:30px;font-weight:800;color:var(--b);line-height:1.1}
+.kpi .l{color:var(--t2);font-size:13.5px;font-weight:600}
+.kpi .s{font-size:12px;color:var(--t2);margin-top:4px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:700;background:var(--bg);color:var(--b);border:1px solid var(--ln);white-space:nowrap}
+.tag.ok{background:#E6F6EF;color:var(--ok);border-color:#BDE6D3}
+.tag.warn{background:#FFF5DC;color:#9A6500;border-color:#F3DB9C}
+.tag.err{background:#FDE8E6;color:var(--err);border-color:#F5C2BD}
+.tag.gr{background:#F2EFEE;color:var(--t2);border-color:#E3DDDB}
+.muted{color:var(--t2);font-size:13px}
+.title{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.title h2{font-size:22px;color:var(--b)}
+/* calendar */
+.calwrap{display:grid;grid-template-columns:1fr 310px;gap:14px;align-items:start}
+.calscroll{overflow-x:auto;background:#fff;border:1px solid var(--ln);border-radius:var(--r);box-shadow:var(--sh)}
+.cal{display:grid;grid-template-columns:58px repeat(5,minmax(150px,1fr));min-width:820px}
+.cal .ch{position:sticky;top:0;background:#fff;padding:10px 8px;text-align:center;font-family:Heebo;font-weight:700;border-bottom:1px solid var(--ln);font-size:14px;z-index:2}
+.cal .ch small{display:block;font-weight:500;color:var(--t2);font-size:12px}
+.cal .ch.today{color:var(--o)}
+.cal .hr{padding:8px 6px;font-family:Heebo;font-weight:700;color:var(--t2);font-size:13px;border-bottom:1px solid #F6E3DA;text-align:center}
+.cal .cell{border-bottom:1px solid #F6E3DA;border-inline-start:1px solid #F6E3DA;padding:5px;min-height:74px;display:flex;flex-direction:column;gap:5px}
+.cal .cell.past{background:#FCFAF9}
+.cal .cell.blk{background:repeating-linear-gradient(-45deg,#FBF3EF,#FBF3EF 6px,#fff 6px,#fff 12px);color:var(--t2);font-size:12px;align-items:center;justify-content:center}
+.card{border-radius:10px;border:1px solid var(--ln);background:#fff;padding:6px 8px;border-inline-start:4px solid var(--c);cursor:pointer;transition:.15s;position:relative}
+.card:hover{box-shadow:var(--sh)}
+.card .t{font-size:12px;font-weight:700;color:var(--t2);display:flex;gap:6px;align-items:center}
+.card .t .cnt{margin-inline-start:auto;font-family:Heebo}
+.card .s{font-family:Heebo;font-weight:700;font-size:13.5px;margin:2px 0 4px}
+.card.ghost{background:transparent;border-style:dashed;border-inline-start-width:1px;padding:3px 8px;opacity:.75}
+.card.ghost .t:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+.card.full .cnt{color:var(--err)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-size:12px;padding:2px 8px;border-radius:12px;background:var(--bg);border:1px solid var(--ln);cursor:grab;white-space:nowrap;font-weight:600}
+.chip.att1{background:#E6F6EF;border-color:#BDE6D3}
+.chip.att0{background:#FDE8E6;border-color:#F5C2BD;text-decoration:line-through}
+body.dragging .card.dim{opacity:.25}
+body.dragging .card.tgt{outline:2px dashed var(--ok);background:#F1FBF6;opacity:1}
+.card.over{outline:3px solid var(--ok)!important;transform:scale(1.03)}
+.side{position:sticky;top:64px;max-height:calc(100vh - 80px);overflow:auto}
+.rq{border:1px solid var(--ln);border-radius:12px;padding:9px 11px;margin-bottom:8px;background:#fff;cursor:grab;transition:.15s}
+.rq:hover{border-color:var(--o);box-shadow:var(--sh)}
+.rq b{font-family:Heebo}
+.drop-un{border:2px dashed transparent;border-radius:12px;padding:4px;transition:.15s}
+body.dragging .drop-un.chipdrag{border-color:var(--err);background:#FFF6F5}
+/* tables */
+table.tb{width:100%;border-collapse:collapse;font-size:14px}
+.tb th{text-align:right;color:var(--t2);font-weight:700;font-size:13px;padding:8px;border-bottom:1px solid var(--ln);background:#FFF9F6;position:sticky;top:0}
+.tb td{padding:9px 8px;border-bottom:1px solid #F6E3DA;vertical-align:middle}
+.tb tr:hover td{background:#FFFBF9}
+.av{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-family:Heebo;font-size:13px;flex:none}
+.tcards{grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+.tcard{background:#fff;border:1px solid var(--ln);border-radius:var(--r);padding:14px;box-shadow:var(--sh);border-top:5px solid var(--c)}
+.bar{height:8px;background:#F6E3DA;border-radius:8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--o);border-radius:8px}
+.bars .br{display:grid;grid-template-columns:110px 1fr 70px;gap:8px;align-items:center;margin-bottom:8px;font-size:13.5px}
+.bars .two{position:relative;height:16px;background:#F6E3DA;border-radius:6px;overflow:hidden}
+.bars .two i{position:absolute;top:0;bottom:0;right:0;border-radius:6px}
+.alert{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;margin-bottom:8px;font-size:14px;border:1px solid}
+.alert.err{background:#FDF0EE;border-color:#F5C2BD}.alert.warn{background:#FFF8E6;border-color:#F3DB9C}.alert.ok{background:#EEF9F4;border-color:#BDE6D3}.alert.info{background:var(--bg);border-color:var(--ln)}
+/* painter */
+.painter{display:grid;grid-template-columns:52px repeat(5,1fr);gap:3px;user-select:none;margin-top:6px}
+.painter .ph{font-size:12px;font-weight:700;text-align:center;color:var(--t2);padding:3px}
+.pc{height:30px;border-radius:7px;background:#F6EFEC;border:1px solid #EEE2DC;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;color:transparent}
+.pc.on{background:var(--pcol,var(--o));border-color:transparent;color:#fff}
+.pc.x{background:repeating-linear-gradient(-45deg,#F4ECE8,#F4ECE8 4px,#fff 4px,#fff 8px);cursor:not-allowed}
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(43,29,26,.45);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:40px 14px;overflow:auto}
+#modal.open{display:flex}
+.mbox{background:#fff;border-radius:18px;max-width:720px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:pop .18s ease}
+.mbox .mh{padding:16px 20px;border-bottom:1px solid var(--ln);display:flex;align-items:center;gap:10px}
+.mbox .mh h3{font-size:18px;color:var(--b)}
+.mbox .mb{padding:18px 20px}
+.mbox .mf{padding:12px 20px;border-top:1px solid var(--ln);display:flex;gap:8px;justify-content:flex-start;background:#FFFAF8;border-radius:0 0 18px 18px}
+@keyframes pop{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+.fld{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fld label{font-weight:700;font-size:13.5px;color:var(--t2)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pick{display:flex;flex-wrap:wrap;gap:6px}
+.pick button{border:1px solid var(--ln);background:#fff;border-radius:20px;padding:6px 12px;font-weight:700;font-size:13.5px;color:var(--tx)}
+.pick button.on{background:var(--o);border-color:var(--o);color:#fff}
+.pick button.on.lv{background:var(--b);border-color:var(--b)}
+.subrow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed #F3DDD3;flex-wrap:wrap}
+.opt{display:flex;align-items:center;gap:12px;border:1px solid var(--ln);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.opt .dt{font-family:Heebo;font-weight:800;color:var(--b);min-width:86px;text-align:center;line-height:1.15}
+.opt .dt small{display:block;font-weight:500;color:var(--t2);font-size:12px}
+.why{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+#toasts{position:fixed;bottom:18px;left:18px;display:flex;flex-direction:column;gap:8px;z-index:200}
+.toast{background:var(--tx);color:#fff;padding:11px 16px;border-radius:12px;box-shadow:var(--sh);font-weight:600;animation:pop .2s;max-width:360px}
+.toast.ok{background:var(--ok)}.toast.err{background:var(--err)}
+/* student mobile */
+.phone{max-width:560px;margin:0 auto}
+.hero{background:#fff;border:1px solid var(--ln);border-radius:20px;padding:18px;box-shadow:var(--sh);margin-bottom:14px}
+.hero h2{font-size:22px;color:var(--b)}
+.big{width:100%;padding:14px;font-size:16px;border-radius:14px;justify-content:center}
+.ses{display:flex;gap:12px;align-items:center;border:1px solid var(--ln);border-radius:14px;padding:12px;margin-bottom:8px;background:#fff;border-inline-start:5px solid var(--c)}
+.step{font-family:Heebo;font-weight:700;margin:14px 0 8px;color:var(--b)}
+.empty{text-align:center;color:var(--t2);padding:26px 10px;font-size:14px}
+.feed div{padding:7px 0;border-bottom:1px dashed #F3DDD3;font-size:13.5px}
+.feed small{color:var(--t2);margin-inline-end:6px}
+.seg{flex-wrap:wrap}
+body.embedded header{padding:8px 14px}body.embedded header .logo{font-size:16px}body.embedded header .logo>span{display:none}body.embedded main{padding-top:14px}
+.bell{border:0;background:rgba(255,255,255,.16);color:#fff;border-radius:10px;padding:7px 11px;font-size:16px;position:relative}
+.bell .n{position:absolute;top:-6px;left:-6px;background:#fff;color:var(--b);border-radius:9px;font-size:11px;padding:0 6px;font-weight:800}
+.rolebar{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:9px 14px;margin-bottom:14px;font-size:14px;color:var(--t2)}
+.rolebar b{color:var(--b)}
+.ucal{display:grid;grid-template-columns:52px repeat(5,minmax(0,1fr));gap:3px;margin-top:10px}
+.ucal .ph{font-size:12px;font-weight:700;text-align:center;color:var(--t2);padding:3px}
+.uc{min-height:44px;border-radius:8px;background:#FAF5F2;border:1px solid #F1E4DE;padding:3px;display:flex;flex-direction:column;gap:2px;position:relative;min-width:0}
+.uc.cf{border:2px solid var(--err);background:#FFF4F3}
+.ub{font-size:11.5px;border-radius:5px;padding:1px 5px;background:#fff;border:1px solid #eee;border-inline-start:3px solid var(--k);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ub.pend{border-style:dashed;opacity:.8}
+.cfi{position:absolute;top:-9px;left:-6px;font-size:13px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--t2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--k);margin-inline-end:4px}
+@media (max-width:1100px){.seg button span{display:none}.seg button{font-size:18px}}
+@media (max-width:1000px){.calwrap{grid-template-columns:1fr}.side{position:static;max-height:none}}
+@media (max-width:640px){main{padding:14px 12px 60px}header{padding:12px 14px}.seg{margin-inline-start:0;width:100%}.seg button{flex:1;padding:7px 6px}.f2{grid-template-columns:1fr}nav{padding:8px 12px}}
+@media print{header,nav,.side,.noprint,#toasts{display:none!important}.calwrap{display:block}.calscroll{box-shadow:none;border:0}body{background:#fff}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><span style="font-size:26px">📚</span><div>מרכז למידה · תיאום תגבורים<small>שכבה בוגרת · מבואות ים</small></div></div>
+  <div class="seg" id="roleSw"></div>
+  <button class="bell" id="bell" onclick="openNotes()" aria-label="התראות"></button>
+</header>
+<nav id="nav"></nav>
+<main id="app"></main>
+<div id="modal" onclick="if(event.target===this)closeModal()"><div class="mbox" id="mbox"></div></div>
+<div id="toasts"></div>
+<script>
+/* ============ קבועים ============ */
+const DAYS=['ראשון','שני','שלישי','רביעי','חמישי'];
+const SUBJECTS=['מתמטיקה','אנגלית','לשון','היסטוריה','תנ"ך','ספרות','אזרחות','פיזיקה','ביולוגיה','כימיה','מחשבים'];
+const LEVELED=['מתמטיקה','אנגלית'];
+const REASONS={'בגרות':25,'מבחן קרוב':20,'ציון נמוך':15,'השלמת חומר':10,'חיזוק כללי':5};
+const COLORS=['#FC5028','#8E033C','#1E9E6A','#2C6FD1','#8A4FD6','#D98E04','#0E9AA7','#D6457A','#5A6B7B','#7B9A1E'];
+const KEY='bogeret_tigburim_demo_v2';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+
+/* ============ תאריכים ============ */
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const addDays=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return iso(d)};
+const weekOf=s=>{const d=new Date((s||todayIso())+'T12:00:00');d.setDate(d.getDate()-d.getDay());return iso(d)};
+const todayIso=()=>iso(new Date());
+const fmt=s=>{const p=s.split('-');return (+p[2])+'.'+(+p[1])};
+const diff=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5);
+const dateOf=(w,d)=>addDays(w,d);
+const isPast=(w,d,h)=>{const dt=dateOf(w,d),t=todayIso();return dt<t||(dt===t&&h<=new Date().getHours())};
+const sk=(w,d,h,t)=>`${w}|${d}|${h}|${t}`;
+const pk=k=>{const [w,d,h,t]=k.split('|');return {w,d:+d,h:+h,t}};
+const hh=h=>`${String(h).padStart(2,'0')}:00`;
+
+/* ============ מצב ============ */
+let S=null;
+/* ── מצב חי: כשהדף פתוח בתוך פורטל בוגרת — משתמשים בכניסה, ברשימת החניכים ובאזור המוגן של הפורטל ── */
+const P=(()=>{try{return window.parent!==window&&window.parent.LC_BRIDGE?window.parent.LC_BRIDGE:null}catch(e){return null}})();
+const LIVE=!!P;
+const LC_PATH='portal/bogeret/secure/lc';
+const COLS=['settings','teachers','requests','sessions','activities','exits','notes','fixedGroups','log','sync','stu'];
+let LAST={},DB=null,ALLOWED=null,MY_GROUPS=null,ME_N='';
+let UI={grp:'',calSid:null,gs:'מתמטיקה',role:'coord',tab:'dash',week:weekOf(),tid:null,sid:null,f:{t:'',s:''},rf:{st:'pending',s:'',q:''},sw:null,paint:{}};
+function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
+function save(){if(LIVE)return liveSave();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function log(msg){S.log.unshift({ts:Date.now(),msg:LIVE&&ME_N?`${msg} (${ME_N})`:msg});S.log=S.log.slice(0,100)}
+function blankState(){return {settings:{hours:[14,15,16,17,18,19,20],blocked:[19],max:4},teachers:[],requests:[],sessions:{},activities:[],exits:[],notes:[],fixedGroups:[],log:[],sync:{date:'',src:'סמרט סקול'},stu:{},students:[]}}
+function buildStudents(){
+  S.students=(P.students()||[]).filter(s=>s&&s.n).map(s=>{const x=S.stu[s.n]||{};return {id:s.n,name:s.n,grade:String(s.l||'').replace(/['׳"]/g,''),group:s.g||'',busy:x.busy||[],levels:x.levels||{},code:''}});
+}
+function applyRemote(v){
+  if(!S)S=blankState();let ch=false;const b=blankState();
+  for(const c of COLS){const str=v[c];if(str===LAST[c])continue;LAST[c]=str;try{S[c]=str?JSON.parse(str):b[c]}catch(e){S[c]=b[c]}ch=true}
+  buildStudents();return ch;
+}
+function liveSave(){
+  if(!DB)return;const up={};
+  for(const c of COLS){const str=JSON.stringify(S[c]);if(str!==LAST[c]){LAST[c]=str;up[c]=str}}
+  if(Object.keys(up).length)DB.dbm.update(DB.dbm.ref(DB.rdb,LC_PATH),up).catch(e=>toast('השמירה נכשלה — בדקו חיבור לאינטרנט','err'));
+}
+function madrichGroups(me){
+  const all=[...new Set(S.students.map(s=>s.group))];
+  const named=all.filter(g=>g&&String(me.r||'').includes(g));
+  if(named.length)return named;
+  if(me.scope==='academy')return all.filter(g=>g==='אקדמיה');
+  if(me.scope==='ya')return all.filter(g=>S.students.some(s=>s.group===g&&s.grade==='יא'));
+  if(me.scope==='yb')return all.filter(g=>S.students.some(s=>s.group===g&&s.grade==='יב'));
+  return all;
+}
+function setupRole(){
+  const me=P.me()||{};ME_N=me.n||'';
+  if(me.mode==='admin'){ALLOWED=null;UI.role='coord'}
+  else if(me.lc){ALLOWED=[me.lc];UI.role=me.lc}
+  else{ALLOWED=['madrich'];UI.role='madrich';MY_GROUPS=madrichGroups(me);UI.grp=MY_GROUPS[0]||''}
+}
+async function liveInit(){
+  document.body.classList.add('embedded');
+  $('#app').innerHTML='<div class="empty">🔒 טוען את נתוני מרכז הלמידה…</div>';
+  try{
+    DB=await P.db();
+    const ref=DB.dbm.ref(DB.rdb,LC_PATH);
+    applyRemote((await DB.dbm.get(ref)).val()||{});
+    setupRole();render();
+    DB.dbm.onValue(ref,sn=>{if(applyRemote(sn.val()||{})&&!$('#modal').classList.contains('open'))render()});
+  }catch(e){console.warn(e);$('#app').innerHTML='<div class="empty">⚠️ לא הצלחנו לטעון את נתוני מרכז הלמידה. רעננו את הפורטל ונסו שוב.</div>'}
+}
+const T=id=>S.teachers.find(t=>t.id===id);
+const ST=id=>S.students.find(s=>s.id===id);
+const R=id=>S.requests.find(r=>r.id===id);
+const reqAt=(key,sid)=>S.requests.find(r=>r.key===key&&r.sid===sid&&r.status==='assigned');
+const blocked=h=>S.settings.blocked.includes(h);
+const reqLevel=r=>LEVELED.includes(r.subject)?((ST(r.sid)||{}).levels||{})[r.subject]||null:null;
+const subjLabel=(s,l)=>s+(l?` · ${l} יח"ל`:'');
+const teaches=(t,s,l)=>t.subjects[s]!==undefined&&(!l||!t.subjects[s].length||t.subjects[s].includes(l));
+const initials=n=>n.split(' ').map(x=>x[0]).join('').slice(0,2);
+
+/* ============ מנוע השיבוץ ============ */
+function prio(r){
+  let p=REASONS[r.reason]||5;
+  if(r.exam){const dd=diff(todayIso(),r.exam);p+=dd<=3?40:dd<=7?25:dd<=14?10:0}
+  p+=Math.min(20,Math.floor((Date.now()-r.created)/864e5)*3);
+  return p;
+}
+function prioTag(r){const p=prio(r);return p>=50?'<span class="tag err">🔥 דחוף</span>':p>=30?'<span class="tag warn">גבוה</span>':'<span class="tag gr">רגיל</span>'}
+function studentBusyAt(sid,w,d,h,ignore){
+  const pre=`${w}|${d}|${h}|`;
+  return Object.entries(S.sessions).some(([k,s])=>k!==ignore&&k.startsWith(pre)&&s.students.includes(sid));
+}
+function sessionsOfStudent(sid){return Object.entries(S.sessions).filter(([k,s])=>s.students.includes(sid)).map(([k,s])=>({key:k,...pk(k),s}))}
+function teacherLoad(tid,w){return Object.entries(S.sessions).filter(([k,s])=>k.startsWith(w+'|')&&k.endsWith('|'+tid)&&s.students.length).length}
+function nextWeeks(n=3){const w=weekOf();return Array.from({length:n},(_,i)=>addDays(w,7*i))}
+
+function candidates(r,weeks,o={}){
+  const st=ST(r.sid);if(!st)return[];
+  const lvl=reqLevel(r),out=[],now=todayIso();
+  for(const w of weeks)for(const t of S.teachers){
+    if(!teaches(t,r.subject,lvl))continue;
+    for(const a of t.avail){
+      const [d,h]=a.split('-').map(Number);
+      if(blocked(h)||!S.settings.hours.includes(h))continue;
+      if(!o.allowPast&&isPast(w,d,h))continue;
+      const date=dateOf(w,d);
+      if(r.exam&&date>r.exam)continue;
+      if(blockers(r.sid,w,d,h).length)continue;
+      const key=sk(w,d,h,t.id);
+      if(key===o.ignoreKey)continue;
+      if(studentBusyAt(r.sid,w,d,h,o.ignoreKey))continue;
+      const s=S.sessions[key],n=s?s.students.length:0;
+      if(n&&(s.subject!==r.subject||(s.level&&lvl&&s.level!==lvl)))continue;
+      if(n>=t.max)continue;
+      let sc=50;const why=[];
+      if(n){sc+=25;why.push(['ok',`מצטרפים לקבוצה (${n})`])}else why.push(['gr','תגבור חדש']);
+      if(r.exam){const b=diff(date,r.exam);if(b>=1&&b<=3){sc+=20;why.push(['ok',`${b} ימים לפני המבחן`])}else if(b===0){sc-=15;why.push(['warn','ביום המבחן עצמו'])}}
+      const off=Math.max(0,diff(now,date));sc-=off*1.2;
+      if(off<=2)why.push(['ok','בקרוב']);
+      if(r.pref&&r.pref.length&&r.pref.includes(d)){sc+=10;why.push(['ok','יום מועדף'])}
+      if(sessionsOfStudent(r.sid).some(x=>x.key!==o.ignoreKey&&x.w===w&&x.d===d)){sc-=12;why.push(['warn','עוד תגבור באותו יום'])}
+      sc-=teacherLoad(t.id,w)*0.8;
+      if(lvl&&t.subjects[r.subject].includes(lvl))sc+=3;
+      out.push({key,w,d,h,t,date,n,score:Math.round(sc),why});
+    }
+  }
+  return out.sort((a,b)=>b.score-a.score);
+}
+function noMatchReason(r){
+  const lvl=reqLevel(r);
+  if(!S.teachers.some(t=>teaches(t,r.subject,lvl)))return `אין מורה ל${subjLabel(r.subject,lvl)}`;
+  if(r.exam&&r.exam<todayIso())return 'מועד המבחן כבר עבר';
+  return 'אין חלון זמן משותף לחניך/ה ולמורה';
+}
+function removeFromSession(key,sid){
+  const s=S.sessions[key];if(!s)return;
+  s.students=s.students.filter(x=>x!==sid);delete s.att[sid];
+  if(!s.students.length&&!s.note)delete S.sessions[key];
+}
+function assign(rid,key,o={}){
+  const r=R(rid);if(!r)return false;
+  const p=pk(key),t=T(p.t);
+  if(!o.force){
+    const ok=candidates(r,[p.w],{ignoreKey:r.status==='assigned'?r.key:null}).some(c=>c.key===key);
+    if(!ok){toast('אי אפשר לשבץ כאן: התנגשות במערכת, אין התאמה למקצוע או שהקבוצה מלאה','err');return false}
+  }
+  if(r.status==='assigned'&&r.key)removeFromSession(r.key,r.sid);
+  const s=S.sessions[key]||(S.sessions[key]={subject:r.subject,level:reqLevel(r),students:[],att:{},note:''});
+  if(!s.students.length){s.subject=r.subject;s.level=reqLevel(r)}
+  s.students.push(r.sid);
+  r.status='assigned';r.key=key;r.assignedAt=Date.now();
+  if(!o.silent)log(`${ST(r.sid).name} שובצ/ה ל${r.subject} אצל ${t.name}, יום ${DAYS[p.d]} ${fmt(dateOf(p.w,p.d))} ${hh(p.h)}`);
+  return true;
+}
+function unassign(rid,close){
+  const r=R(rid);if(!r)return;
+  if(r.key)removeFromSession(r.key,r.sid);
+  r.key=null;r.status=close?'closed':'pending';
+}
+function autoAssign(o={}){
+  const weeks=o.weeks||nextWeeks(3);
+  const list=S.requests.filter(r=>r.status==='pending').sort((a,b)=>prio(b)-prio(a));
+  const ok=[],fail=[];
+  for(const r of list){
+    const c=candidates(r,weeks,{allowPast:o.allowPast})[0];
+    if(c){assign(r.id,c.key,{force:true,silent:o.silent});ok.push([r,c])}else fail.push(r);
+  }
+  return {ok,fail};
+}
+
+/* ============ נתוני דמו ============ */
+function seed(){
+  let x=7;const rnd=()=>(x=(x*9301+49297)%233280)/233280;const pick=a=>a[Math.floor(rnd()*a.length)];
+  const D={settings:{hours:[14,15,16,17,18,19,20],blocked:[19],max:4},teachers:[],students:[],requests:[],sessions:{},log:[],activities:[],exits:[],notes:[],fixedGroups:[],sync:{date:'2026-09-03',src:'סמרט סקול'}};
+  const ACT=[['אקדמיה לכדורסל','0-17 0-18 2-17 2-18 4-17','#2C6FD1','צוות האקדמיה'],['מוזיקה','1-16 1-17','#8A4FD6','מדריך מוזיקה'],['תיאטרון','3-17 3-18','#D6457A','מדריכת תיאטרון'],['רובוטיקה','2-14 2-15','#0E9AA7','מדריך רובוטיקה']];
+  D.activities=ACT.map((a,i)=>({id:'a'+i,name:a[0],slots:a[1].split(' '),color:a[2],instructor:a[3],participants:[]}));
+  const TT=[
+    ['רונית אלון',{'מתמטיקה':[3,4,5],'פיזיקה':[]},'0-15 0-16 0-17 2-15 2-16 2-17 4-15 4-16','חדר 1'],
+    ['מיכאל דהן',{'אנגלית':[3,4,5]},'1-14 1-15 1-16 1-17 3-14 3-15 3-16 3-17 4-15 4-16','חדר 2'],
+    ['שירה כהן',{'לשון':[],'ספרות':[]},'0-16 0-17 0-18 0-20 1-16 1-17 1-18 3-16 3-17 3-18','חדר 3'],
+    ['אבי לוי',{'היסטוריה':[],'אזרחות':[]},'2-16 2-17 2-18 2-20 4-16 4-17 4-18','חדר 4'],
+    ['נועה פרץ',{'מתמטיקה':[3,4]},'1-17 1-18 1-20 3-17 3-18 3-20 4-17 4-18','חדר 1'],
+    ['דנה מזרחי',{'ביולוגיה':[],'כימיה':[]},'0-15 0-16 0-17 2-15 2-16 2-17','מעבדה'],
+    ['יוסי ברק',{'תנ"ך':[],'היסטוריה':[]},'1-15 1-16 3-15 3-16','חדר 4'],
+    ['טל אשכנזי',{'אנגלית':[4,5],'מחשבים':[]},'0-18 0-20 2-18 2-20 3-18 3-20','חדר 2']
+  ];
+  TT.forEach((t,i)=>D.teachers.push({id:'t'+i,name:t[0],subjects:t[1],avail:t[2].split(' '),room:t[3],max:4,color:COLORS[i%COLORS.length],phone:''}));
+  const first=['נועם','מאיה','איתי','ליה','עומר','שקד','יונתן','תמר','אורי','נגה','רועי','הילה','אלון','רוני','דניאל','עדי','גיא','יעל','בן','אגם','עידו','ליאור','אריאל','שחר'];
+  const last=['ש.','כ.','ל.','ב.','מ.','ד.','פ.','א.','ג.','ר.','ח.','ז.'];
+  first.forEach((f,i)=>{
+    const busy=[`${Math.floor(rnd()*5)}-14`];if(rnd()<.4)busy.push(`${Math.floor(rnd()*5)}-14`);
+    if(i%5===0)D.activities[0].participants.push('s'+i);
+    else{if(rnd()<.3)D.activities[1].participants.push('s'+i);if(rnd()<.25)D.activities[2].participants.push('s'+i);if(rnd()<.3)D.activities[3].participants.push('s'+i)}
+    D.students.push({id:'s'+i,name:`${f} ${pick(last)}`,grade:i%2?'יב':'יא',group:`קבוצה ${i%4+1}`+(i%5===0?' · אקדמיה':''),busy:[...new Set(busy)],levels:{'מתמטיקה':pick([3,4,4,5]),'אנגלית':pick([3,4,5,5])},code:String(1000+i*37)});
+  });
+  const subjW=['מתמטיקה','מתמטיקה','מתמטיקה','אנגלית','אנגלית','אנגלית','לשון','היסטוריה','תנ"ך','ספרות','אזרחות','ביולוגיה','פיזיקה','מחשבים'];
+  const mk=(sid,o={})=>{const r={id:uid(),sid,subject:o.subject||pick(subjW),reason:o.reason||pick(Object.keys(REASONS)),exam:o.exam||'',pref:[],note:'',status:'pending',key:null,created:Date.now()-Math.floor(rnd()*5)*864e5,by:o.by||pick(['חניך/ה','מנהלת'])};D.requests.push(r);return r};
+  const w0=weekOf();
+  D.students.slice(0,16).forEach(s=>{mk(s.id);if(rnd()<.35)mk(s.id)});
+  S=D;autoAssign({weeks:[w0],allowPast:true,silent:true});
+  Object.entries(D.sessions).forEach(([k,s])=>{const p=pk(k);if(isPast(p.w,p.d,p.h))s.students.forEach(id=>s.att[id]=rnd()<.85)});
+  D.requests.filter(r=>r.status==='pending').forEach(r=>r.created=Date.now()-2*864e5);
+  [[16,'מתמטיקה','בגרות',5],[17,'אנגלית','מבחן קרוב',3],[18,'מתמטיקה','ציון נמוך',0],[19,'היסטוריה','מבחן קרוב',9],[20,'אנגלית','בגרות',12],[21,'כימיה','השלמת חומר',0],[22,'לשון','ציון נמוך',0],[23,'פיזיקה','מבחן קרוב',6],[2,'מתמטיקה','מבחן קרוב',4],[9,'אזרחות','חיזוק כללי',0]]
+    .forEach(([i,s,re,ex])=>mk('s'+i,{subject:s,reason:re,exam:ex?addDays(todayIso(),ex):''}));
+  autoAssign({weeks:nextWeeks(3),silent:true});
+  [[3,'אנגלית','ציון נמוך',0],[5,'לשון','מבחן קרוב',4],[11,'מתמטיקה','בגרות',10],[14,'היסטוריה','השלמת חומר',0],[7,'תנ"ך','מבחן קרוב',3],[17,'אנגלית','בגרות',9]]
+    .forEach(([i,s,re,ex])=>{const r=mk('s'+i,{subject:s,reason:re,exam:ex?addDays(todayIso(),ex):''});r.created=Date.now()-864e5});
+  // אישורי יציאה: אחת מתנגשת בתגבור, אחת רגילה, אחת שכבר אושרה
+  const fut=Object.entries(D.sessions).filter(([k,s])=>{const p=pk(k);return s.students.length&&!isPast(p.w,p.d,p.h)}).sort((a,b)=>a[0].localeCompare(b[0]));
+  if(fut[0]){const p=pk(fut[0][0]);D.exits.push({id:uid(),sid:fut[0][1].students[0],date:dateOf(p.w,p.d),from:Math.max(14,p.h-1),to:p.h+3,reason:'ביקור משפחה',status:'pending',by:'חניך/ה',ts:Date.now()-5e6})}
+  const nw=addDays(weekOf(),7);
+  D.exits.push({id:uid(),sid:'s6',date:addDays(nw,3),from:16,to:18,reason:'תור לרופא שיניים',status:'pending',by:'חניך/ה',ts:Date.now()-2e6});
+  D.exits.push({id:uid(),sid:'s10',date:addDays(weekOf(),1),from:15,to:20,reason:'אירוע משפחתי',status:'approved',by:'חניך/ה',decidedBy:'מדריך/ה',ts:Date.now()-3e8});
+  D.notes=[{id:uid(),ts:Date.now()-4e6,to:'madrich',msg:'2 בקשות יציאה חדשות ממתינות לאישור',read:false},{id:uid(),ts:Date.now()-7e6,to:'coord',msg:'6 פניות תגבור חדשות נכנסו מאתמול',read:false},{id:uid(),ts:Date.now()-9e6,to:'mahat',msg:'יש חניכים בחוג רובוטיקה שיש להם שיעור 8 באותה שעה',read:false}];
+  D.log=[{ts:Date.now()-36e5,msg:'נטענו נתוני דמו: 8 מורים, 24 חניכים, 4 חוגים'}];
+  return D;
+}
+
+/* ============ תשתית UI ============ */
+function toast(m,t=''){const e=document.createElement('div');e.className='toast '+t;e.textContent=m;$('#toasts').appendChild(e);setTimeout(()=>e.remove(),3200)}
+function openModal(h){$('#mbox').innerHTML=h;$('#modal').classList.add('open')}
+function closeModal(){$('#modal').classList.remove('open')}
+function setRole(r){UI.role=r;UI.sw=null;render()}
+function go(t){UI.tab=t;render();scrollTo(0,0)}
+function chWeek(n){UI.week=n===0?weekOf():addDays(UI.week,7*n);render()}
+function commit(msg,type='ok'){save();render();if(msg)toast(msg,type)}
+
+/* ============ תפקידים והרשאות ============ */
+const ROLES=[['manager','👩‍💼','מנהלת המרכז'],['coord','🗂️','רכזת המרכז'],['mahat','🎭','פז · רכזת מח"מ'],['madrich','🧭','מדריך/ה'],['teacher','🧑‍🏫','מורה'],['student','🎓','חניך/ה']];
+const ROLE_TABS={manager:['dash','groups','teachers','students','cal','calendars','settings'],coord:['dash','cal','req','calendars','teachers'],mahat:['activities','calendars'],madrich:['exits','calendars']};
+const TAB_L={dash:'📊 לוח בקרה',cal:'🗓️ לוח שבועי',req:'📥 פניות',groups:'🧩 קבוצות לפי רמות',teachers:'🧑‍🏫 מורים',students:'🎓 חניכים ומערכות שעות',calendars:'📅 יומני חניכים',settings:'⚙️ הגדרות',activities:'🎭 חוגים ומשתתפים',exits:'🚪 אישורי יציאה'};
+const ROLE_DESC={manager:'<b>מנהלת מרכז הלמידה</b> — סנכרון מול מערכת הלמידה של בית הספר, בניית קבוצות לפי רמות, גיוס מורים ותמונת מצב.',
+ coord:'<b>רכזת מרכז הלמידה</b> — המתפעלת הראשית: פניות, שיבוצים, לוח שבועי ונוכחות.',
+ mahat:'<b>פז, רכזת המח"מ</b> — הזנת חוגים ומשתתפים, וזיהוי התנגשויות ביומני החניכים.',
+ madrich:'<b>מדריך/ה</b> — אישור יציאות של חניכי הקבוצה, עם התראה כשיציאה מתנגשת בתגבור או בחוג.',
+ teacher:'<b>מורה</b> — הלוח האישי, סימון נוכחות ועדכון זמינות.',student:'<b>חניך/ה</b> — בקשת תגבור, בקשת יציאה והיומן האישי (בגרסה האמיתית: כניסה מהטלפון עם קוד אישי).'};
+const grpOf=s=>(s&&s.group||'').split(' · ')[0];
+const GROUPS=()=>UI.role==='madrich'&&MY_GROUPS?MY_GROUPS:[...new Set(S.students.map(grpOf))].filter(Boolean).sort();
+function notify(to,msg){S.notes.unshift({id:uid(),ts:Date.now(),to,msg,read:false});S.notes=S.notes.slice(0,80)}
+function openNotes(){
+  const my=S.notes.filter(n=>n.to===UI.role);
+  openModal(`<div class="mh"><h3>🔔 התראות · ${ROLES.find(r=>r[0]===UI.role)[2]}</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb feed">${my.map(n=>`<div style="${n.read?'':'font-weight:700'}"><small>${new Date(n.ts).toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}</small>${esc(n.msg)}</div>`).join('')||'<div class="empty">אין התראות</div>'}</div>`);
+  my.forEach(n=>n.read=true);save();render();
+}
+const VIEWS={dash:()=>vDash(),cal:()=>vCal(),req:()=>vReq(),groups:()=>vGroups(),teachers:()=>vTeachers(),students:()=>vStudents(),calendars:()=>vCalendars(),settings:()=>vSettings(),activities:()=>vActivities(),exits:()=>vExits()};
+function render(){
+  $('#roleSw').innerHTML=ALLOWED&&ALLOWED.length===1?`<button class="on" style="cursor:default">${ROLES.find(r=>r[0]===UI.role).slice(1).join(' ')}${ME_N?' · '+esc(ME_N):''}</button>`:ROLES.filter(r=>!ALLOWED||ALLOWED.includes(r[0])).map(([k,i,l])=>`<button class="${UI.role===k?'on':''}" onclick="setRole('${k}')" title="${l}">${i} <span>${l}</span></button>`).join('');
+  const un=S.notes.filter(n=>n.to===UI.role&&!n.read).length;
+  $('#bell').innerHTML='🔔'+(un?`<span class="n">${un}</span>`:'');
+  const pend=S.requests.filter(r=>r.status==='pending').length,pex=S.exits.filter(e=>e.status==='pending'&&(!UI.grp||grpOf(ST(e.sid))===UI.grp)).length;
+  const nav=$('#nav'),tabs=ROLE_TABS[UI.role],bar=`<div class="rolebar">${ROLE_DESC[UI.role]}</div>`;
+  if(tabs){
+    if(!tabs.includes(UI.tab))UI.tab=tabs[0];
+    nav.style.display='flex';
+    nav.innerHTML=tabs.map(k=>`<button class="${UI.tab===k?'on':''}" onclick="go('${k}')">${TAB_L[k]}${k==='req'&&pend?`<span class="n">${pend}</span>`:''}${k==='exits'&&pex?`<span class="n">${pex}</span>`:''}</button>`).join('');
+    $('#app').innerHTML=bar+VIEWS[UI.tab]();
+  }else{nav.style.display='none';$('#app').innerHTML=bar+(UI.role==='teacher'?vTeacher():vStudent())}
+}
+
+/* ============ לוח בקרה ============ */
+function weekStats(w){
+  const ses=Object.entries(S.sessions).filter(([k,s])=>k.startsWith(w+'|')&&s.students.length);
+  let avail=0;S.teachers.forEach(t=>t.avail.forEach(a=>{if(!blocked(+a.split('-')[1]))avail++}));
+  const studs=new Set();ses.forEach(([k,s])=>s.students.forEach(x=>studs.add(x)));
+  let att=0,attN=0;ses.forEach(([k,s])=>Object.values(s.att).forEach(v=>{attN++;if(v)att++}));
+  return {ses,avail,studs,att,attN,places:ses.reduce((a,[k,s])=>a+s.students.length,0)};
+}
+function vDash(){
+  const w=weekOf(),st=weekStats(w),pend=S.requests.filter(r=>r.status==='pending');
+  const util=st.avail?Math.round(st.ses.length/st.avail*100):0;
+  const urgent=pend.filter(r=>r.exam&&diff(todayIso(),r.exam)<=4);
+  const nomatch=pend.filter(r=>!candidates(r,nextWeeks(3)).length);
+  const solo=st.ses.filter(([k,s])=>s.students.length===1&&!isPast(pk(k).w,pk(k).d,pk(k).h));
+  const old=pend.filter(r=>Date.now()-r.created>3*864e5);
+  const alerts=[];
+  if(urgent.length)alerts.push(['err','🔥',`<b>${urgent.length} פניות דחופות</b> — מבחן בעוד 4 ימים או פחות: ${urgent.map(r=>esc(ST(r.sid).name)).join(', ')}`,`go('req')`,'לפניות']);
+  if(nomatch.length)alerts.push(['err','⛔',`<b>${nomatch.length} פניות בלי שום התאמה</b> — ${[...new Set(nomatch.map(noMatchReason))].map(esc).join(' · ')}`,`go('teachers')`,'למורים']);
+  if(old.length)alerts.push(['warn','⏳',`<b>${old.length} פניות ממתינות מעל 3 ימים</b>`,`go('req')`,'לטיפול']);
+  const cfs=allConflicts(w),pex=S.exits.filter(e=>e.status==='pending'&&exitConflicts(e).some(c=>c.type==='tutor'));
+  if(pex.length)alerts.push(['warn','🚪',`<b>${pex.length} בקשות יציאה מתנגשות בתגבור</b> — ממתינות להחלטת המדריך/ה`,'','']);
+  if(cfs.length)alerts.push(['warn','📅',`<b>${cfs.length} התנגשויות ביומני חניכים השבוע</b> (שיעורים, חוגים, תגבורים, יציאות)`,`go('calendars')`,'ליומנים']);
+  if(solo.length)alerts.push(['warn','👤',`<b>${solo.length} תגבורים עם חניך/ה אחד/ת</b> — אפשר לאחד ולפנות שעות מורה`,`go('cal')`,'ללוח']);
+  if(pend.length&&!urgent.length&&!nomatch.length)alerts.push(['info','⚡',`יש ${pend.length} פניות ממתינות. שיבוץ אוטומטי ימצא להן את הזמן הטוב ביותר.`,`runAuto()`,'שבצו עכשיו']);
+  if(!alerts.length)alerts.push(['ok','✅','הכל מתוקתק — אין פניות פתוחות או התנגשויות']);
+  // ביקוש מול היצע
+  const dem={};S.requests.filter(r=>r.status!=='closed').forEach(r=>{dem[r.subject]=(dem[r.subject]||0)+1});
+  const sup={};S.teachers.forEach(t=>Object.keys(t.subjects).forEach(s=>{sup[s]=(sup[s]||0)+t.avail.filter(a=>!blocked(+a.split('-')[1])).length*t.max}));
+  const subs=SUBJECTS.filter(s=>dem[s]||sup[s]);const mx=Math.max(1,...subs.map(s=>Math.max(dem[s]||0,(sup[s]||0)/4)));
+  const bars=subs.map(s=>{const d=dem[s]||0,p=(sup[s]||0);const short=d>0&&!p;return `<div class="br"><b>${esc(s)}</b><div class="two"><i style="width:${Math.min(100,p/4/mx*100)}%;background:#F3C2B0"></i><i style="width:${d/mx*100}%;background:${short?'var(--err)':'var(--o)'};height:8px;top:4px"></i></div><span class="muted">${d} פניות${short?' · <b style="color:var(--err)">אין מורה</b>':''}</span></div>`}).join('');
+  // היום
+  const td=new Date().getDay();
+  const today=td<=4?Object.entries(S.sessions).filter(([k,s])=>k.startsWith(`${w}|${td}|`)&&s.students.length).sort((a,b)=>pk(a[0]).h-pk(b[0]).h):[];
+  return `<div class="title"><h2>בוקר טוב 👋</h2><span class="muted">שבוע ${fmt(w)}–${fmt(addDays(w,4))}</span><span class="sp"></span><button class="btn pri" onclick="runAuto()">⚡ שיבוץ אוטומטי</button><button class="btn" onclick="newReqModal()">➕ פנייה חדשה</button></div>
+  <div class="grid kpis" style="margin-bottom:14px">
+    <div class="kpi"><div class="l">פניות ממתינות</div><div class="v" style="color:${pend.length?'var(--o)':'var(--ok)'}">${pend.length}</div><div class="s">${urgent.length} דחופות</div></div>
+    <div class="kpi"><div class="l">תגבורים השבוע</div><div class="v">${st.ses.length}</div><div class="s">${st.places} מקומות תפוסים</div></div>
+    <div class="kpi"><div class="l">חניכים שמתוגברים</div><div class="v">${st.studs.size}</div><div class="s">מתוך ${S.students.length} בשכבה</div></div>
+    <div class="kpi"><div class="l">ניצולת שעות מורים</div><div class="v">${util}%</div><div class="bar" style="margin-top:6px"><i style="width:${util}%"></i></div></div>
+    <div class="kpi"><div class="l">הגעה לתגבורים</div><div class="v">${st.attN?Math.round(st.att/st.attN*100)+'%':'—'}</div><div class="s">${st.att} מתוך ${st.attN} שסומנו</div></div>
+  </div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">
+    <div class="panel"><h3>מה דורש תשומת לב</h3>${alerts.map(a=>`<div class="alert ${a[0]}"><span>${a[1]}</span><div class="sp">${a[2]}</div>${a[3]?`<button class="btn sm" onclick="${a[3]}">${a[4]}</button>`:''}</div>`).join('')}</div>
+    <div class="panel"><h3>היום ${td<=4?'· יום '+DAYS[td]:''}</h3>${today.length?today.map(([k,s])=>{const p=pk(k),t=T(p.t);return `<div class="ses" style="--c:${t.color};cursor:pointer" onclick="openSession('${k}')"><div class="hd" style="font-weight:800;color:var(--b)">${hh(p.h)}</div><div class="sp"><b>${esc(subjLabel(s.subject,s.level))}</b><div class="muted">${esc(t.name)} · ${esc(t.room)} · ${s.students.map(i=>esc(ST(i).name)).join(', ')}</div></div><span class="tag">${s.students.length}/${t.max}</span></div>`}).join(''):'<div class="empty">אין תגבורים היום</div>'}</div>
+    <div class="panel"><h3>ביקוש מול היצע לפי מקצוע</h3><div class="muted" style="margin-bottom:10px"><span style="color:var(--o)">■</span> פניות פתוחות ומשובצות &nbsp; <span style="color:#F3C2B0">■</span> קיבולת שבועית של מורים</div><div class="bars">${bars}</div></div>
+    <div class="panel"><h3>פעילות אחרונה</h3><div class="feed">${S.log.slice(0,9).map(l=>`<div><small>${new Date(l.ts).toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}</small>${esc(l.msg)}</div>`).join('')||'<div class="empty">עדיין אין פעילות</div>'}</div></div>
+  </div>`;
+}
+function runAuto(){
+  const {ok,fail}=autoAssign();
+  log(`שיבוץ אוטומטי: ${ok.length} שובצו, ${fail.length} ללא התאמה`);save();render();
+  openModal(`<div class="mh"><h3>⚡ תוצאות השיבוץ האוטומטי</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb">
+  <div class="alert ${ok.length?'ok':'info'}"><span>✅</span><div><b>${ok.length} פניות שובצו</b>${ok.length?' — לפי דחיפות, מועד המבחן, איחוד לקבוצות קיימות ואיזון עומס בין המורים.':''}</div></div>
+  ${ok.map(([r,c])=>`<div class="opt"><div class="dt">${DAYS[c.d]}<small>${fmt(c.date)} · ${hh(c.h)}</small></div><div class="sp"><b>${esc(ST(r.sid).name)}</b> · ${esc(subjLabel(r.subject,reqLevel(r)))}<div class="muted">${esc(c.t.name)} · ${esc(c.t.room)}</div><div class="why">${c.why.map(w=>`<span class="tag ${w[0]}">${esc(w[1])}</span>`).join('')}</div></div></div>`).join('')}
+  ${fail.length?`<div class="alert err"><span>⛔</span><div><b>${fail.length} פניות לא שובצו</b><br>${fail.map(r=>`${esc(ST(r.sid).name)} (${esc(r.subject)}) — ${esc(noMatchReason(r))}`).join('<br>')}</div></div>`:''}
+  </div><div class="mf"><button class="btn pri" onclick="closeModal();go('cal')">ללוח השבועי</button><button class="btn" onclick="closeModal()">סגירה</button></div>`);
+}
+
+/* ============ לוח שבועי ============ */
+function calGrid(o={}){
+  const w=UI.week,td=todayIso(),hours=S.settings.hours;
+  let h=`<div class="cal"><div class="ch"></div>`+DAYS.map((d,i)=>{const dt=dateOf(w,i);return `<div class="ch ${dt===td?'today':''}">${d}<small>${fmt(dt)}</small></div>`}).join('');
+  for(const hr of hours){
+    h+=`<div class="hr">${hh(hr)}</div>`;
+    for(let d=0;d<5;d++){
+      if(blocked(hr)){h+=`<div class="cell blk">ארוחת ערב · חסום</div>`;continue}
+      const past=isPast(w,d,hr);
+      const ts=S.teachers.filter(t=>(!o.tid||t.id===o.tid)&&(!UI.f.t||o.tid||t.id===UI.f.t)&&(t.avail.includes(`${d}-${hr}`)||(S.sessions[sk(w,d,hr,t.id)]||{students:[]}).students.length));
+      const cards=ts.map(t=>{
+        const key=sk(w,d,hr,t.id),s=S.sessions[key];
+        if(UI.f.s&&!o.tid&&!(s&&s.students.length&&s.subject===UI.f.s)&&!(!(s&&s.students.length)&&t.subjects[UI.f.s]!==undefined))return '';
+        const dnd=o.noDnd?'':`ondragover="dOver(event)" ondragleave="dLeave(event)" ondrop="dDrop(event,'${key}')"`;
+        if(s&&s.students.length){
+          const full=s.students.length>=t.max;
+          return `<div class="card ${full?'full':''}" style="--c:${t.color}" data-key="${key}" ${dnd} onclick="openSession('${key}')"><div class="t">${esc(o.tid?t.room:t.name)}<span class="cnt">${s.students.length}/${t.max}</span></div><div class="s">${esc(subjLabel(s.subject,s.level))}</div><div class="chips">${s.students.map(id=>`<span class="chip ${s.att[id]===true?'att1':s.att[id]===false?'att0':''}" ${o.noDnd?'':`draggable="true" ondragstart="dragChip(event,'${key}','${id}')" ondragend="dragEnd()"`}>${esc(ST(id).name)}</span>`).join('')}</div></div>`;
+        }
+        if(past)return '';
+        return `<div class="card ghost" style="--c:${t.color}" data-key="${key}" ${dnd} title="${esc(t.name)} פנוי/ה · ${esc(Object.keys(t.subjects).join(', '))}"><div class="t">${o.tid?'זמין/ה':esc(t.name)}</div></div>`;
+      }).join('');
+      h+=`<div class="cell ${past?'past':''}">${cards}</div>`;
+    }
+  }
+  return h+'</div>';
+}
+function weekNav(){const w=UI.week,cur=weekOf();return `<div class="row"><button class="btn sm" onclick="chWeek(-1)">→</button><b class="hd">${fmt(w)}–${fmt(addDays(w,4))}</b><button class="btn sm" onclick="chWeek(1)">←</button>${w!==cur?`<button class="btn sm ghost" onclick="chWeek(0)">לשבוע הנוכחי</button>`:'<span class="tag">השבוע</span>'}</div>`}
+function vCal(){
+  const pend=S.requests.filter(r=>r.status==='pending').sort((a,b)=>prio(b)-prio(a));
+  return `<div class="title noprint"><h2>לוח שבועי</h2>${weekNav()}<span class="sp"></span>
+   <select onchange="UI.f.t=this.value;render()"><option value="">כל המורים</option>${S.teachers.map(t=>`<option value="${t.id}" ${UI.f.t===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select>
+   <select onchange="UI.f.s=this.value;render()"><option value="">כל המקצועות</option>${SUBJECTS.map(s=>`<option ${UI.f.s===s?'selected':''}>${s}</option>`).join('')}</select>
+   <button class="btn pri" onclick="runAuto()">⚡ שיבוץ אוטומטי</button><button class="btn" onclick="exportCSV()">⬇️ אקסל</button><button class="btn" onclick="print()">🖨️</button></div>
+  <div class="calwrap"><div class="calscroll">${calGrid()}</div>
+   <div class="side panel drop-un" ondragover="if(DRAG&&DRAG.type==='chip'){event.preventDefault()}" ondrop="dropUnassign(event)">
+     <h3>📥 ממתינים לשיבוץ (${pend.length})</h3>
+     <div class="muted" style="margin-bottom:10px">גררו פנייה ללוח — המקומות המתאימים יידלקו בירוק. גררו חניך/ה מהלוח לכאן כדי לבטל שיבוץ.</div>
+     ${pend.map(r=>`<div class="rq" draggable="true" ondragstart="dragReq(event,'${r.id}')" ondragend="dragEnd()" onclick="suggest('${r.id}')"><div class="row" style="gap:6px"><b>${esc(ST(r.sid).name)}</b><span class="sp"></span>${prioTag(r)}</div><div style="font-size:13.5px;margin-top:3px">${esc(subjLabel(r.subject,reqLevel(r)))} · <span class="muted">${esc(r.reason)}</span></div>${r.exam?`<div class="muted">📝 מבחן ${fmt(r.exam)} (בעוד ${diff(todayIso(),r.exam)} ימים)</div>`:''}</div>`).join('')||'<div class="empty">🎉 אין פניות ממתינות</div>'}
+   </div></div>`;
+}
+let DRAG=null;
+function hl(keys){const s=new Set(keys);document.body.classList.add('dragging');document.querySelectorAll('.card[data-key]').forEach(c=>c.classList.add(s.has(c.dataset.key)?'tgt':'dim'))}
+function dragReq(ev,id){DRAG={type:'req',id};ev.dataTransfer.setData('text/plain',id);ev.dataTransfer.effectAllowed='move';setTimeout(()=>hl(candidates(R(id),[UI.week]).map(c=>c.key)),0)}
+function dragChip(ev,key,sid){ev.stopPropagation();const r=reqAt(key,sid);if(!r){ev.preventDefault();return}DRAG={type:'chip',id:r.id,key};ev.dataTransfer.setData('text/plain',r.id);setTimeout(()=>{hl(candidates(r,[UI.week],{ignoreKey:key}).map(c=>c.key));document.querySelector('.drop-un')?.classList.add('chipdrag')},0)}
+function dragEnd(){document.body.classList.remove('dragging');document.querySelectorAll('.tgt,.dim,.over,.chipdrag').forEach(e=>e.classList.remove('tgt','dim','over','chipdrag'));setTimeout(()=>DRAG=null,50)}
+function dOver(ev){if(ev.currentTarget.classList.contains('tgt')){ev.preventDefault();ev.currentTarget.classList.add('over')}}
+function dLeave(ev){ev.currentTarget.classList.remove('over')}
+function dDrop(ev,key){ev.preventDefault();ev.stopPropagation();if(!DRAG)return;const d=DRAG;dragEnd();if(assign(d.id,key)){const p=pk(key);commit(`שובץ ליום ${DAYS[p.d]} ${hh(p.h)} ✓`)}}
+function dropUnassign(ev){ev.preventDefault();if(!DRAG||DRAG.type!=='chip')return;const d=DRAG;dragEnd();const r=R(d.id);unassign(d.id);log(`בוטל שיבוץ של ${ST(r.sid).name} (${r.subject}) — חזר/ה לממתינים`);commit('השיבוץ בוטל והפנייה חזרה לממתינים')}
+
+function openSession(key){
+  const p=pk(key),t=T(p.t),s=S.sessions[key]||{students:[],att:{},note:'',subject:'',level:null},date=dateOf(p.w,p.d),past=isPast(p.w,p.d,p.h)||date===todayIso();
+  const addable=S.requests.filter(r=>r.status==='pending'&&candidates(r,[p.w]).some(c=>c.key===key));
+  openModal(`<div class="mh"><span class="av" style="background:${t.color}">${initials(t.name)}</span><div><h3>${esc(s.students.length?subjLabel(s.subject,s.level):'שעה פנויה')}</h3><div class="muted">${esc(t.name)} · ${esc(t.room)} · יום ${DAYS[p.d]} ${fmt(date)} · ${hh(p.h)}–${hh(p.h+1)}</div></div><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div>
+  <div class="mb">
+   <div class="step">חניכים (${s.students.length}/${t.max})</div>
+   ${s.students.map(id=>{const st=ST(id),a=s.att[id];return `<div class="subrow"><span class="av" style="background:#D9B8AC">${initials(st.name)}</span><b>${esc(st.name)}</b><span class="muted">${esc(st.grade)}' · ${esc(st.group)}</span><span class="sp"></span>${past?`<div class="pick"><button class="${a===true?'on':''}" style="${a===true?'background:var(--ok);border-color:var(--ok)':''}" onclick="setAtt('${key}','${id}',true)">✓ הגיע/ה</button><button class="${a===false?'on':''}" style="${a===false?'background:var(--err);border-color:var(--err)':''}" onclick="setAtt('${key}','${id}',false)">✕ לא הגיע/ה</button></div>`:''}<button class="btn sm danger" onclick="rmStudent('${key}','${id}')">הסרה</button></div>`}).join('')||'<div class="empty">אין עדיין חניכים בשעה הזו</div>'}
+   ${addable.length&&s.students.length<t.max?`<div class="step">הוספה מהפניות הממתינות</div><div class="row"><select id="addR" style="flex:1">${addable.sort((a,b)=>prio(b)-prio(a)).map(r=>`<option value="${r.id}">${esc(ST(r.sid).name)} — ${esc(subjLabel(r.subject,reqLevel(r)))} (${esc(r.reason)})</option>`).join('')}</select><button class="btn pri" onclick="if(assign($('#addR').value,'${key}')){save();openSession('${key}');render()}">הוספה</button></div>`:''}
+   <div class="step">הערה למורה / לחניכים</div><textarea id="snote" rows="2" style="width:100%" placeholder="למשל: להביא את חוברת הבגרות, פרק 3">${esc(s.note)}</textarea>
+  </div><div class="mf"><button class="btn pri" onclick="saveNote('${key}')">שמירה</button><button class="btn" onclick="closeModal()">סגירה</button></div>`);
+}
+function setAtt(key,id,v){const s=S.sessions[key];s.att[id]=s.att[id]===v?undefined:v;save();openSession(key);render()}
+function rmStudent(key,sid){const r=reqAt(key,sid);if(r)unassign(r.id);else removeFromSession(key,sid);log(`${ST(sid).name} הוסר/ה מתגבור — חזר/ה לממתינים`);save();render();S.sessions[key]?openSession(key):closeModal();toast('החניך/ה חזר/ה לרשימת הממתינים')}
+function saveNote(key){const n=$('#snote').value.trim();if(S.sessions[key])S.sessions[key].note=n;closeModal();commit('נשמר')}
+
+/* ============ פניות ============ */
+function vReq(){
+  const f=UI.rf;
+  let list=S.requests.filter(r=>(!f.st||r.status===f.st)&&(!f.s||r.subject===f.s)&&(!f.q||ST(r.sid).name.includes(f.q)));
+  list.sort((a,b)=>a.status==='pending'&&b.status==='pending'?prio(b)-prio(a):b.created-a.created);
+  const cnt=k=>S.requests.filter(r=>r.status===k).length;
+  return `<div class="title"><h2>פניות לתגבור</h2><span class="sp"></span><button class="btn pri" onclick="runAuto()">⚡ שיבוץ אוטומטי לכל הממתינות</button><button class="btn" onclick="newReqModal()">➕ פנייה חדשה</button></div>
+  <div class="panel"><div class="row" style="margin-bottom:12px">
+   <div class="pick">${[['pending','ממתינות'],['assigned','משובצות'],['closed','סגורות'],['','הכל']].map(([k,l])=>`<button class="${f.st===k?'on':''}" onclick="UI.rf.st='${k}';render()">${l}${k?` (${cnt(k)})`:''}</button>`).join('')}</div><span class="sp"></span>
+   <select onchange="UI.rf.s=this.value;render()"><option value="">כל המקצועות</option>${SUBJECTS.map(s=>`<option ${f.s===s?'selected':''}>${s}</option>`).join('')}</select>
+   <input placeholder="🔎 חיפוש חניך/ה" value="${esc(f.q)}" oninput="UI.rf.q=this.value;clearTimeout(window._q);window._q=setTimeout(()=>{render();const i=document.querySelector('input[placeholder^=\\'🔎\\']');i.focus();i.setSelectionRange(99,99)},250)">
+  </div>
+  <div style="overflow-x:auto"><table class="tb"><thead><tr><th>חניך/ה</th><th>מקצוע</th><th>סיבה</th><th>מבחן</th><th>עדיפות</th><th>סטטוס</th><th></th></tr></thead><tbody>
+  ${list.map(r=>{const st=ST(r.sid),p=r.key?pk(r.key):null;return `<tr><td><b>${esc(st.name)}</b><div class="muted">${esc(st.grade)}' · ${esc(st.group)}</div></td><td>${esc(subjLabel(r.subject,reqLevel(r)))}</td><td>${esc(r.reason)}${r.note?`<div class="muted">${esc(r.note)}</div>`:''}</td><td>${r.exam?fmt(r.exam):'—'}</td><td>${r.status==='pending'?prioTag(r):''}</td>
+   <td>${r.status==='pending'?`<span class="tag warn">ממתין/ה · ${Math.floor((Date.now()-r.created)/864e5)} ימים</span>`:r.status==='assigned'?`<span class="tag ok">יום ${DAYS[p.d]} ${fmt(dateOf(p.w,p.d))} ${hh(p.h)} · ${esc(T(p.t).name)}</span>`:'<span class="tag gr">נסגר</span>'}</td>
+   <td style="white-space:nowrap">${r.status==='pending'?`<button class="btn sm pri" onclick="suggest('${r.id}')">💡 הצעות שיבוץ</button> <button class="btn sm ghost" onclick="closeReq('${r.id}')">סגירה</button>`:r.status==='assigned'?`<button class="btn sm" onclick="suggest('${r.id}')">החלפת זמן</button> <button class="btn sm ghost danger" onclick="unassign('${r.id}');commit('הפנייה חזרה לממתינות')">ביטול</button>`:`<button class="btn sm ghost" onclick="R('${r.id}').status='pending';commit('נפתח מחדש')">פתיחה מחדש</button>`}</td></tr>`}).join('')||'<tr><td colspan="7"><div class="empty">אין פניות להצגה</div></td></tr>'}
+  </tbody></table></div></div>`;
+}
+function closeReq(id){unassign(id,true);commit('הפנייה נסגרה')}
+function suggest(id){
+  const r=R(id),st=ST(r.sid),c=candidates(r,nextWeeks(3),{ignoreKey:r.key}).slice(0,6);
+  openModal(`<div class="mh"><h3>💡 הצעות שיבוץ · ${esc(st.name)}</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb">
+  <div class="row" style="margin-bottom:12px"><span class="tag">${esc(subjLabel(r.subject,reqLevel(r)))}</span><span class="tag gr">${esc(r.reason)}</span>${r.exam?`<span class="tag warn">📝 מבחן ${fmt(r.exam)}</span>`:''}${prioTag(r)}</div>
+  <div class="muted" style="margin-bottom:10px">המערכת בדקה את המערכת השבועית של החניך/ה, הזמינות של המורים, הרמה (יח"ל), מקום פנוי בקבוצות ומועד המבחן — ומדרגת את האפשרויות:</div>
+  ${c.map((o,i)=>`<div class="opt" style="${i===0?'border-color:var(--o);background:#FFF8F5':''}"><div class="dt">${DAYS[o.d]}<small>${fmt(o.date)} · ${hh(o.h)}</small></div><div class="sp"><b>${esc(o.t.name)}</b> <span class="muted">· ${esc(o.t.room)} · ${o.n}/${o.t.max} בקבוצה</span>${i===0?' <span class="tag" style="background:var(--o);color:#fff;border-color:var(--o)">⭐ מומלץ</span>':''}<div class="why">${o.why.map(w=>`<span class="tag ${w[0]}">${esc(w[1])}</span>`).join('')}</div></div><button class="btn ${i===0?'pri':''}" onclick="if(assign('${id}','${o.key}',{force:true})){closeModal();commit('שובץ ✓')}">שיבוץ</button></div>`).join('')||`<div class="alert err"><span>⛔</span><div><b>אין התאמה בשלושת השבועות הקרובים.</b><br>${esc(noMatchReason(r))}. אפשר להוסיף זמינות למורה או לבדוק את המערכת של החניך/ה.</div></div>`}
+  </div>`);
+}
+function newReqModal(sid){
+  openModal(`<div class="mh"><h3>➕ פנייה חדשה לתגבור</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb">
+   <div class="fld"><label>חניך/ה</label><select id="nr_s">${S.students.map(s=>`<option value="${s.id}" ${s.id===sid?'selected':''}>${esc(s.name)} · ${s.grade}'</option>`).join('')}</select></div>
+   <div class="f2"><div class="fld"><label>מקצוע</label><select id="nr_sub">${SUBJECTS.map(s=>`<option>${s}</option>`).join('')}</select></div>
+   <div class="fld"><label>סיבה</label><select id="nr_re">${Object.keys(REASONS).map(s=>`<option>${s}</option>`).join('')}</select></div></div>
+   <div class="f2"><div class="fld"><label>תאריך מבחן (לא חובה)</label><input type="date" id="nr_ex" min="${todayIso()}"></div>
+   <div class="fld"><label>הערה</label><input id="nr_n" placeholder="למשל: חומר של שאלון 382"></div></div>
+  </div><div class="mf"><button class="btn pri" onclick="createReq(true)">שמירה ושיבוץ מיידי</button><button class="btn" onclick="createReq(false)">שמירה לממתינים</button></div>`);
+}
+function createReq(now){
+  const r={id:uid(),sid:$('#nr_s').value,subject:$('#nr_sub').value,reason:$('#nr_re').value,exam:$('#nr_ex').value,pref:[],note:$('#nr_n').value.trim(),status:'pending',key:null,created:Date.now(),by:'מנהלת'};
+  S.requests.push(r);log(`נפתחה פנייה: ${ST(r.sid).name} · ${r.subject}`);closeModal();save();
+  if(now){suggest(r.id);render()}else commit('הפנייה נוספה לממתינים');
+}
+
+/* ============ מורים ============ */
+function vTeachers(){
+  const w=weekOf();
+  return `<div class="title"><h2>המורים של מרכז הלמידה</h2><span class="muted">${S.teachers.length} מורים</span><span class="sp"></span><button class="btn pri" onclick="editTeacher()">➕ מורה חדש/ה</button></div>
+  <div class="grid tcards">${S.teachers.map(t=>{const av=t.avail.filter(a=>!blocked(+a.split('-')[1])).length,ld=teacherLoad(t.id,w),u=av?Math.round(ld/av*100):0;
+   const days=[...new Set(t.avail.map(a=>+a.split('-')[0]))].sort().map(d=>DAYS[d]).join(', ');
+   return `<div class="tcard" style="--c:${t.color}"><div class="row"><span class="av" style="background:${t.color}">${initials(t.name)}</span><div><b class="hd">${esc(t.name)}</b><div class="muted">${esc(t.room)} · עד ${t.max} בקבוצה</div></div><span class="sp"></span><button class="btn sm" onclick="editTeacher('${t.id}')">✏️ עריכה</button></div>
+   <div class="chips" style="margin:10px 0">${Object.entries(t.subjects).map(([s,l])=>`<span class="tag">${esc(s)}${l.length?' · '+l.join('/')+' יח"ל':''}</span>`).join('')}</div>
+   <div class="muted">🗓️ ${av} שעות בשבוע · ${days||'לא הוגדרה זמינות'}</div>
+   <div class="row" style="margin-top:8px"><span class="muted">השבוע: ${ld}/${av} שעות מנוצלות</span><span class="sp"></span><b>${u}%</b></div><div class="bar"><i style="width:${u}%;background:${t.color}"></i></div></div>`}).join('')}</div>`;
+}
+function painter(id,set,o={}){
+  UI.paint[id]=new Set(set);
+  let h=`<div class="painter" data-pid="${id}" style="--pcol:${o.color||'var(--o)'}"><div></div>`+DAYS.map(d=>`<div class="ph">${d}</div>`).join('');
+  for(const hr of S.settings.hours){h+=`<div class="ph">${hh(hr)}</div>`;for(let d=0;d<5;d++){const k=`${d}-${hr}`;h+=blocked(hr)?`<div class="pc x" title="שעה חסומה"></div>`:`<div class="pc ${UI.paint[id].has(k)?'on':''}" data-p="${k}">${o.label||'✓'}</div>`}}
+  return h+`</div><div class="muted" style="margin-top:6px">לחצו או גררו על המשבצות כדי לסמן. ${o.hint||''}</div>`;
+}
+let PAINT=null;
+document.addEventListener('pointerdown',e=>{const c=e.target.closest('.pc[data-p]');if(!c)return;e.preventDefault();const id=c.parentElement.dataset.pid,set=UI.paint[id],k=c.dataset.p,v=!set.has(k);PAINT={id,v};v?set.add(k):set.delete(k);c.classList.toggle('on',v)});
+document.addEventListener('pointerover',e=>{if(!PAINT)return;const c=e.target.closest('.pc[data-p]');if(!c||c.parentElement.dataset.pid!==PAINT.id)return;const set=UI.paint[PAINT.id];PAINT.v?set.add(c.dataset.p):set.delete(c.dataset.p);c.classList.toggle('on',PAINT.v)});
+document.addEventListener('pointerup',()=>PAINT=null);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+function editTeacher(id){
+  const t=id?JSON.parse(JSON.stringify(T(id))):{id:'t'+uid(),name:'',subjects:{},avail:[],room:'',max:S.settings.max,color:COLORS[S.teachers.length%COLORS.length]};
+  window._et=t;
+  const subRows=()=>SUBJECTS.map(s=>{const on=t.subjects[s]!==undefined;return `<div class="subrow"><div class="pick"><button class="${on?'on':''}" onclick="tgSub('${s}')">${on?'✓ ':''}${s}</button></div>${on&&LEVELED.includes(s)?`<span class="muted">רמות:</span><div class="pick">${[3,4,5].map(l=>`<button class="lv ${t.subjects[s].includes(l)?'on':''}" onclick="tgLv('${s}',${l})">${l} יח"ל</button>`).join('')}</div><span class="muted">(בלי סימון = כל הרמות)</span>`:''}</div>`}).join('');
+  window._subRows=subRows;
+  openModal(`<div class="mh"><h3>${id?'עריכת מורה':'מורה חדש/ה'}</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb">
+   <div class="f2"><div class="fld"><label>שם מלא</label><input id="et_n" value="${esc(t.name)}" placeholder="שם המורה"></div><div class="fld"><label>חדר / כיתה</label><input id="et_r" value="${esc(t.room)}" placeholder="למשל: חדר 2"></div></div>
+   <div class="f2"><div class="fld"><label>מקסימום חניכים בקבוצה</label><input type="number" id="et_m" min="1" max="12" value="${t.max}"></div>
+   <div class="fld"><label>צבע בלוח</label><div class="pick">${COLORS.map(c=>`<button onclick="_et.color='${c}';document.querySelectorAll('.cpk').forEach(b=>b.style.outline='');this.style.outline='3px solid #2B1D1A'" class="cpk" style="width:28px;height:28px;padding:0;background:${c};border-color:${c};${t.color===c?'outline:3px solid #2B1D1A':''}"></button>`).join('')}</div></div></div>
+   <div class="fld"><label>מקצועות שהמורה מלמד/ת</label><div id="subRows">${subRows()}</div></div>
+   <div class="fld"><label>זמינות שבועית קבועה במרכז הלמידה</label>${painter('t',t.avail,{color:t.color})}</div>
+  </div><div class="mf"><button class="btn pri" onclick="saveTeacher(${id?'true':'false'})">שמירה</button><button class="btn" onclick="closeModal()">ביטול</button>${id?`<span class="sp"></span><button class="btn danger" onclick="delTeacher('${id}')">🗑️ מחיקה</button>`:''}</div>`);
+}
+function tgSub(s){const t=_et;if(t.subjects[s]!==undefined)delete t.subjects[s];else t.subjects[s]=[];$('#subRows').innerHTML=_subRows()}
+function tgLv(s,l){const a=_et.subjects[s];const i=a.indexOf(l);i<0?a.push(l):a.splice(i,1);a.sort();$('#subRows').innerHTML=_subRows()}
+function saveTeacher(ex){
+  const t=_et;t.name=$('#et_n').value.trim();t.room=$('#et_r').value.trim()||'—';t.max=Math.max(1,+$('#et_m').value||4);t.avail=[...UI.paint.t];
+  if(!t.name)return toast('חסר שם','err');if(!Object.keys(t.subjects).length)return toast('בחרו לפחות מקצוע אחד','err');
+  const i=S.teachers.findIndex(x=>x.id===t.id);i<0?S.teachers.push(t):S.teachers[i]=t;
+  log(`${ex?'עודכנו פרטי':'נוסף/ה'} המורה ${t.name}`);closeModal();commit('המורה נשמר/ה ✓');
+}
+function delTeacher(id){
+  const t=T(id);if(!confirm(`למחוק את ${t.name}? החניכים בתגבורים שלה/שלו יחזרו לרשימת הממתינים.`))return;
+  Object.keys(S.sessions).filter(k=>k.endsWith('|'+id)).forEach(k=>S.sessions[k].students.slice().forEach(sid=>{const r=reqAt(k,sid);r?unassign(r.id):removeFromSession(k,sid)}));
+  Object.keys(S.sessions).filter(k=>k.endsWith('|'+id)).forEach(k=>delete S.sessions[k]);
+  S.teachers=S.teachers.filter(x=>x.id!==id);log(`נמחק/ה המורה ${t.name}`);closeModal();commit('נמחק');
+}
+
+/* ============ חניכים ============ */
+function vStudents(){
+  return `<div class="title"><h2>חניכי השכבה</h2><span class="muted">${S.students.length} חניכים</span><span class="sp"></span>${LIVE?'<span class="muted">הרשימה מגיעה אוטומטית מהפורטל</span>':'<button class="btn pri" onclick="editStudent()">➕ חניך/ה</button>'}</div>
+  <div class="panel" style="margin-bottom:14px"><div class="row"><span style="font-size:26px">🔄</span><div class="sp"><b class="hd">סנכרון מערכות שעות מסמרט סקול</b><div class="muted">עודכן לאחרונה: ${fmt(S.sync.date)} · מתבצע פעם במחצית. יובל מתחבר בעצמו לסמרט סקול, ו-Claude שולף את המערכת של כל החניכים ומעדכן כאן. החוגים מגיעים מפז (רכזת המח"מ) והיציאות מהמדריכים.</div></div><button class="btn" onclick="S.sync.date=todayIso();log('סונכרנו מערכות השעות מסמרט סקול');notify('coord','מערכות השעות עודכנו מסמרט סקול — כדאי לבדוק התנגשויות');commit('נרשם שבוצע סנכרון ✓')">${LIVE?'סימון: בוצע סנכרון':'סנכרון עכשיו (דמו)'}</button></div></div>
+  <div class="panel" style="overflow-x:auto"><table class="tb"><thead><tr><th>שם</th><th>שכבה</th><th>קבוצה</th><th>מתמטיקה</th><th>אנגלית</th><th>שיעורים אחה"צ</th><th>פניות פתוחות</th><th>תגבורים השבוע</th><th></th></tr></thead><tbody>
+  ${S.students.map(s=>{const w=weekOf(),op=S.requests.filter(r=>r.sid===s.id&&r.status==='pending').length,ws=sessionsOfStudent(s.id).filter(x=>x.w===w).length;return `<tr><td><b>${esc(s.name)}</b></td><td>${s.grade}'</td><td class="muted">${esc(s.group)}</td><td>${s.levels['מתמטיקה']||'—'}</td><td>${s.levels['אנגלית']||'—'}</td><td>${s.busy.length}</td><td>${op?`<span class="tag warn">${op}</span>`:'—'}</td><td>${ws||'—'}</td><td style="white-space:nowrap"><button class="btn sm" onclick="editStudent('${s.id}')">✏️ מערכת</button> <button class="btn sm ghost" onclick="newReqModal('${s.id}')">➕ פנייה</button></td></tr>`}).join('')}
+  </tbody></table></div>`;
+}
+function editStudent(id){
+  const s=id?ST(id):{id:'s'+uid(),name:'',grade:'יא',group:'',busy:[],levels:{'מתמטיקה':4,'אנגלית':4},code:String(1000+Math.floor(Math.random()*9000))};
+  window._es=s;
+  openModal(`<div class="mh"><h3>${id?esc(s.name):'חניך/ה חדש/ה'}</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb">
+   <div class="f2"><div class="fld"><label>שם</label><input id="es_n" value="${esc(s.name)}"></div><div class="fld"><label>קבוצה</label><input id="es_g" value="${esc(s.group)}"></div></div>
+   <div class="f2"><div class="fld"><label>שכבה</label><select id="es_y"><option ${s.grade==='יא'?'selected':''}>יא</option><option ${s.grade==='יב'?'selected':''}>יב</option></select></div>
+   <div class="fld"><label>רמות (יח"ל)</label><div class="row">מתמטיקה <select id="es_m">${[3,4,5].map(l=>`<option ${s.levels['מתמטיקה']==l?'selected':''}>${l}</option>`).join('')}</select> אנגלית <select id="es_e">${[3,4,5].map(l=>`<option ${s.levels['אנגלית']==l?'selected':''}>${l}</option>`).join('')}</select></div></div></div>
+   <div class="fld"><label>שיעורים בבית הספר אחר הצהריים (מסמרט סקול)</label>${painter('s',s.busy,{color:'#5A6B7B',label:'שיעור',hint:'בשעות המסומנות לא ישובצו תגבורים. חוגים מנוהלים בנפרד אצל פז.'})}</div>
+  </div><div class="mf"><button class="btn pri" onclick="saveStudent()">שמירה</button><button class="btn" onclick="closeModal()">ביטול</button></div>`);
+}
+function saveStudent(){
+  const s=_es;s.name=$('#es_n').value.trim();s.group=$('#es_g').value.trim();s.grade=$('#es_y').value;s.levels={'מתמטיקה':+$('#es_m').value,'אנגלית':+$('#es_e').value};s.busy=[...UI.paint.s];
+  if(!s.name)return toast('חסר שם','err');
+  if(LIVE)S.stu[s.id]={busy:s.busy,levels:s.levels};else if(!ST(s.id))S.students.push(s);
+  // התנגשויות חדשות → חזרה לממתינים
+  let n=0;sessionsOfStudent(s.id).forEach(x=>{if(!isPast(x.w,x.d,x.h)&&s.busy.includes(`${x.d}-${x.h}`)){const r=reqAt(x.key,s.id);r?unassign(r.id):removeFromSession(x.key,s.id);n++}});
+  closeModal();commit(n?`נשמר · ${n} תגבורים התנגשו במערכת החדשה וחזרו לממתינים`:'נשמר ✓',n?'err':'ok');
+}
+
+/* ============ הגדרות ============ */
+function vSettings(){
+  const st=S.settings;
+  return `<div class="title"><h2>הגדרות</h2></div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+  <div class="panel"><h3>שעות פעילות המרכז</h3>
+   <div class="f2"><div class="fld"><label>שעת פתיחה</label><select id="st_a">${[12,13,14,15,16].map(h=>`<option value="${h}" ${st.hours[0]===h?'selected':''}>${hh(h)}</option>`).join('')}</select></div>
+   <div class="fld"><label>תגבור אחרון מתחיל ב-</label><select id="st_b">${[18,19,20,21].map(h=>`<option value="${h}" ${st.hours.at(-1)===h?'selected':''}>${hh(h)}</option>`).join('')}</select></div></div>
+   <div class="fld"><label>שעות חסומות לכולם (ארוחות, מפקד)</label><div class="pick">${[12,13,14,15,16,17,18,19,20,21].map(h=>`<button class="${st.blocked.includes(h)?'on':''}" onclick="tgBlk(${h})">${hh(h)}</button>`).join('')}</div></div>
+   <div class="fld"><label>ברירת מחדל לגודל קבוצה</label><input type="number" id="st_m" value="${st.max}" min="1" max="12"></div>
+   <button class="btn pri" onclick="saveSettings()">שמירה</button></div>
+  <div class="panel"><h3>ייצוא וגיבוי</h3><div class="row"><button class="btn" onclick="exportCSV()">⬇️ לוח השבוע לאקסל</button><button class="btn" onclick="backup()">💾 גיבוי מלא</button><label class="btn">📂 שחזור מגיבוי<input type="file" accept=".json" hidden onchange="restore(this)"></label></div>
+   ${LIVE?'':`<h3 style="margin-top:18px">נתוני דמו</h3><div class="muted" style="margin-bottom:8px">כל השמות כאן בדויים. הנתונים נשמרים רק בדפדפן הזה.</div><button class="btn danger" onclick="if(confirm('לאפס את כל הנתונים ולטעון מחדש את נתוני הדמו?')){localStorage.removeItem(KEY);S=seed();commit('נטענו נתוני דמו חדשים')}">↺ איפוס לנתוני דמו</button>`}</div>
+  ${LIVE?'':`<div class="panel"><h3>קודי כניסה לחניכים (דמו)</h3><div class="muted" style="margin-bottom:8px">בגרסה המלאה כל חניך/ה נכנס/ת מהטלפון עם קוד אישי ורואה רק את עצמו/ה.</div><div style="max-height:260px;overflow:auto">${S.students.map(s=>`<div class="subrow"><b>${esc(s.name)}</b><span class="sp"></span><code>${s.code}</code></div>`).join('')}</div></div>`}</div>`;
+}
+function tgBlk(h){const b=S.settings.blocked,i=b.indexOf(h);i<0?b.push(h):b.splice(i,1);commit()}
+function saveSettings(){const a=+$('#st_a').value,b=+$('#st_b').value;S.settings.hours=Array.from({length:b-a+1},(_,i)=>a+i);S.settings.max=+$('#st_m').value||4;commit('ההגדרות נשמרו')}
+function dl(name,data,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click()}
+function exportCSV(){
+  const w=UI.week,rows=[['יום','תאריך','שעה','מורה','חדר','מקצוע','רמה','חניכים','הגיעו']];
+  Object.entries(S.sessions).filter(([k,s])=>k.startsWith(w+'|')&&s.students.length).sort().forEach(([k,s])=>{const p=pk(k),t=T(p.t);rows.push([DAYS[p.d],fmt(dateOf(w,p.d)),hh(p.h),t.name,t.room,s.subject,s.level||'',s.students.map(i=>ST(i).name).join(' · '),Object.values(s.att).filter(Boolean).length])});
+  dl(`תגבורים-${w}.csv`,'﻿'+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'),'text/csv');toast('הקובץ ירד ✓','ok');
+}
+function backup(){dl(`גיבוי-מרכז-למידה-${todayIso()}.json`,JSON.stringify(S),'application/json')}
+function restore(inp){const f=inp.files[0];if(!f)return;f.text().then(t=>{try{const d=JSON.parse(t);if(!d.teachers)throw 0;S=d;commit('שוחזר מגיבוי ✓')}catch(e){toast('הקובץ לא תקין','err')}})}
+
+/* ============ תצוגת מורה ============ */
+function vTeacher(){
+  if(!UI.tid)UI.tid=S.teachers[0]?.id;const t=T(UI.tid);if(!t)return '<div class="empty">אין מורים</div>';
+  const w=UI.week,mine=Object.entries(S.sessions).filter(([k,s])=>k.startsWith(w+'|')&&k.endsWith('|'+t.id)&&s.students.length);
+  const studs=mine.reduce((a,[k,s])=>a+s.students.length,0);
+  return `<div class="title"><span class="av" style="background:${t.color};width:42px;height:42px;font-size:16px">${initials(t.name)}</span><div><h2>שלום ${esc(t.name.split(' ')[0])}</h2><div class="muted">${Object.keys(t.subjects).map(esc).join(' · ')} · ${esc(t.room)}</div></div><span class="sp"></span><span class="muted">תצוגת דמו של:</span><select onchange="UI.tid=this.value;render()">${S.teachers.map(x=>`<option value="${x.id}" ${x.id===t.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
+  <div class="grid kpis" style="margin-bottom:14px"><div class="kpi"><div class="l">תגבורים בשבוע המוצג</div><div class="v">${mine.length}</div></div><div class="kpi"><div class="l">חניכים</div><div class="v">${studs}</div></div><div class="kpi"><div class="l">שעות זמינות</div><div class="v">${t.avail.filter(a=>!blocked(+a.split('-')[1])).length}</div></div></div>
+  <div class="title"><h3 class="hd" style="color:var(--b)">הלוח שלי</h3>${weekNav()}<span class="sp"></span><span class="muted">לחיצה על תגבור ← סימון נוכחות והערות</span></div>
+  <div class="calscroll" style="margin-bottom:16px">${calGrid({tid:t.id,noDnd:true})}</div>
+  <div class="panel" style="max-width:640px"><h3>עדכון הזמינות שלי</h3>${painter('tv',t.avail,{color:t.color,hint:'שינוי יעבור למנהלת המרכז.'})}<div class="row" style="margin-top:10px"><button class="btn pri" onclick="saveTv()">שמירת זמינות</button></div></div>`;
+}
+function saveTv(){
+  const t=T(UI.tid),nw=[...UI.paint.tv],gone=t.avail.filter(a=>!nw.includes(a));t.avail=nw;let n=0;
+  Object.keys(S.sessions).filter(k=>k.endsWith('|'+t.id)).forEach(k=>{const p=pk(k);if(!isPast(p.w,p.d,p.h)&&gone.includes(`${p.d}-${p.h}`)){S.sessions[k].students.slice().forEach(sid=>{const r=reqAt(k,sid);r?unassign(r.id):removeFromSession(k,sid);n++})}});
+  log(`${t.name} עדכן/ה זמינות${n?` (${n} חניכים חזרו לממתינים)`:''}`);commit(n?`הזמינות עודכנה · ${n} חניכים הועברו לשיבוץ מחדש`:'הזמינות עודכנה ✓');
+}
+
+/* ============ תצוגת חניך ============ */
+function vStudent(){
+  if(!UI.sid)UI.sid=S.students[0]?.id;const st=ST(UI.sid);if(!st)return '';
+  const up=sessionsOfStudent(st.id).filter(x=>!isPast(x.w,x.d,x.h)).sort((a,b)=>(a.w+a.d+String(a.h).padStart(2,'0')).localeCompare(b.w+b.d+String(b.h).padStart(2,'0')));
+  const pend=S.requests.filter(r=>r.sid===st.id&&r.status==='pending');
+  const done=sessionsOfStudent(st.id).filter(x=>isPast(x.w,x.d,x.h)).length;
+  return `<div class="phone">
+  <div class="row" style="justify-content:flex-end;margin-bottom:10px"><span class="muted">תצוגת דמו של:</span><select onchange="UI.sid=this.value;UI.sw=null;render()">${S.students.map(x=>`<option value="${x.id}" ${x.id===st.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div>
+  <div class="hero"><h2>היי ${esc(st.name.split(' ')[0])} 👋</h2><div class="muted">${st.grade}' · ${esc(st.group)} · ${done} תגבורים שהיו לך עד עכשיו</div>
+   ${UI.sw?'':`<div class="row" style="margin-top:14px;flex-wrap:nowrap"><button class="btn pri big" onclick="UI.sw={subject:'',reason:'',exam:''};render()">📚 אני רוצה תגבור</button><button class="btn big" onclick="newExitModal('${st.id}','student')">🚪 בקשת יציאה</button></div>`}</div>
+  ${UI.sw?wizard(st):''}
+  ${(()=>{const ex=S.exits.filter(e=>e.sid===st.id&&e.date>=todayIso());return ex.length?`<div class="step">היציאות שלי</div>${ex.map(e=>`<div class="ses" style="--c:var(--warn)"><div class="sp"><b>${esc(e.reason)}</b><div class="muted">${DAYS[new Date(e.date+'T12:00').getDay()]||''} ${fmt(e.date)} · ${hh(e.from)}–${hh(e.to)}</div></div>${exitTag(e)}</div>`).join('')}`:''})()}
+  <div class="step">היומן שלי השבוע</div><div class="hero" style="padding:10px">${legend()}${ucal(st.id,weekOf())}</div>
+  <div class="step">התגבורים הקרובים שלי</div>
+  ${up.map(x=>{const t=T(x.t),date=dateOf(x.w,x.d),dd=diff(todayIso(),date);return `<div class="ses" style="--c:${t.color}"><div class="opt" style="border:0;padding:0;margin:0"><div class="dt">${dd===0?'היום':dd===1?'מחר':DAYS[x.d]}<small>${fmt(date)} · ${hh(x.h)}</small></div></div><div class="sp"><b>${esc(subjLabel(x.s.subject,x.s.level))}</b><div class="muted">${esc(t.name)} · ${esc(t.room)} · ${x.s.students.length>1?`עוד ${x.s.students.length-1} בקבוצה`:'אישי'}</div>${x.s.note?`<div class="muted">📌 ${esc(x.s.note)}</div>`:''}</div><button class="btn sm ghost danger" onclick="stCancel('${x.key}')">ביטול</button></div>`}).join('')||'<div class="empty">אין תגבורים קרובים</div>'}
+  ${pend.length?`<div class="step">בקשות שמחכות למנהלת</div>${pend.map(r=>`<div class="ses" style="--c:var(--warn)"><div class="sp"><b>${esc(r.subject)}</b><div class="muted">${esc(r.reason)}${r.exam?' · מבחן '+fmt(r.exam):''} · נשלח לפני ${Math.floor((Date.now()-r.created)/864e5)||'פחות מ-1'} ימים</div></div><span class="tag warn">⏳ בטיפול</span></div>`).join('')}`:''}
+  </div>`;
+}
+function wizard(st){
+  const sw=UI.sw,taught=SUBJECTS.filter(s=>S.teachers.some(t=>t.subjects[s]!==undefined));
+  let h=`<div class="hero"><div class="row"><h3 class="hd" style="color:var(--b)">בקשת תגבור</h3><span class="sp"></span><button class="btn sm ghost" onclick="UI.sw=null;render()">✕</button></div>
+  <div class="step">1. באיזה מקצוע?</div><div class="pick">${taught.map(s=>`<button class="${sw.subject===s?'on':''}" onclick="UI.sw.subject='${s.replace(/"/g,'&quot;')}';render()">${s}</button>`).join('')}</div>`;
+  if(sw.subject)h+=`<div class="step">2. למה?</div><div class="pick">${Object.keys(REASONS).map(s=>`<button class="${sw.reason===s?'on':''}" onclick="UI.sw.reason='${s}';render()">${s}</button>`).join('')}</div>
+   <div class="step">3. יש מבחן? (לא חובה)</div><input type="date" min="${todayIso()}" value="${sw.exam}" onchange="UI.sw.exam=this.value;render()" style="width:100%">`;
+  if(sw.subject&&sw.reason){
+    const tmp={id:'tmp',sid:st.id,subject:sw.subject,reason:sw.reason,exam:sw.exam,pref:[],created:Date.now()};
+    const seen=new Set(),c=candidates(tmp,nextWeeks(3)).filter(o=>{const k=o.date+o.h;if(seen.has(k))return false;seen.add(k);return true}).slice(0,6);
+    h+=`<div class="step">4. בחרו זמן שמתאים לך</div><div class="muted" style="margin-bottom:8px">מוצגים רק זמנים שלא מתנגשים עם השיעורים והחוגים שלך${reqLevel(tmp)?`, ברמה של ${reqLevel(tmp)} יח"ל`:''}.</div>
+    ${c.map(o=>`<div class="opt"><div class="dt">${DAYS[o.d]}<small>${fmt(o.date)} · ${hh(o.h)}</small></div><div class="sp"><b>${esc(o.t.name)}</b><div class="muted">${esc(o.t.room)} · ${o.n?`מצטרפים לעוד ${o.n}`:'תהיה/י ראשון/ה בקבוצה'} · נשארו ${o.t.max-o.n} מקומות</div></div><button class="btn pri" onclick="stBook('${o.key}')">שריון</button></div>`).join('')||'<div class="alert warn"><span>🤔</span><div>לא מצאנו זמן פנוי שמתאים לך. שלחו בקשה ומנהלת המרכז תמצא פתרון.</div></div>'}
+    <button class="btn big" style="margin-top:6px" onclick="stSend()">📨 אף זמן לא מתאים — שלחו בקשה למנהלת</button>`;
+  }
+  return h+'</div>';
+}
+function stBook(key){
+  const sw=UI.sw,r={id:uid(),sid:UI.sid,subject:sw.subject,reason:sw.reason,exam:sw.exam,pref:[],note:'',status:'pending',key:null,created:Date.now(),by:'חניך/ה'};
+  S.requests.push(r);if(!assign(r.id,key)){S.requests.pop();return}
+  const p=pk(key);UI.sw=null;commit(`נשמר לך מקום! יום ${DAYS[p.d]} ב-${hh(p.h)} 🎉`);
+}
+function stSend(){const sw=UI.sw;S.requests.push({id:uid(),sid:UI.sid,subject:sw.subject,reason:sw.reason,exam:sw.exam,pref:[],note:'',status:'pending',key:null,created:Date.now(),by:'חניך/ה'});log(`${ST(UI.sid).name} שלח/ה בקשה: ${sw.subject}`);UI.sw=null;commit('הבקשה נשלחה למנהלת המרכז ✓')}
+function stCancel(key){if(!confirm('לבטל את התגבור? המקום יתפנה לחניכים אחרים.'))return;const r=reqAt(key,UI.sid);r?unassign(r.id,true):removeFromSession(key,UI.sid);log(`${ST(UI.sid).name} ביטל/ה תגבור`);commit('התגבור בוטל')}
+
+/* ============ יומן אישי מאוחד ============ */
+const TS={school:['#5A6B7B','שיעור'],act:['#8A4FD6','חוג'],tutor:['#FC5028','תגבור'],exit:['#D98E04','יציאה מאושרת'],exitp:['#D98E04','יציאה ממתינה'],meal:['#B9A9A3','ארוחה']};
+function blockers(sid,w,d,h){
+  const st=ST(sid),a=`${d}-${h}`,out=[],date=dateOf(w,d);
+  if(st&&st.busy.includes(a))out.push({type:'school',label:'שיעור בבית הספר'});
+  S.activities.forEach(ac=>{if(ac.slots.includes(a)&&ac.participants.includes(sid))out.push({type:'act',label:ac.name,id:ac.id})});
+  S.exits.forEach(e=>{if(e.sid===sid&&e.status==='approved'&&e.date===date&&h>=e.from&&h<e.to)out.push({type:'exit',label:'יציאה · '+e.reason,id:e.id})});
+  return out;
+}
+function cellItems(sid,w,d,h){
+  const it=blockers(sid,w,d,h);
+  if(blocked(h))it.push({type:'meal',label:'ארוחת ערב'});
+  Object.keys(S.sessions).forEach(k=>{if(k.startsWith(`${w}|${d}|${h}|`)&&S.sessions[k].students.includes(sid)){const s=S.sessions[k];it.push({type:'tutor',label:`תגבור ${s.subject} · ${T(pk(k).t).name}`,key:k})}});
+  return it;
+}
+function isCf(it){const real=it.filter(x=>x.type!=='meal');return real.length>1||(real.length<it.length&&real.some(x=>x.type==='act'||x.type==='tutor'))}
+function conflictsOf(sid,w){const out=[];for(const h of S.settings.hours)for(let d=0;d<5;d++){const it=cellItems(sid,w,d,h);if(isCf(it))out.push({sid,w,d,h,items:it})}return out}
+function allConflicts(w,grp){return S.students.filter(s=>!grp||grpOf(s)===grp).flatMap(s=>conflictsOf(s.id,w))}
+function legend(){return `<div class="legend">${Object.values(TS).filter((v,i)=>i!==4).map(([c,l])=>`<span><i style="--k:${c}"></i>${l}</span>`).join('')}<span>⚠️ התנגשות</span></div>`}
+function ucal(sid,w){
+  let h=`<div class="ucal"><div></div>`+DAYS.map((d,i)=>`<div class="ph">${d}<br><small style="font-weight:500">${fmt(dateOf(w,i))}</small></div>`).join('');
+  for(const hr of S.settings.hours){
+    h+=`<div class="ph">${hh(hr)}</div>`;
+    for(let d=0;d<5;d++){
+      const it=cellItems(sid,w,d,hr),date=dateOf(w,d);
+      const pe=S.exits.filter(e=>e.sid===sid&&e.status==='pending'&&e.date===date&&hr>=e.from&&hr<e.to);
+      const cf=isCf(it);
+      h+=`<div class="uc ${cf?'cf':''}" title="${esc(it.map(x=>x.label).join(' / '))}">${it.map(x=>`<div class="ub" style="--k:${TS[x.type][0]}">${esc(x.label)}</div>`).join('')}${pe.map(e=>`<div class="ub pend" style="--k:${TS.exitp[0]}">⏳ ${esc(e.reason)}</div>`).join('')}${cf?'<span class="cfi">⚠️</span>':''}</div>`;
+    }
+  }
+  return h+'</div>';
+}
+function grpSel(){return `<select onchange="UI.grp=this.value;render()">${GROUPS().map(g=>`<option ${UI.grp===g?'selected':''}>${g}</option>`).join('')}</select>`}
+function vCalendars(){
+  const w=UI.week;if(UI.role==='madrich'&&!UI.grp)UI.grp=GROUPS()[0];
+  const grp=UI.role==='madrich'?UI.grp:'',list=S.students.filter(s=>!grp||grpOf(s)===grp);
+  if(!UI.calSid||!list.find(s=>s.id===UI.calSid))UI.calSid=list[0]?.id;
+  const cf=allConflicts(w,grp),canFix=['coord','manager','mahat'].includes(UI.role);
+  return `<div class="title"><h2>יומני חניכים</h2>${weekNav()}<span class="sp"></span>${grp?grpSel():''}</div>
+  <div class="calwrap" style="grid-template-columns:1fr 340px">
+   <div class="panel"><div class="row"><select onchange="UI.calSid=this.value;render()">${list.map(s=>`<option value="${s.id}" ${s.id===UI.calSid?'selected':''}>${esc(s.name)} · ${esc(grpOf(s))}</option>`).join('')}</select><span class="muted">${conflictsOf(UI.calSid,w).length} התנגשויות השבוע</span><span class="sp"></span>${legend()}</div>
+   ${ucal(UI.calSid,w)}<div class="muted" style="margin-top:8px">היומן נבנה אוטומטית: שיעורים מסמרט סקול · חוגים מפז · תגבורים ממרכז הלמידה · יציאות מהמדריכים.</div></div>
+   <div class="side panel"><h3>⚠️ התנגשויות בשבוע (${cf.length})</h3>
+   ${cf.map(c=>{const tu=c.items.find(i=>i.type==='tutor');return `<div class="rq" onclick="UI.calSid='${c.sid}';render()" style="cursor:pointer;${c.sid===UI.calSid?'border-color:var(--o)':''}"><div class="row" style="gap:6px"><b>${esc(ST(c.sid).name)}</b><span class="sp"></span><span class="tag gr">${DAYS[c.d]} ${hh(c.h)}</span></div><div class="muted" style="margin-top:3px">${c.items.map(i=>esc(i.label)).join(' ✕ ')}</div>${tu&&canFix?`<button class="btn sm" style="margin-top:6px" onclick="event.stopPropagation();fixTutor('${tu.key}','${c.sid}')">↺ התגבור לשיבוץ מחדש</button>`:''}</div>`}).join('')||'<div class="empty">✅ אין התנגשויות בשבוע הזה</div>'}
+   </div></div>`;
+}
+function fixTutor(key,sid){const r=reqAt(key,sid);r?unassign(r.id):removeFromSession(key,sid);const p=pk(key);log(`תגבור של ${ST(sid).name} (יום ${DAYS[p.d]} ${hh(p.h)}) הוחזר לשיבוץ בגלל התנגשות`);if(UI.role!=='coord')notify('coord',`תגבור של ${ST(sid).name} הוחזר לשיבוץ בגלל התנגשות ביומן`);commit('התגבור חזר לרשימת הממתינים לשיבוץ')}
+
+/* ============ חוגים (פז, רכזת המח"מ) ============ */
+function actConflicts(ac,weeks){
+  const out=[];
+  for(const w of weeks)for(const a of ac.slots){const [d,h]=a.split('-').map(Number);
+    for(const sid of ac.participants){const it=cellItems(sid,w,d,h).filter(x=>!(x.type==='act'&&x.id===ac.id));if(it.length)out.push({sid,w,d,h,items:it})}}
+  return out;
+}
+function vActivities(){
+  const w=UI.week;
+  return `<div class="title"><h2>חוגים ומשתתפים</h2>${weekNav()}<span class="sp"></span><button class="btn pri" onclick="editAct()">➕ חוג חדש</button></div>
+  <div class="grid tcards">${S.activities.map(ac=>{const cf=actConflicts(ac,[w]);const days=ac.slots.map(a=>{const [d,h]=a.split('-');return `${DAYS[d]} ${hh(+h)}`}).join(' · ');
+   return `<div class="tcard" style="--c:${ac.color}"><div class="row"><b class="hd" style="font-size:17px">${esc(ac.name)}</b><span class="sp"></span><button class="btn sm" onclick="editAct('${ac.id}')">✏️ עריכה</button></div>
+   <div class="muted" style="margin:6px 0">${esc(ac.instructor)} · ${days||'אין מועדים'}</div>
+   <div class="row"><span class="tag">${ac.participants.length} משתתפים</span>${cf.length?`<span class="tag err">⚠️ ${cf.length} התנגשויות השבוע</span>`:'<span class="tag ok">✓ בלי התנגשויות</span>'}</div>
+   ${cf.length?`<div style="margin-top:8px;font-size:13px">${cf.slice(0,4).map(c=>`<div>• <b>${esc(ST(c.sid).name)}</b> — ${DAYS[c.d]} ${hh(c.h)}: ${c.items.map(i=>esc(i.label)).join(', ')}</div>`).join('')}${cf.length>4?`<div class="muted">ועוד ${cf.length-4}… (ביומני החניכים)</div>`:''}</div>`:''}</div>`}).join('')}</div>`;
+}
+function editAct(id){
+  const ac=id?JSON.parse(JSON.stringify(S.activities.find(a=>a.id===id))):{id:'a'+uid(),name:'',slots:[],color:COLORS[(S.activities.length+3)%COLORS.length],instructor:'',participants:[]};
+  window._ea=ac;
+  openModal(`<div class="mh"><h3>${id?'עריכת חוג':'חוג חדש'}</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb">
+   <div class="f2"><div class="fld"><label>שם החוג</label><input id="ea_n" value="${esc(ac.name)}"></div><div class="fld"><label>מדריך/ה</label><input id="ea_i" value="${esc(ac.instructor)}"></div></div>
+   <div class="fld"><label>מועדים קבועים בשבוע</label>${painter('act',ac.slots,{color:ac.color,label:'חוג',hint:'שינוי מועדים מעדכן מיד את התנגשויות המשתתפים למטה.'})}</div>
+   <div class="fld"><label>משתתפים <span class="muted">(⚠️ = יש לחניך/ה משהו אחר באחד המועדים)</span></label><div id="partList"></div></div>
+  </div><div class="mf"><button class="btn pri" onclick="saveAct()">שמירה</button><button class="btn" onclick="closeModal()">ביטול</button>${id?`<span class="sp"></span><button class="btn danger" onclick="if(confirm('למחוק את החוג?')){S.activities=S.activities.filter(a=>a.id!=='${id}');closeModal();commit('החוג נמחק')}">🗑️ מחיקה</button>`:''}</div>`);
+  renderParts();
+  document.querySelector('[data-pid="act"]').addEventListener('pointerup',()=>setTimeout(renderParts,0));
+}
+function renderParts(){
+  const ac=_ea,slots=[...UI.paint.act],w=weekOf();
+  $('#partList').innerHTML=GROUPS().map(g=>`<div class="subrow"><b style="min-width:70px">${g}</b><div class="pick">${S.students.filter(s=>grpOf(s)===g).map(s=>{const on=ac.participants.includes(s.id);const cf=slots.some(a=>{const [d,h]=a.split('-').map(Number);return cellItems(s.id,addDays(w,7),d,h).some(x=>!(x.type==='act'&&x.id===ac.id))});return `<button class="${on?'on':''}" onclick="tgPart('${s.id}')">${cf?'⚠️ ':''}${esc(s.name)}</button>`}).join('')}</div></div>`).join('');
+}
+function tgPart(sid){const p=_ea.participants,i=p.indexOf(sid);i<0?p.push(sid):p.splice(i,1);renderParts()}
+function saveAct(){
+  const ac=_ea;ac.name=$('#ea_n').value.trim();ac.instructor=$('#ea_i').value.trim()||'—';ac.slots=[...UI.paint.act];
+  if(!ac.name)return toast('חסר שם לחוג','err');
+  const i=S.activities.findIndex(a=>a.id===ac.id);i<0?S.activities.push(ac):S.activities[i]=ac;
+  const tu=actConflicts(ac,nextWeeks(2)).filter(c=>c.items.some(x=>x.type==='tutor')&&!isPast(c.w,c.d,c.h));
+  log(`פז עדכנה את החוג ${ac.name} (${ac.participants.length} משתתפים)`);
+  if(tu.length)notify('coord',`החוג "${ac.name}" מתנגש ב-${tu.length} תגבורים משובצים — צריך לשבץ מחדש (ביומני החניכים)`);
+  closeModal();commit(tu.length?`נשמר · ${tu.length} תגבורים מתנגשים, רכזת המרכז קיבלה התראה`:'החוג נשמר ✓',tu.length?'err':'ok');
+}
+
+/* ============ אישורי יציאה (מדריכים) ============ */
+function exitDay(e){return new Date(e.date+'T12:00:00').getDay()}
+function exitConflicts(e){
+  const w=weekOf(e.date),d=exitDay(e),out=[];if(d>4)return out;
+  for(let h=e.from;h<e.to;h++){
+    Object.entries(S.sessions).forEach(([k,s])=>{if(k.startsWith(`${w}|${d}|${h}|`)&&s.students.includes(e.sid))out.push({type:'tutor',key:k,label:`תגבור ${s.subject} ב-${hh(h)} אצל ${T(pk(k).t).name}`})});
+    S.activities.forEach(a=>{if(a.slots.includes(`${d}-${h}`)&&a.participants.includes(e.sid))out.push({type:'act',label:`${a.name} ב-${hh(h)}`})});
+    if(ST(e.sid).busy.includes(`${d}-${h}`))out.push({type:'school',label:`שיעור ב-${hh(h)}`});
+  }
+  return out;
+}
+function exitTag(e){return e.status==='pending'?'<span class="tag warn">⏳ ממתין לאישור</span>':e.status==='approved'?'<span class="tag ok">✓ אושר</span>':'<span class="tag err">✕ לא אושר</span>'}
+function vExits(){
+  if(!UI.grp){const p=S.exits.find(e=>e.status==='pending');UI.grp=p?grpOf(ST(p.sid)):GROUPS()[0]}
+  const ex=S.exits.filter(e=>grpOf(ST(e.sid))===UI.grp).sort((a,b)=>(a.status==='pending'?0:1)-(b.status==='pending'?0:1)||a.date.localeCompare(b.date));
+  return `<div class="title"><h2>אישורי יציאה</h2>${grpSel()}<span class="sp"></span><button class="btn pri" onclick="newExitModal('','madrich')">➕ יציאה חדשה</button></div>
+  <div class="panel" style="overflow-x:auto"><table class="tb"><thead><tr><th>חניך/ה</th><th>מתי</th><th>סיבה</th><th>מה יתפספס</th><th>סטטוס</th><th></th></tr></thead><tbody>
+  ${ex.map(e=>{const cf=exitConflicts(e);return `<tr><td><b>${esc(ST(e.sid).name)}</b><div class="muted">ביקש/ה: ${esc(e.by)}</div></td><td>${DAYS[exitDay(e)]||'סופ"ש'} ${fmt(e.date)}<div class="muted">${hh(e.from)}–${hh(e.to)}</div></td><td>${esc(e.reason)}</td>
+   <td>${cf.map(c=>`<span class="tag ${c.type==='tutor'?'err':'warn'}" style="margin:2px">${c.type==='tutor'?'📚':c.type==='act'?'🎭':'🏫'} ${esc(c.label)}</span>`).join('')||'<span class="tag ok">אין התנגשות</span>'}</td>
+   <td>${exitTag(e)}</td><td style="white-space:nowrap">${e.status==='pending'?`<button class="btn sm pri" onclick="approveExit('${e.id}')">✓ אישור</button> <button class="btn sm ghost danger" onclick="decideExit('${e.id}',false)">✕ דחייה</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="6"><div class="empty">אין בקשות יציאה בקבוצה הזו</div></td></tr>'}
+  </tbody></table></div>`;
+}
+function approveExit(id){
+  const e=S.exits.find(x=>x.id===id),tu=exitConflicts(e).filter(c=>c.type==='tutor');
+  if(!tu.length)return decideExit(id,true);
+  openModal(`<div class="mh"><h3>⚠️ היציאה מתנגשת בתגבור</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb">
+   <p><b>${esc(ST(e.sid).name)}</b> מבקש/ת לצאת ב-${fmt(e.date)} בין ${hh(e.from)} ל-${hh(e.to)}, ויש לו/ה באותו זמן:</p>
+   ${tu.map(c=>`<div class="alert err"><span>📚</span><div>${esc(c.label)}</div></div>`).join('')}
+   <p class="muted">אם מאשרים, התגבור חוזר אוטומטית לרשימת הממתינים, ורכזת מרכז הלמידה מקבלת התראה כדי לשבץ זמן אחר.</p>
+  </div><div class="mf"><button class="btn pri" onclick="closeModal();decideExit('${id}',true)">אישור היציאה ושיבוץ מחדש של התגבור</button><button class="btn" onclick="closeModal()">לא עכשיו</button></div>`);
+}
+function decideExit(id,ok){
+  const e=S.exits.find(x=>x.id===id),name=ST(e.sid).name;
+  e.status=ok?'approved':'rejected';e.decidedBy='מדריך/ה';
+  if(ok){
+    const tu=exitConflicts(e).filter(c=>c.type==='tutor');
+    tu.forEach(c=>{const r=reqAt(c.key,e.sid);r?unassign(r.id):removeFromSession(c.key,e.sid)});
+    if(tu.length)notify('coord',`${name} אושר/ה ליציאה ב-${fmt(e.date)} — ${tu.length} תגבורים חזרו לשיבוץ`);
+  }
+  log(`המדריך/ה ${ok?'אישר/ה':'דחה/תה'} יציאה של ${name} ב-${fmt(e.date)}`);
+  commit(ok?'היציאה אושרה ✓':'הבקשה נדחתה',ok?'ok':'');
+}
+function newExitModal(sid,by){
+  const list=by==='madrich'?S.students.filter(s=>grpOf(s)===UI.grp):S.students;
+  const hrs=[14,15,16,17,18,19,20,21,22];
+  openModal(`<div class="mh"><h3>🚪 ${by==='student'?'בקשת יציאה':'יציאה חדשה'}</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb">
+   ${by==='student'?`<input type="hidden" id="ne_s" value="${sid}">`:`<div class="fld"><label>חניך/ה</label><select id="ne_s">${list.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div>`}
+   <div class="f2"><div class="fld"><label>תאריך</label><input type="date" id="ne_d" min="${todayIso()}" value="${addDays(weekOf(),8)}"></div><div class="fld"><label>סיבה</label><input id="ne_r" placeholder="למשל: תור לרופא"></div></div>
+   <div class="f2"><div class="fld"><label>משעה</label><select id="ne_f">${hrs.map(h=>`<option value="${h}" ${h===16?'selected':''}>${hh(h)}</option>`).join('')}</select></div><div class="fld"><label>עד שעה</label><select id="ne_t">${hrs.map(h=>`<option value="${h}" ${h===19?'selected':''}>${hh(h)}</option>`).join('')}</select></div></div>
+  </div><div class="mf"><button class="btn pri" onclick="createExit('${by}')">${by==='student'?'שליחה למדריך/ה':'שמירה ואישור'}</button><button class="btn" onclick="closeModal()">ביטול</button></div>`);
+}
+function createExit(by){
+  const e={id:uid(),sid:$('#ne_s').value,date:$('#ne_d').value,from:+$('#ne_f').value,to:+$('#ne_t').value,reason:$('#ne_r').value.trim()||'יציאה',status:'pending',by:by==='student'?'חניך/ה':'מדריך/ה',ts:Date.now()};
+  if(!e.date||e.to<=e.from)return toast('בדקו תאריך ושעות','err');
+  S.exits.push(e);closeModal();
+  const cf=exitConflicts(e);
+  if(by==='student'){notify('madrich',`בקשת יציאה חדשה: ${ST(e.sid).name}, ${fmt(e.date)}${cf.some(c=>c.type==='tutor')?' — מתנגשת בתגבור!':''}`);log(`${ST(e.sid).name} ביקש/ה יציאה ב-${fmt(e.date)}`);commit(cf.some(c=>c.type==='tutor')?'הבקשה נשלחה. שימו לב: יש לך תגבור באותו זמן':'הבקשה נשלחה למדריך/ה ✓')}
+  else{save();approveExit(e.id);render()}
+}
+
+/* ============ קבוצות קבועות לפי רמות (מנהלת) ============ */
+function vGroups(){
+  const sub=UI.gs,lv=LEVELED.includes(sub)?[3,4,5]:[null];
+  const dem=S.requests.filter(r=>r.subject===sub&&r.status!=='closed');
+  const cols=lv.map(l=>{const sids=[...new Set(dem.filter(r=>!l||reqLevel(r)===l).map(r=>r.sid))];const tch=S.teachers.filter(t=>teaches(t,sub,l));
+    return `<div class="panel"><div class="row"><h3 style="margin:0">${l?l+' יח"ל':'כל הרמות'}</h3><span class="sp"></span><span class="tag">${sids.length} חניכים</span></div>
+    <div class="muted" style="margin:6px 0">מורים: ${tch.map(t=>esc(t.name)).join(', ')||'<b style="color:var(--err)">אין — צריך לגייס</b>'}</div>
+    <div class="chips" style="margin-bottom:10px">${sids.map(id=>{const p=dem.some(r=>r.sid===id&&r.status==='pending'&&(!l||reqLevel(r)===l));return `<span class="chip" style="cursor:default;${p?'border-color:var(--o)':''}">${p?'⏳ ':''}${esc(ST(id).name)}</span>`}).join('')||'<span class="muted">אין ביקוש כרגע</span>'}</div>
+    <button class="btn ${tch.length?'pri':''} sm" ${tch.length?'':'disabled'} onclick="fixedModal('${l||''}')">➕ פתיחת קבוצה קבועה</button></div>`}).join('');
+  return `<div class="title"><h2>בניית קבוצות לפי רמות</h2><span class="sp"></span><select onchange="UI.gs=this.value;render()">${SUBJECTS.map(s=>`<option ${UI.gs===s?'selected':''}>${s}</option>`).join('')}</select></div>
+  <div class="alert info"><span>💡</span><div>קבוצה קבועה = אותו מורה, אותה שעה, כל שבוע עד הבגרות. המערכת מציעה רק שעות שבהן <b>כל</b> חברי הקבוצה פנויים בכל השבועות (שיעורים, חוגים, יציאות).</div></div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-bottom:16px">${cols}</div>
+  <div class="panel"><h3>קבוצות קבועות פעילות (${S.fixedGroups.length})</h3>${S.fixedGroups.map(g=>{const t=T(g.tid);return `<div class="ses" style="--c:${t?t.color:'#ccc'}"><div class="sp"><b>${esc(subjLabel(g.subject,g.level))}</b> · יום ${DAYS[g.d]} ${hh(g.h)} · ${esc(t?t.name:'—')}<div class="muted">${g.sids.map(i=>esc(ST(i).name)).join(', ')} · ${g.weeks.length} שבועות, עד ${fmt(addDays(g.weeks.at(-1),g.d))}</div></div></div>`}).join('')||'<div class="empty">עדיין אין קבוצות קבועות</div>'}</div>`;
+}
+function groupSlots(sub,lvl,sids,nW){
+  const weeks=Array.from({length:nW},(_,i)=>addDays(weekOf(),7*(i+1))),out=[];
+  for(const t of S.teachers){if(!teaches(t,sub,lvl))continue;
+    for(const a of t.avail){const [d,h]=a.split('-').map(Number);if(blocked(h)||!sids.length)continue;let ok=sids.length<=t.max;
+      for(const w of weeks){if(!ok)break;const s=S.sessions[sk(w,d,h,t.id)];
+        if(s&&s.students.length&&(s.subject!==sub||s.students.length+sids.length>t.max)){ok=false;break}
+        for(const sid of sids)if(blockers(sid,w,d,h).length||studentBusyAt(sid,w,d,h)){ok=false;break}}
+      if(ok)out.push({t,d,h})}}
+  return {weeks,out:out.sort((a,b)=>a.d-b.d||a.h-b.h)};
+}
+function fixedModal(l){
+  const lvl=l?+l:null,sub=UI.gs;
+  const pre=[...new Set(S.requests.filter(r=>r.subject===sub&&r.status==='pending'&&(!lvl||reqLevel(r)===lvl)).map(r=>r.sid))];
+  window._fg={sub,lvl,sids:pre.slice(0,4),nW:6};
+  const pool=S.students.filter(s=>!lvl||!LEVELED.includes(sub)||s.levels[sub]===lvl);
+  openModal(`<div class="mh"><h3>🧩 קבוצה קבועה · ${esc(subjLabel(sub,lvl))}</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb">
+   <div class="fld"><label>חברי הקבוצה <span class="muted">(⏳ = יש פנייה פתוחה)</span></label><div class="pick" id="fgS">${pool.map(s=>`<button data-s="${s.id}" onclick="tgFg('${s.id}')">${pre.includes(s.id)?'⏳ ':''}${esc(s.name)}</button>`).join('')}</div></div>
+   <div class="fld"><label>לכמה שבועות?</label><div class="pick">${[4,6,8,10].map(n=>`<button data-n="${n}" onclick="_fg.nW=${n};refreshFg()">${n} שבועות</button>`).join('')}</div></div>
+   <div class="fld"><label>זמנים שמתאימים לכולם</label><div id="fgO"></div></div></div>`);
+  refreshFg();
+}
+function tgFg(id){const a=_fg.sids,i=a.indexOf(id);i<0?a.push(id):a.splice(i,1);refreshFg()}
+function refreshFg(){
+  const g=_fg;document.querySelectorAll('#fgS button').forEach(b=>b.classList.toggle('on',g.sids.includes(b.dataset.s)));
+  document.querySelectorAll('[data-n]').forEach(b=>b.classList.toggle('on',+b.dataset.n===g.nW));
+  const {weeks,out}=groupSlots(g.sub,g.lvl,g.sids,g.nW);g.weeks=weeks;
+  $('#fgO').innerHTML=!g.sids.length?'<div class="muted">בחרו חניכים</div>':out.map((o,i)=>`<div class="opt"><div class="dt">${DAYS[o.d]}<small>${hh(o.h)} · כל שבוע</small></div><div class="sp"><b>${esc(o.t.name)}</b><div class="muted">${esc(o.t.room)} · מ-${fmt(addDays(weeks[0],o.d))} עד ${fmt(addDays(weeks.at(-1),o.d))}</div></div><button class="btn ${i?'':'pri'}" onclick="createFixed('${o.t.id}',${o.d},${o.h})">פתיחת הקבוצה</button></div>`).join('')||`<div class="alert err"><span>⛔</span><div>אין שעה שבה כל ${g.sids.length} החניכים פנויים בכל ${g.nW} השבועות. נסו להוריד חניך/ה, לקצר את התקופה, או להוסיף זמינות למורה.</div></div>`;
+}
+function createFixed(tid,d,h){
+  const g=_fg,gid=uid();
+  g.sids.forEach(sid=>S.requests.filter(r=>r.sid===sid&&r.subject===g.sub&&r.status==='pending').forEach(r=>{r.status='closed';r.note='הועבר/ה לקבוצה קבועה'}));
+  g.weeks.forEach(w=>g.sids.forEach(sid=>{const r={id:uid(),sid,subject:g.sub,reason:'קבוצה קבועה',exam:'',pref:[],note:'',status:'pending',key:null,created:Date.now(),by:'מנהלת',fixed:gid};S.requests.push(r);assign(r.id,sk(w,d,h,tid),{force:true,silent:true})}));
+  S.fixedGroups.push({id:gid,subject:g.sub,level:g.lvl,tid,d,h,sids:[...g.sids],weeks:g.weeks});
+  const msg=`נפתחה קבוצה קבועה: ${subjLabel(g.sub,g.lvl)}, יום ${DAYS[d]} ${hh(h)} אצל ${T(tid).name} (${g.sids.length} חניכים, ${g.weeks.length} שבועות)`;
+  log(msg);notify('coord',msg);closeModal();commit('הקבוצה נפתחה ושובצה לכל השבועות ✓');
+}
+
+if(LIVE)liveInit();
+else{S=load()||seed();save();render();}
+</script>
+</body>
+</html>
