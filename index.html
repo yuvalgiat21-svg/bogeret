@@ -348,6 +348,7 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 .app-row>.main{flex:1;min-width:0}
 #lnkSide{display:none;width:210px;flex-shrink:0;position:sticky;top:12px;margin:20px 0 20px 16px;background:#fff;border:1px solid #F3C2B0;border-radius:16px;padding:12px;max-height:calc(100vh - 24px);overflow:auto}
 #lnkSide.on{display:block}
+.lnk-tool{background:#FFF1EB;border:1px solid #F3C2B0;margin-bottom:4px}.lnk-tool:hover{background:#ffe3d8}
 .lnk-h{font:800 14px Heebo,sans-serif;color:#8E033C;margin:0 4px 8px;display:flex;align-items:center;gap:6px}
 .lnk-a{display:flex;align-items:center;gap:9px;padding:8px;border-radius:11px;text-decoration:none;color:inherit;font-size:13.5px;line-height:1.25}
 .lnk-a:hover{background:#FFF1EB}
@@ -1617,7 +1618,6 @@ const NEW_TABS = [
   {id:'groups',   icon:'👥', label:'ניהול קבוצה',    tier:'main'},
   {id:'attendance',icon:'✅', label:'נוכחות',         tier:'main'},
   {id:'parents',  icon:'👪', label:'הורים',          tier:'main'},
-  {id:'rooms',    icon:'🏘️', label:'שריון מתחמים',   tier:'main'},
   {id:'lc',       icon:'🏫', label:'מרכז למידה',     tier:'main'},
   {id:'eduplan',  icon:'🎓', label:'תוכנית חינוכית', tier:'main', grp:'plan'},
   {id:'companion',icon:'🧭', label:'תוכנית מלווה',   tier:'main', grp:'plan'},
@@ -1630,7 +1630,7 @@ const NEW_TABS = [
   {id:'users',    icon:'🔐', label:'משתמשים',        tier:'more', admin:true},
 ];
 /* סדר הסרגל הקודם (כפי שהיה באוויר לפני השינוי) */
-const CLASSIC_ORDER = ['overview','msg','calendar','attendance','parents','rooms','team','groups','pedagogy','lc','companion','eduplan','evacplan','prof','graduates','users'];
+const CLASSIC_ORDER = ['overview','msg','calendar','attendance','parents','team','groups','pedagogy','lc','companion','eduplan','evacplan','prof','graduates','users'];
 const NAV_MODE_KEY='bogeret_nav_mode', NAV_MODE_PATH='portal/bogeret/secure/settings/nav_mode';
 let NAV_MODE=(()=>{ try{ return localStorage.getItem(NAV_MODE_KEY)==='classic'?'classic':'new'; }catch(e){ return 'new'; } })();
 
@@ -4457,11 +4457,12 @@ const LINKS=[
   {ic:'📚',t:'סמרט סקול',d:'מערכת בית הספר: ציונים, מערכת שעות והודעות',u:'https://www.smartschool.co.il/'},
   {ic:'🛡️',t:'סייף סקול',d:'בטיחות וביטחון במוסדות חינוך',u:'https://safe-school.co.il/'},
   {ic:'🔧',t:'תחזוקנית',d:'פתיחת קריאה לתחזוקה ותקלות',u:'https://tachzukanit.ramdor.net/m_yam/callorder/'},
-  {ic:'🗺️',t:'אשף המסלולים — מוקד טבע',d:'תכנון מסלול לטיול: אזור, אורך, רמת קושי ודגשי בטיחות',u:'https://www.mokedteva.co.il/InfoCenter/TrackWizard'},
+  {ic:'🗺️',t:'אשף המסלולים',d:'תכנון מסלול לטיול: אזור, אורך, רמת קושי ודגשי בטיחות',u:'https://www.mokedteva.co.il/InfoCenter/TrackWizard'},
   {ic:'🏘️',t:'שריון מתחמים',d:'הזמנת מתחמים וחדרים בכפר (גיליון משותף)',u:'https://docs.google.com/spreadsheets/d/17g_UWjBBaSHq0mQ-5ZhvlgTLnZ0hyqxt4jaW5oajWkk/edit'},
 ];
 /* סרגל צדי — נבנה אחרי הכניסה מאותה רשימת LINKS */
-function lnkHtml(){ return `<div class="lnk-h">🔗 לינקים שימושיים</div>`+LINKS.filter(x=>x.u).map(x=>`<a class="lnk-a" href="${x.u}" target="_blank" rel="noopener"><span class="i">${x.ic}</span><span><b>${x.t}</b><small>${x.d}</small></span></a>`).join(''); }
+function lnkHtml(){ return `<div class="lnk-h">🧰 כלים</div><a class="lnk-a lnk-tool" href="#" onclick="lnkDrawer(false);show('rooms');return false;"><span class="i">🏘️</span><span><b>שריון מתחמים</b><small>לוח המתחמים — מחובר לגיליון של פז</small></span></a>
+  <div class="lnk-h" style="margin-top:12px">🔗 לינקים שימושיים</div>`+LINKS.filter(x=>x.u).map(x=>`<a class="lnk-a" href="${x.u}" target="_blank" rel="noopener"><span class="i">${x.ic}</span><span><b>${x.t}</b><small>${x.d}</small></span></a>`).join(''); }
 window.lnkSideRender=function(){ const a=document.getElementById('lnkSide'), f=document.getElementById('lnkFab'); if(!a) return;
   a.innerHTML=lnkHtml(); a.classList.add('on'); if(f) f.classList.add('on'); document.querySelector('#lnkDrawer .lnk-dr').innerHTML=lnkHtml(); };
 window.lnkDrawer=function(o){ document.getElementById('lnkDrawer').classList.toggle('open',!!o); };
@@ -6141,8 +6142,8 @@ function lcMount(){
 /* ── סרגל לשוניות עם לשוניות אב ותפריט נפתח ── */
 /* סרגל לפי תפקיד: מה בשורה הראשית ומה תחת "עוד" */
 const NAV_LAYOUT={
-  admin:['home','overview','msg','groups','attendance','parents','rooms','lc','eduplan','companion','calendar'],
-  staff:['mine','groups','msg','calendar','attendance','parents','rooms']
+  admin:['home','overview','msg','groups','attendance','parents','lc','eduplan','companion','calendar'],
+  staff:['mine','groups','msg','calendar','attendance','parents']
 };
 const navRole=()=>ME&&ME.mode==='admin'?'admin':'staff';
 function navVisible(){
