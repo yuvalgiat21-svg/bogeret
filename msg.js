@@ -45,17 +45,31 @@ const needAck=p=>p.ack!==false&&inAud(p)&&p.by!==(me()&&me().id)&&!(p.acks&&p.ac
 /* ---------- ענן ---------- */
 let DB=null;
 async function db(){ if(!DB) DB=await secureDb(); return DB; }
-async function put(path,val){ try{ const {dbm,rdb}=await db(); await dbm.set(dbm.ref(rdb,MSG_PATH+'/'+path),val); }catch(e){ msgToast('⚠️ השמירה נכשלה — בדקו חיבור'); console.warn('msg',e); } }
-async function patch(path,val){ try{ const {dbm,rdb}=await db(); await dbm.update(dbm.ref(rdb,MSG_PATH+'/'+path),val); }catch(e){ msgToast('⚠️ השמירה נכשלה — בדקו חיבור'); console.warn('msg',e); } }
-async function del(path){ try{ const {dbm,rdb}=await db(); await dbm.remove(dbm.ref(rdb,MSG_PATH+'/'+path)); }catch(e){ msgToast('⚠️ המחיקה נכשלה'); } }
+/* החיבור לענן נופל לפעמים זמן קצר אחרי הכניסה. כל שמירה מנסה שוב פעם אחת עם חיבור טרי לפני שמודיעה על כישלון */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function run(op,fail){
+  for(let i=0;i<2;i++){
+    try{ const {dbm,rdb}=await db(); await op(dbm,rdb); return true; }
+    catch(e){ console.warn('msg',e); DB=null; if(i===0){ await sleep(1200); continue; }
+      msgToast((fail||'⚠️ השמירה נכשלה')+' — '+(String(e&&e.code||'').includes('PERMISSION')?'אין הרשאה':'בדקו חיבור ונסו שוב')); restartListen(); return false; }
+  }
+}
+const put=(path,val)=>run((dbm,rdb)=>dbm.set(dbm.ref(rdb,MSG_PATH+'/'+path),val));
+const patch=(path,val)=>run((dbm,rdb)=>dbm.update(dbm.ref(rdb,MSG_PATH+'/'+path),val));
+const del=path=>run((dbm,rdb)=>dbm.remove(dbm.ref(rdb,MSG_PATH+'/'+path)),'⚠️ המחיקה נכשלה');
+let UNSUB=null, RETRY=0;
+function restartListen(){ if(UNSUB){ try{ UNSUB(); }catch(e){} UNSUB=null; } M.started=false; setTimeout(msgStart,1500); }
 async function msgStart(){
   if(M.started||!me()) return; M.started=true;
   try{ const {dbm,rdb}=await db();
-    dbm.onValue(dbm.ref(rdb,MSG_PATH),snap=>{ const v=snap.val()||{}; const prev=M.ok; M.tasks=v.tasks||{}; M.posts=v.posts||{}; M.ok=true; M.err='';
+    UNSUB=dbm.onValue(dbm.ref(rdb,MSG_PATH),snap=>{ const v=snap.val()||{}; const prev=M.ok; M.tasks=v.tasks||{}; M.posts=v.posts||{}; M.ok=true; M.err=''; RETRY=0;
       if(prev) notifyNew(); else markKnown(); badge(); if(active()) softRender(); },
-      e=>{ M.err='אין גישה לנתוני המסרים בענן.'; console.warn('msg',e); if(active()) msgRender(); });
-  }catch(e){ M.err='לא ניתן להתחבר לענן. נסו לרענן.'; M.started=false; if(active()) msgRender(); }
+      e=>{ console.warn('msg listen',e); DB=null; UNSUB=null; M.started=false;
+        /* ההאזנה נותקה (בדרך כלל בגלל ניתוק רגעי של הכניסה) — מתחברים מחדש לבד */
+        if(++RETRY<=6) setTimeout(msgStart,2000*RETRY); else { M.err='החיבור לנתוני ה-CRM נותק. רעננו את הדף.'; if(active()) msgRender(); } });
+  }catch(e){ DB=null; M.started=false; if(++RETRY<=6) setTimeout(msgStart,2000*RETRY); else { M.err='לא ניתן להתחבר לענן. נסו לרענן.'; if(active()) msgRender(); } }
 }
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&!M.started&&me()){ RETRY=0; msgStart(); } });
 /* עדכון חי בלי למחוק טקסט שמישהו באמצע להקליד */
 let PEND=false;
 function softRender(){ const ae=document.activeElement, sec=document.getElementById('sec-msg');

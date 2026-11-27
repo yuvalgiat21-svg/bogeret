@@ -329,6 +329,9 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 .nav .nv-menu button.active { background:#FC5028; color:#fff; border:none; box-shadow:none; }
 @media (min-width:900px){ .nav { flex-wrap:wrap; overflow:visible; } }
 .nv-sp { flex:1; min-width:6px; }
+#grTopNav { margin-bottom:6px; } #grTopNav button { font-size:15px; font-weight:700; }
+.subnav.subnav-2 { background:#FFF1EB; border:1px solid #F3C2B0; border-radius:12px; padding:6px; margin:0 0 12px; }
+.subnav.subnav-2 button { font-size:13.5px; }
 .nav.nv-new > button, .nav.nv-new > .nv-grp:not(.nv-more) > .nv-par { font-size:clamp(12.5px,0.95vw,14px); padding:7px clamp(9px,0.9vw,14px); font-weight:700; }
 .nav .nv-more > .nv-par { background:#fff; color:var(--text2); border-style:dashed; }
 .nav .nv-more > .nv-par.active { background:var(--blue); color:#fff; border-style:solid; }
@@ -5419,10 +5422,36 @@ function reorganize(){
 
   /* ---------- 3. חניכים ---------- */
   const gr=mkSec('groups');
-  const grItems = [{k:'ya',label:"🎓 שכבת יא' — שכבתי",hl:true}].concat(GROUPS_YA.map(g=>({k:g,label:`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${GRP_CLR[g]};margin-left:6px;"></span>${g} (${stuOf(g).length})`}))
+  const grItems = [{k:'ya',label:"📚 כל השכבה",hl:true}].concat(GROUPS_YA.map(g=>({k:g,label:`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${GRP_CLR[g]};margin-left:6px;"></span>${g} (${stuOf(g).length})`}))
     ).concat([{k:'yb',label:`🌊 קהילת יב' (${stuOfLayer("יב'").length})`},
              {k:'academy',label:`🏀 אקדמיה (${ACAD_STUDENTS.length})`}]);
   gr.appendChild(mkNav('gr',grItems,pickIn(gr,'gr')));
+  /* שתי רמות: שכבת יא' (ומתחתיה כל השכבה + שלדג, שחף, שיר) · קהילת יב' · אקדמיה לכדורסל.
+     הכפתורים המקוריים נשארים (המסננים לפי הרשאה ומסך "הקבוצה שלי" לוחצים עליהם), ורק התצוגה משתנה */
+  const GR_TOP=[{k:'ya',label:`🎓 שכבת יא' (${stuOfLayer("יא'").length})`,keys:['ya'].concat(GROUPS_YA)},
+                {k:'yb',label:`🌊 קהילת יב' (${stuOfLayer("יב'").length})`,keys:['yb']},
+                {k:'academy',label:`🏀 אקדמיה לכדורסל (${ACAD_STUDENTS.length})`,keys:['academy']}];
+  const grTop=document.createElement('div'); grTop.className='subnav'; grTop.id='grTopNav';
+  grTop.innerHTML=GR_TOP.map(x=>`<button data-top="${x.k}">${x.label}</button>`).join('');
+  gr.insertBefore(grTop, gr.firstChild);
+  const grSub=document.getElementById('grSubnav')||gr.querySelector('.subnav:not(#grTopNav)'); if(grSub) grSub.classList.add('subnav-2');
+  const topOf=k=>(GR_TOP.find(x=>x.keys.includes(k))||{}).k;
+  window.grSync=function(){
+    const sub=document.getElementById('grSubnav'); if(!sub) return;
+    const act=sub.querySelector('button.active'), cur=topOf(act&&act.dataset.k);
+    sub.querySelectorAll('button').forEach(b=>b.style.display=(cur==='ya'&&topOf(b.dataset.k)==='ya')?'':'none');
+    sub.style.display=cur==='ya'?'':'none';
+    grTop.querySelectorAll('button').forEach(b=>{ const T=GR_TOP.find(x=>x.k===b.dataset.top);
+      b.style.display=T.keys.some(k=>sub.querySelector(`button[data-k="${k}"]`))?'':'none';
+      b.classList.toggle('active',b.dataset.top===cur); });
+  };
+  grTop.addEventListener('click',e=>{ const b=e.target.closest('button[data-top]'); if(!b) return;
+    const sub=document.getElementById('grSubnav'), T=GR_TOP.find(x=>x.k===b.dataset.top);
+    const act=sub.querySelector('button.active');
+    if(act&&T.keys.includes(act.dataset.k)) return grSync();
+    const first=T.keys.map(k=>sub.querySelector(`button[data-k="${k}"]`)).find(Boolean); if(first) first.click(); grSync(); });
+  if(grSub) grSub.addEventListener('click',()=>setTimeout(grSync,0));
+  setTimeout(()=>window.grSync&&grSync(),0);
 
   // ── שכבת יא' — חומרים שכבתיים ──
   const secYA=mkSub('gr-ya',true);
@@ -5634,7 +5663,7 @@ function reorganize(){
   if(window.renderYaSept) renderYaSept();
   if(window.renderYaFiles) renderYaFiles();
   if(window.renderUsers) renderUsers();
-  applyPerms();
+  applyPerms(); if(window.grSync) grSync();
   SYNC.init();
 }
 
@@ -7881,7 +7910,7 @@ window.syncRamzorFromSheet = async function() {
   }
 };
 </script>
-<script src="msg.js?v=2"></script>
+<script src="msg.js?v=3"></script>
 <script src="home.js?v=1"></script>
 </body>
 </html>
