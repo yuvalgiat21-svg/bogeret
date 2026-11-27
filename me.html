@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>בוגרת — האפליקציה שלי</title>
+<meta name="theme-color" content="#8E033C">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="me.webmanifest">
+<link rel="icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="בוגרת שלי">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800;900&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  האפליקציה של החניכים (שכבה בוגרת, מבואות ים).
+  • כניסה בקוד אישי בלבד (יובל מפיק בפורטל ← נוכחות). כל חניך/ה רואה רק את עצמו/ה.
+  • בדיקת נוכחות: 08:00 ו-20:00 — בכפר / לא בכפר + סיבה + פירוט.
+  • בקשת יציאה → קישור להורה בוואטסאפ (parent.html) → אישור מדריך/ה (ואם צריך: מנהלת מרכז הלמידה / רכזת המח"מ) → אישור לשער.
+  אין כאן נתוני חניכים: הכול נטען מהאזור המוגן אחרי הכניסה.
+-->
+<style>
+:root{--o:#FC5028;--b:#8E033C;--bg:#FFF1EB;--bd:#F3C2B0;--mut:#7A6A66;--ok:#15803d;--err:#b91c1c;--warn:#b45309}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Assistant,Heebo,Arial,sans-serif;color:#2b1d1a;font-size:16px;-webkit-tap-highlight-color:transparent}
+h1,h2,h3,.hd{font-family:Heebo,Arial,sans-serif}
+.wrap{max-width:480px;margin:0 auto;padding:16px 16px 40px}
+.top{background:linear-gradient(135deg,var(--b),var(--o));color:#fff;padding:22px 18px 18px;border-radius:0 0 24px 24px;margin:-16px -16px 16px}
+.top h1{margin:0;font-size:24px;font-weight:900}.top small{opacity:.9}
+.card{background:#fff;border:1px solid var(--bd);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(142,3,60,.06)}
+.card h2{margin:0 0 10px;font-size:18px;font-weight:800}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:14px;font:800 17px Heebo,sans-serif;cursor:pointer;margin-top:8px}
+.btn.pri{background:var(--o);color:#fff}.btn.sec{background:#fff;color:var(--b);border:2px solid var(--bd)}
+.btn.yes{background:var(--ok);color:#fff}.btn.no{background:#fff;color:var(--err);border:2px solid #fecaca}
+.btn:disabled{opacity:.5}
+.row2{display:flex;gap:10px}.row2>*{flex:1}
+label{display:block;font-weight:700;font-size:14px;margin:10px 0 4px}
+input,select,textarea{width:100%;font:16px Assistant,sans-serif;padding:12px;border:1.5px solid var(--bd);border-radius:12px;background:#fff;color:inherit}
+textarea{min-height:64px;resize:vertical}
+.mut{color:var(--mut);font-size:14px}
+.tag{display:inline-block;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:700;margin:2px;background:#f3f4f6}
+.tag.ok{background:#dcfce7;color:var(--ok)}.tag.w{background:#fef3c7;color:var(--warn)}.tag.e{background:#fee2e2;color:var(--err)}
+.done{background:#f0fdf4;border-color:#bbf7d0}
+.code{font:900 28px monospace;letter-spacing:3px;text-align:center;direction:ltr;text-transform:uppercase}
+.err{color:var(--err);font-weight:700;margin-top:8px;min-height:20px}
+.ex{border-top:1px solid #f1e4df;padding:12px 0}.ex:first-child{border-top:0}
+#pass{position:fixed;inset:0;background:#f0fdf4;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;z-index:9}
+#pass.on{display:flex}
+.pbox{border:4px solid var(--ok);border-radius:22px;padding:22px 18px;background:#fff;width:100%;max-width:420px}
+.clock{font:900 44px Heebo,monospace;color:var(--ok);direction:ltr}
+.pulse{animation:p 1.6s infinite}@keyframes p{50%{opacity:.45}}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2b1d1a;color:#fff;padding:10px 18px;border-radius:999px;font-weight:700;z-index:10;max-width:90vw}
+a{color:var(--b)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="card mut" style="margin-top:40px;text-align:center">טוען…</div></div>
+<div id="pass"></div>
+<script type="module">
+const FB_CONFIG={apiKey:"AIzaSyDytvmAX1Sm8KEKINOreUeRutDbnxinVXA",authDomain:"yudbet-almog.firebaseapp.com",databaseURL:"https://yudbet-almog-default-rtdb.europe-west1.firebasedatabase.app",projectId:"yudbet-almog",storageBucket:"yudbet-almog.firebasestorage.app",messagingSenderId:"933488998542",appId:"1:933488998542:web:c3a36396573c808ba071df"};
+const VAPID='BOQ6aLW_3pNxIj8JwWTH76OIv-uTAx68RxDsLx9oav1I0NOXJVF4W3oNuuyWcnMdggFj1kNSPk8AC9d96_o7Zk4';
+const ROOT='portal/bogeret/secure';
+const V='10.12.0', G=`https://www.gstatic.com/firebasejs/${V}/`;
+const appM=await import(G+'firebase-app.js'), authM=await import(G+'firebase-auth.js'), dbM=await import(G+'firebase-database.js');
+const app=appM.getApps().length?appM.getApp():appM.initializeApp(FB_CONFIG);
+const auth=authM.getAuth(app), rdb=dbM.getDatabase(app);
+await authM.setPersistence(auth,authM.browserLocalPersistence).catch(()=>{});
+const {ref,get,set,update,onValue}=dbM;
+
+const REASONS=['בבית / חופשה','מחלה','סיבה אישית / משפחתית','יציאה מאושרת','פעילות מחוץ לכפר','אחר'];
+const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const fmt=s=>{const [y,m,d]=s.split('-');return `${+d}.${+m}`};
+const dayN=s=>DAYS[new Date(s+'T12:00').getDay()];
+const hh=h=>pad(h)+':00';
+const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)};
+const rnd=n=>{const A='abcdefghijkmnpqrstuvwxyz23456789',a=new Uint32Array(n);crypto.getRandomValues(a);return [...a].map(x=>A[x%A.length]).join('')};
+async function sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+const norm=c=>String(c||'').toUpperCase().replace(/[^0-9A-Z]/g,'');
+/* חלון הבדיקה: בוקר 05:00–13:59 · ערב 17:00–23:59 */
+function curSlot(){const d=new Date(),h=d.getHours();if(h>=5&&h<14)return {c:iso(d)+'_m',l:'בוקר',t:'08:00'};if(h>=17)return {c:iso(d)+'_e',l:'ערב',t:'20:00'};return null}
+
+let K=null, P=null, CFG={}, MYCHK=null, X={}, XS={}, unsub=[], VIEW='home';
+
+/* ── כניסה ── */
+function loginView(msg){
+  $('#app').innerHTML=`<div class="top"><h1>שלום 👋</h1><small>האפליקציה של השכבה הבוגרת · מבואות ים</small></div>
+  <div class="card"><h2>כניסה עם הקוד האישי</h2>
+   <div class="mut">את הקוד קיבלת מהמדריך/ה. הוא אישי — לא מעבירים אותו לאף אחד.</div>
+   <input id="code" class="code" maxlength="9" placeholder="XXXX-XXXX" autocomplete="one-time-code" inputmode="latin" autocapitalize="characters" spellcheck="false" style="margin-top:12px">
+   <button class="btn pri" id="go">כניסה</button><div class="err" id="er">${esc(msg||'')}</div></div>`;
+  const c=$('#code'); c.oninput=()=>{let v=norm(c.value).slice(0,8);c.value=v.length>4?v.slice(0,4)+'-'+v.slice(4):v};
+  c.onkeydown=e=>{if(e.key==='Enter')$('#go').click()};
+  $('#go').onclick=async()=>{
+    const code=norm(c.value); if(code.length!==8){$('#er').textContent='הקוד צריך להיות 8 תווים';return}
+    $('#go').disabled=true;$('#er').textContent='';
+    try{ await authM.signInWithEmailAndPassword(auth,(await sha('st:'+code)).slice(0,20)+'@st.bogeret.app',code); }
+    catch(e){ $('#go').disabled=false; $('#er').textContent=/too-many/.test(e.code||'')?'יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.':'הקוד לא נכון. בדקו שוב או פנו למדריך/ה.'; }
+  };
+}
+authM.onAuthStateChanged(auth,async u=>{
+  unsub.forEach(f=>{try{f()}catch(e){}});unsub=[];
+  if(!u||!/^st_[0-9a-f]{12}$/.test(u.uid)){ if(u) await authM.signOut(auth); return loginView(); }
+  K=u.uid.slice(3);
+  try{ P=(await get(ref(rdb,`${ROOT}/stu/${K}/p`))).val()||{}; }catch(e){ return loginView('אין גישה. פנו למדריך/ה.'); }
+  get(ref(rdb,`${ROOT}/chk_cfg`)).then(s=>{CFG=s.val()||{};render()}).catch(()=>{});
+  unsub.push(onValue(ref(rdb,`${ROOT}/stu/${K}/x`),s=>{X=s.val()||{};render()}));
+  unsub.push(onValue(ref(rdb,`${ROOT}/stu/${K}/xs`),s=>{XS=s.val()||{};render();passRefresh()}));
+  watchChk();
+  render(); pushRefresh();
+  setInterval(()=>{ const s=curSlot(); if((s&&s.c)!==CUR){ watchChk(); render(); } },60000);
+});
+let CUR=null, chkUn=null;
+function watchChk(){
+  const s=curSlot(); CUR=s&&s.c; if(chkUn){chkUn();chkUn=null} MYCHK=null;
+  if(s) chkUn=onValue(ref(rdb,`${ROOT}/chk/${s.c}/${K}`),sn=>{MYCHK=sn.val();render()},()=>{});
+}
+
+/* ── מסך ראשי ── */
+function render(){
+  if(!K) return;
+  if(VIEW==='exit'){ if(!$('#sx')) exitForm(); return; }   /* לא מוחקים טופס באמצע מילוי */
+  const keep=AWAY&&$('#dt')?{r:$('#rs').value,d:$('#dt').value}:null;
+  const first=String(P.n||'').split(' ')[0];
+  $('#app').innerHTML=`<div class="top"><h1>שלום ${esc(first)} 👋</h1><small>${esc(P.g||'')} · השכבה הבוגרת, מבואות ים</small></div>
+   ${chkCard()}
+   <div class="card"><h2>🚪 יציאה מהכפר</h2><div class="mut">ממלאים בקשה → שולחים להורה בוואטסאפ → ההורה מאשר/ת → המדריך/ה מאשר/ת → מקבלים כאן אישור לשער.</div>
+    <button class="btn pri" id="nx">בקשת יציאה חדשה</button>${exitsList()}</div>
+   ${pushCard()}
+   <div style="text-align:center;margin-top:18px"><a href="#" id="lo" class="mut">יציאה מהחשבון</a></div>`;
+  if(keep&&$('#dt')){ $('#rs').value=keep.r; $('#dt').value=keep.d; }
+  bindHome();
+}
+function chkCard(){
+  if(!CFG.on) return '';
+  const s=curSlot();
+  if(!s) return `<div class="card"><h2>📍 בדיקת נוכחות</h2><div class="mut">הבדיקה הבאה ב-${new Date().getHours()<5?'08:00':'20:00'}. תקבלו הודעה לטלפון.</div></div>`;
+  if(MYCHK&&!CHG) return `<div class="card done"><h2>📍 בדיקת ${s.l} — ענית ✓</h2>
+    <div style="font-size:18px;font-weight:800;color:${MYCHK.h?'var(--ok)':'var(--err)'}">${MYCHK.h?'אני בכפר':'אני לא בכפר'}</div>
+    ${MYCHK.h?'':`<div class="mut">${esc(MYCHK.r||'')}${MYCHK.d?' — '+esc(MYCHK.d):''}</div>`}
+    <button class="btn sec" id="chg">שינוי התשובה</button></div>`;
+  return `<div class="card"><h2>📍 בדיקת ${s.l} (${s.t}) — איפה את/ה עכשיו?</h2>
+   ${AWAY?`<label>מה הסיבה?</label><select id="rs">${REASONS.map(r=>`<option>${r}</option>`).join('')}</select>
+     <label>פירוט קצר</label><textarea id="dt" placeholder="למשל: בבית אצל ההורים, חוזר/ת ביום ראשון"></textarea>
+     <button class="btn pri" id="sendAway">שליחה</button><button class="btn sec" id="back">חזרה</button>`
+   :`<button class="btn yes" id="here">✓ אני בכפר</button><button class="btn no" id="away">✕ אני לא בכפר</button>`}</div>`;
+}
+let AWAY=false, CHG=false;
+async function sendChk(h,r,d){
+  const s=curSlot(); if(!s) return toast('חלון הבדיקה נסגר');
+  try{ await set(ref(rdb,`${ROOT}/chk/${s.c}/${K}`),{h:h?1:0,r:r||'',d:d||'',at:Date.now()}); AWAY=false;CHG=false; toast('✓ נשלח למדריך/ה'); render(); }
+  catch(e){ toast('השליחה נכשלה — בדקו אינטרנט'); }
+}
+function st(e,id){ return XS[id]||{st:'pending'}; }
+function exitsList(){
+  const today=iso(new Date());
+  const ids=Object.keys(X).filter(id=>X[id]&&X[id].date>=today).sort((a,b)=>X[a].date.localeCompare(X[b].date)||X[a].from-X[b].from);
+  if(!ids.length) return '';
+  return '<div style="margin-top:14px">'+ids.map(id=>{const e=X[id],s=st(e,id);
+    const tags=s.st==='approved'?'<span class="tag ok">✓ אושר</span>':s.st==='rejected'?`<span class="tag e">✕ לא אושר${s.by?' ('+esc(s.by)+')':''}</span>`:
+      `<span class="tag ${s.par?'ok':'w'}">${s.par?'✓':'⏳'} הורים</span><span class="tag ${s.mad?'ok':'w'}">${s.mad?'✓':'⏳'} מדריך/ה</span>${(s.need||[]).map(n=>`<span class="tag w">⏳ ${esc(n)}</span>`).join('')}`;
+    return `<div class="ex"><b>${dayN(e.date)} ${fmt(e.date)} · ${hh(e.from)}–${hh(e.to)}</b><div class="mut">${esc(e.reason)}</div><div>${tags}</div>
+      ${(s.cf||[]).length&&s.st==='pending'?`<div class="mut" style="font-size:13px">⚠️ באותו זמן יש לך: ${s.cf.map(esc).join(' · ')}</div>`:''}
+      ${s.st==='approved'?`<button class="btn yes" data-pass="${id}">🎫 אישור יציאה לשער</button>`:''}
+      ${s.st==='pending'&&!s.par?`<button class="btn sec" data-wa="${id}">📲 שליחה שוב להורה בוואטסאפ</button>`:''}</div>`}).join('')+'</div>';
+}
+function bindHome(){
+  const on=(id,f)=>{const e=$('#'+id);if(e)e.onclick=f};
+  on('here',()=>sendChk(1));
+  on('away',()=>{AWAY=true;render()});
+  on('back',()=>{AWAY=false;render()});
+  on('chg',()=>{CHG=true;render()});
+  on('sendAway',()=>sendChk(0,$('#rs').value,$('#dt').value.trim()));
+  on('nx',()=>{VIEW='exit';render()});
+  on('lo',e=>{e.preventDefault();if(confirm('לצאת מהחשבון? כדי להיכנס שוב צריך את הקוד.'))authM.signOut(auth)});
+  on('pushOn',pushEnable);
+  document.querySelectorAll('[data-pass]').forEach(b=>b.onclick=()=>openPass(b.dataset.pass));
+  document.querySelectorAll('[data-wa]').forEach(b=>b.onclick=()=>shareParent(b.dataset.wa));
+}
+
+/* ── בקשת יציאה ── */
+function exitForm(){
+  const t=new Date(), hrs=[...Array(18)].map((_,i)=>i+6);
+  $('#app').innerHTML=`<div class="top"><h1>🚪 בקשת יציאה</h1><small>${esc(P.n||'')} · ${esc(P.g||'')}</small></div>
+  <div class="card"><label>באיזה יום?</label><input type="date" id="d" min="${iso(t)}" value="${iso(t)}">
+   <div class="row2"><div><label>יציאה בשעה</label><select id="f">${hrs.map(h=>`<option value="${h}" ${h===16?'selected':''}>${hh(h)}</option>`).join('')}</select></div>
+   <div><label>חזרה בשעה</label><select id="t">${hrs.map(h=>`<option value="${h}" ${h===20?'selected':''}>${hh(h)}</option>`).join('')}</select></div></div>
+   <label>לאן ולמה?</label><textarea id="r" placeholder="למשל: תור לרופא שיניים בחדרה"></textarea>
+   <div class="mut" style="margin-top:8px">אחרי השליחה תקבלו קישור לשלוח להורה בוואטסאפ.</div>
+   <button class="btn pri" id="sx">שליחת הבקשה</button><button class="btn sec" id="cx">ביטול</button><div class="err" id="er"></div></div>`;
+  $('#cx').onclick=()=>{VIEW='home';render()};
+  $('#sx').onclick=async()=>{
+    const date=$('#d').value, from=+$('#f').value, to=+$('#t').value, reason=$('#r').value.trim();
+    if(!date||date<iso(new Date())) return $('#er').textContent='בחרו תאריך מהיום והלאה';
+    if(to<=from) return $('#er').textContent='שעת החזרה צריכה להיות אחרי שעת היציאה';
+    if(!reason) return $('#er').textContent='כתבו לאן ולמה';
+    $('#sx').disabled=true;
+    const id=Date.now().toString(36)+rnd(4), tok=rnd(24), at=Date.now();
+    try{
+      await set(ref(rdb,`${ROOT}/par/${tok}`),{k:K,n:P.n||'',g:P.g||'',date,from,to,reason,at});
+      await set(ref(rdb,`${ROOT}/stu/${K}/x/${id}`),{date,from,to,reason,at,t:tok});
+      VIEW='home'; render(); shareParent(id,{date,from,to,reason,t:tok});
+    }catch(e){ $('#sx').disabled=false; $('#er').textContent='השליחה נכשלה — בדקו אינטרנט ונסו שוב'; }
+  };
+}
+function parentLink(t){ return location.origin+location.pathname.replace(/[^/]*$/,'')+'parent.html?t='+t; }
+function shareParent(id,e){
+  e=e||X[id]; if(!e) return;
+  const first=String(P.n||'').split(' ')[0];
+  const txt=`היי, זה ${first} 🙂 ביקשתי לצאת מהכפר ב${dayN(e.date)} ${fmt(e.date)} בין ${hh(e.from)} ל-${hh(e.to)} (${e.reason}).\nצריך את האישור שלך כאן: ${parentLink(e.t)}`;
+  const box=document.createElement('div');
+  box.innerHTML=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8;display:flex;align-items:flex-end"><div class="card" style="width:100%;max-width:480px;margin:0 auto;border-radius:22px 22px 0 0">
+   <h2>✓ הבקשה נשמרה — עכשיו להורה</h2><div class="mut">שלחו להורה את הקישור. ההורה פותח/ת, מאשר/ת, והבקשה עוברת למדריך/ה.</div>
+   <a class="btn yes" style="text-align:center;text-decoration:none" target="_blank" href="https://wa.me/?text=${encodeURIComponent(txt)}">📲 שליחה בוואטסאפ</a>
+   <button class="btn sec" id="cpy">📋 העתקת הקישור</button><button class="btn sec" id="cls">סגירה</button></div></div>`;
+  document.body.appendChild(box);
+  box.querySelector('#cpy').onclick=()=>navigator.clipboard.writeText(txt).then(()=>toast('הועתק'),()=>prompt('העתיקו:',txt));
+  box.querySelector('#cls').onclick=()=>box.remove();
+}
+
+/* ── אישור לשער: שעון חי (צילום מסך לא ייראה חי) ── */
+let PASS=null, tick=null;
+function openPass(id){PASS=id;passRefresh();}
+function passRefresh(){
+  const el=$('#pass'); if(!PASS){el.classList.remove('on');return}
+  const e=X[PASS], s=XS[PASS]||{}; if(!e||s.st!=='approved'){PASS=null;el.classList.remove('on');return}
+  const today=iso(new Date())===e.date;
+  el.innerHTML=`<div class="pbox"><div style="color:var(--ok);font-weight:800">מבואות ים · שכבה בוגרת</div>
+   <div class="hd" style="font-size:30px;font-weight:900;margin:6px 0">${esc(P.n||'')}</div><div class="mut">${esc(P.g||'')}</div>
+   <div class="hd" style="font-size:21px;font-weight:800;margin:14px 0">${dayN(e.date)} ${fmt(e.date)}<br>יציאה ${hh(e.from)} · חזרה ${hh(e.to)}</div>
+   <div class="hd ${today?'pulse':''}" style="font-size:20px;font-weight:900;color:${today?'var(--ok)':'var(--warn)'}">${today?'✓ יציאה מאושרת':'⚠️ האישור תקף רק ב-'+fmt(e.date)}</div>
+   <div class="clock" id="clk"></div><div class="mut" id="cld"></div>
+   <div class="mut" style="font-size:13px;margin-top:8px">הורים ✓ · מדריך/ה ✓${(s.ovr||[]).map(r=>' · '+esc(r)+' ✓').join('')}</div>
+   <div class="mut" style="font-size:12px">מספר אישור ${esc(s.no||'')}</div></div>
+   <button class="btn sec" id="pcl" style="max-width:420px">סגירה</button>`;
+  el.classList.add('on'); $('#pcl').onclick=()=>{PASS=null;el.classList.remove('on')};
+  const t=()=>{const d=new Date(),c=$('#clk');if(!c)return;c.textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());$('#cld').textContent=dayN(iso(d))+' '+d.toLocaleDateString('he-IL')};
+  clearInterval(tick);t();tick=setInterval(t,1000);
+}
+
+/* ── התראות לטלפון ── */
+const supported=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
+const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+function pushOnState(){ try{return Notification.permission==='granted'&&localStorage.getItem('bogeret_me_push')==='1'}catch(e){return false} }
+function pushCard(){
+  if(supported()&&pushOnState()) return '<div class="mut" style="text-align:center">🔔 התראות פעילות בטלפון הזה</div>';
+  const ios=isIOS()&&!standalone();
+  return `<div class="card"><h2>🔔 התראות לטלפון</h2><div class="mut">${ios?'באייפון: בספארי לוחצים על כפתור השיתוף ← "הוספה למסך הבית", פותחים את האפליקציה מהאייקון ולוחצים כאן.':'כדי לקבל את הבדיקה של 08:00 ו-20:00 ועדכונים על היציאות.'}</div>
+   <button class="btn pri" id="pushOn">הפעלת התראות</button></div>`;
+}
+async function register(){
+  const reg=await navigator.serviceWorker.register('firebase-messaging-sw.js',{scope:'./'}); await navigator.serviceWorker.ready;
+  const mm=await import(G+'firebase-messaging.js'); if(!(await mm.isSupported())) throw new Error('לא נתמך');
+  const m=mm.getMessaging(app), tok=await mm.getToken(m,{vapidKey:VAPID,serviceWorkerRegistration:reg}); if(!tok) throw new Error('no token');
+  await set(ref(rdb,`${ROOT}/push/st_${K}/${(await sha(tok)).slice(0,24)}`),{t:tok,at:Date.now(),n:P.n||'',st:1,ua:navigator.userAgent.slice(0,120)});
+  try{localStorage.setItem('bogeret_me_push','1')}catch(e){}
+  mm.onMessage(m,p=>{const n=(p&&p.notification)||{};toast((n.title||'')+(n.body?' — '+n.body:''))});
+}
+async function pushEnable(){
+  if(!supported()) return alert(isIOS()&&!standalone()?'באייפון: ספארי ← שיתוף ← "הוספה למסך הבית", ואז פותחים מהאייקון ולוחצים שוב.':'הדפדפן הזה לא תומך בהתראות. נסו בכרום.');
+  try{ if((await Notification.requestPermission())!=='granted') return alert('ההתראות לא אושרו. אפשר לאשר בהגדרות הדפדפן.');
+    await register(); toast('🔔 ההתראות הופעלו'); render(); }catch(e){ alert('ההפעלה נכשלה: '+(e.message||e)); }
+}
+function pushRefresh(){ if(supported()&&Notification.permission==='granted') register().catch(e=>console.warn('push',e)); }
+</script>
+</body>
+</html>

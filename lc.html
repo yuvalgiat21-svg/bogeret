@@ -222,6 +222,61 @@ function liveSave(){
   if(!DB)return;const up={};
   for(const c of COLS){const str=JSON.stringify(S[c]);if(str!==LAST[c]){LAST[c]=str;up[c]=str}}
   if(Object.keys(up).length)DB.dbm.update(DB.dbm.ref(DB.rdb,LC_PATH),up).catch(e=>toast('השמירה נכשלה — בדקו חיבור לאינטרנט','err'));
+  stuPublish();
+}
+/* ── גשר לאפליקציית החניכים (me.html) ולדף ההורים (parent.html) ──
+   • בקשות יציאה שחניכים שלחו מהטלפון (secure/stu/<k>/x) נכנסות לכאן כבקשה רגילה (id = sx_<מזהה>).
+   • תשובת ההורה מהקישור (secure/par/<קוד>/ans) נרשמת כ"הורים אישרו".
+   • המצב של כל בקשה נשלח חזרה לטלפון של החניך/ה (secure/stu/<k>/xs) — כולל האישור לשער.
+   • "לא בכפר" בבדיקת הנוכחות של היום חוסם שיבוץ לתגבור ולחוג. */
+let STU={},PAR={},CHK={},N2K={},K2N={};
+const SROOT='portal/bogeret/secure';
+function stuKeys(){N2K={};K2N={};if(!P||!P.key)return;S.students.forEach(s=>{const k=P.key(s.id);N2K[s.id]=k;K2N[k]=s.id})}
+function stuInit(){
+  if(!P||!P.key)return;stuKeys();
+  const on=(p,f)=>DB.dbm.onValue(DB.dbm.ref(DB.rdb,`${SROOT}/${p}`),sn=>{f(sn.val()||{});stuBridge()},e=>console.warn('stu bridge',p,e&&e.code));
+  on('stu',v=>STU=v);on('par',v=>PAR=v);
+  const t=todayIso();['m','e'].forEach(sl=>{on(`chk/${t}_${sl}`,v=>CHK['a'+sl]=v);on(`chkv/${t}_${sl}`,v=>CHK['v'+sl]=v)});
+}
+function stuBridge(){
+  if(!S)return;if(!Object.keys(K2N).length)stuKeys();let ch=false;const fin=[];
+  for(const [k,u] of Object.entries(STU)){
+    const name=K2N[k];if(!name||!ST(name))continue;
+    for(const [rid,x] of Object.entries((u&&u.x)||{})){
+      if(!x||!x.date)continue;const id='sx_'+rid;let e=S.exits.find(z=>z.id===id);
+      if(!e){e={id,sid:name,date:x.date,from:+x.from,to:+x.to,reason:x.reason||'יציאה',status:'pending',by:'חניך/ה (מהטלפון)',ts:x.at||Date.now(),k,rid,tok:x.t||''};
+        S.exits.push(e);ch=true;log(`${name} ביקש/ה יציאה מהטלפון ב-${fmt(e.date)}`)}
+      const a=e.tok&&PAR[e.tok]&&PAR[e.tok].ans;
+      if(a&&e.status==='pending'&&!e.parOk&&!e.parNo){
+        if(a.ok){e.parOk={how:'בקישור האישי להורים',who:a.pn||'',by:'',at:a.at};ch=true;
+          log(`ההורים של ${name} אישרו בקישור יציאה ב-${fmt(e.date)}`);
+          notify('madrich',`ההורים של ${name} אישרו יציאה ב-${fmt(e.date)} (${hh(e.from)}–${hh(e.to)}) — מחכה לאישורך`);
+          if(e.madOk){const miss=exitMissing(e);if(miss.length)askOverride(e);else fin.push(e)}}
+        else{e.parNo={who:a.pn||'',at:a.at};e.status='rejected';e.decidedBy='ההורים';ch=true;log(`ההורים של ${name} לא אישרו יציאה ב-${fmt(e.date)}`)}
+      }
+    }
+  }
+  if(fin.length){fin.forEach(e=>exitFinal(e,true));return}   /* אישור אחרון = ההורים → אישור סופי (כולל החזרת תגבורים לשיבוץ) */
+  if(ch){save();if(!$('#modal').classList.contains('open'))render()}else stuPublish();
+}
+let PUB={};
+const canon=o=>JSON.stringify(Object.keys(o).sort().reduce((a,k)=>(a[k]=o[k],a),{}));
+function stuPublish(){
+  if(!DB||!P||!P.key)return;const up={};
+  S.exits.forEach(e=>{if(!e.k||!e.rid)return;
+    const v={st:e.status,mad:e.madOk?1:0,par:e.parOk?1:0,need:e.status==='pending'?exitMissing(e).map(r=>OVR_L[r]):[],
+      ovr:Object.keys(e.ovr||{}).filter(r=>e.ovr[r].ok).map(r=>OVR_L[r]),cf:e.status==='pending'?exitConflicts(e).filter(c=>c.type!=='school').map(c=>c.label):[],
+      no:e.id.slice(-6).toUpperCase(),by:e.status==='rejected'?(e.decidedBy||''):''};
+    const str=canon(v),cur=((STU[e.k]||{}).xs||{})[e.rid];
+    if(PUB[e.id]===str||(cur&&canon(Object.assign({need:[],ovr:[],cf:[]},cur))===str))return;
+    PUB[e.id]=str;up[`${e.k}/xs/${e.rid}`]=v});
+  if(Object.keys(up).length)DB.dbm.update(DB.dbm.ref(DB.rdb,`${SROOT}/stu`),up).catch(e=>{console.warn('xs',e);PUB={}});
+}
+/* בדיקת הנוכחות של היום: הסטטוס המאושר של המדריך/ה קודם, אחריו תשובת החניך/ה. הערב גובר על הבוקר */
+function awayToday(sid){
+  const k=N2K[sid];if(!k)return null;
+  for(const sl of ['e','m']){const v=(CHK['v'+sl]||{})[k]||(CHK['a'+sl]||{})[k];if(v)return v.h?null:v}
+  return null;
 }
 function madrichGroups(me){
   const all=[...new Set(S.students.map(s=>s.group))];
@@ -250,6 +305,7 @@ async function liveInit(){
     applyRemote((await DB.dbm.get(ref)).val()||{});
     setupRole();render();
     DB.dbm.onValue(ref,sn=>{if(applyRemote(sn.val()||{})&&!$('#modal').classList.contains('open'))render()});
+    stuInit();
   }catch(e){console.warn(e);$('#app').innerHTML='<div class="empty">⚠️ לא הצלחנו לטעון את נתוני מרכז הלמידה. רעננו את הפורטל ונסו שוב.</div>'}
 }
 const T=id=>S.teachers.find(t=>t.id===id);
@@ -779,6 +835,7 @@ function blockers(sid,w,d,h){
   if(st&&st.busy.includes(a))out.push({type:'school',label:'שיעור בבית הספר'});
   S.activities.forEach(ac=>{if(ac.slots.includes(a)&&ac.participants.includes(sid))out.push({type:'act',label:ac.name,id:ac.id})});
   S.exits.forEach(e=>{if(e.sid===sid&&e.status==='approved'&&e.date===date&&h>=e.from&&h<e.to)out.push({type:'exit',label:'יציאה · '+e.reason,id:e.id})});
+  if(LIVE&&date===todayIso()){const aw=awayToday(sid);if(aw)out.push({type:'exit',label:'לא בכפר היום · '+(aw.r||'בדיקת נוכחות')})}
   return out;
 }
 function cellItems(sid,w,d,h){

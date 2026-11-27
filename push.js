@@ -34,7 +34,7 @@ async function register(){
   if(!tok) throw new Error('no token');
   const u=me(); const {dbm,rdb}=await secureDb();
   await dbm.set(dbm.ref(rdb,`${PUSH_PATH}/${u.id}/${await devKey(tok)}`),
-    {t:tok, at:Date.now(), n:u.n||'', scope:u.scope||'', mode:u.mode||'', ua:(navigator.userAgent||'').slice(0,120)});
+    {t:tok, at:Date.now(), n:u.n||'', r:u.r||'', scope:u.scope||'', mode:u.mode||'', ua:(navigator.userAgent||'').slice(0,120)});
   try{ localStorage.setItem('bogeret_push_on','1'); }catch(e){}
   /* הודעה כשהפורטל פתוח — מוצגת בתוך הפורטל */
   mm.onMessage(m,p=>{ const n=(p&&p.notification)||{}; if(window.msgToast) msgToast((n.title||'')+(n.body?' — '+n.body:'')); });
@@ -77,10 +77,14 @@ window.pushUi=pushUi;
 /* אחרי הכניסה: אם כבר אושר — מרעננים את הרישום בשקט */
 window.pushAfterLogin=function(){
   pushUi();
-  /* פתיחה מתוך התראה: ?open=task:<id> או ?open=post:<id> */
+  /* פתיחה מתוך התראה: ?open=task:<id> · post:<id> · att: (בדיקת נוכחות) · exits: (אישורי יציאה) */
   try{ const o=new URLSearchParams(location.search).get('open')||'';
-    if(o){ const [k,id]=o.split(':'); show('msg');
-      setTimeout(()=>{ if(k==='task'&&window.msgOpenTask) msgOpenTask(id); else if(k==='post'&&window.msgView) msgView('posts'); },1500);
+    if(o){ const [k,id]=o.split(':');
+      if(k==='att'||k==='exits'){ show('attendance');
+        setTimeout(()=>{ if(k==='exits'){ const b=[...document.querySelectorAll('#atSubnav button')].find(x=>x.textContent.includes('יציאה')); if(b) b.click(); }
+          else if(window.chkRender){ const t=document.querySelector('#chkdash [data-tg]'); if(t&&!document.querySelector('#chkdash [data-approve]')) t.click(); } },1200); }
+      else { show('msg');
+      setTimeout(()=>{ if(k==='task'&&window.msgOpenTask) msgOpenTask(id); else if(k==='post'&&window.msgView) msgView('posts'); },1500); }
       history.replaceState(null,'',location.pathname); } }catch(e){}
   if(ready()&&supported()&&Notification.permission==='granted') register().then(pushUi).catch(e=>console.warn('push refresh',e));
 };

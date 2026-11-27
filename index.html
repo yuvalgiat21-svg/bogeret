@@ -5663,6 +5663,7 @@ function reorganize(){
 
   /* ---------- נוכחות — לשונית ראשית ---------- */
   const at=mkSec('attendance');
+  const chd=document.createElement('div'); chd.id='chkdash'; at.appendChild(chd);   /* בדיקת נוכחות מהטלפון (chk.js) */
   const atd=document.createElement('div'); atd.id='attdash'; at.appendChild(atd);
   while(old.attendance.firstChild) at.appendChild(old.attendance.firstChild);
   main.appendChild(at);
@@ -5685,6 +5686,7 @@ function reorganize(){
   if(window.scCalRender) scCalRender();
   if(window.pcalRender) pcalRender();
   if(window.attdRender) attdRender();
+  if(window.chkRender) chkRender();
   if(window.gradDocsRender) gradDocsRender();
   if(window.renderYaSept) renderYaSept();
   if(window.renderYaFiles) renderYaFiles();
@@ -6093,7 +6095,7 @@ function initApp() {
    המודול עצמו נמצא ב-lc.html ונפתח כאן בתוך מסגרת מאותו אתר.
    הוא משתמש בכניסה של הפורטל, ברשימת החניכים ובאזור המוגן portal/bogeret/secure/lc.
    תפקידים: מנהל/ת הפורטל רואה הכל · ME.lc = 'manager' | 'coord' | 'mahat' · אנשי צוות במצב עריכה = מדריכים (אישורי יציאה). */
-window.LC_BRIDGE = { me:()=>ME, students:()=>[...STUDENTS_DATA, ...ACAD_STUDENTS], db:()=>secureDb() };
+window.LC_BRIDGE = { me:()=>ME, students:()=>[...STUDENTS_DATA, ...ACAD_STUDENTS], db:()=>secureDb(), key:n=>sha256hex('stu:'+n).slice(0,12) };
 function lcRole(){ if(!ME) return null; if(ME.mode==='admin') return 'admin'; if(ME.lc) return ME.lc; if(ME.mode==='edit') return 'madrich'; return null; }
 function lcMount(){
   if(!lcRole()){ const b=document.getElementById('tab-lc'); if(b) b.remove(); return; }
@@ -6157,7 +6159,7 @@ function navRender(){
   const lf=document.getElementById('lcFrame'); if(lf&&lf.getAttribute('src')&&lf.dataset.mode!==NAV_MODE){ lf.dataset.mode=NAV_MODE; lf.setAttribute('src',lcSrc()); }
   if(window.msgBadgeRefresh) msgBadgeRefresh();
 }
-const lcSrc=()=>'lc.html?v=3'+(NAV_MODE==='classic'?'':'&nav=new');
+const lcSrc=()=>'lc.html?v=4'+(NAV_MODE==='classic'?'':'&nav=new');
 /* המנהל מחליף סרגל — נשמר בענן לכל הצוות, ומקומית למעבר מהיר */
 window.navSetMode=async function(m){
   navClose();
@@ -6188,7 +6190,7 @@ function attExitsSync(){
     ex.innerHTML='<iframe id="exitsFrame" title="אישורי יציאה" style="width:100%;height:calc(100vh - 210px);min-height:600px;border:0;border-radius:14px;background:#FBF6F3;display:block;"></iframe>';
     bar=mkNav('at',[{k:'main',label:'📊 נוכחות'},{k:'exits',label:'🚪 אישורי יציאה'}],k=>{
       at.querySelectorAll(':scope > .subsec').forEach(s=>s.classList.toggle('active',s.id==='at-'+k));
-      if(k==='exits'){ const f=document.getElementById('exitsFrame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','lc.html?v=3&only=exits'); }
+      if(k==='exits'){ const f=document.getElementById('exitsFrame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','lc.html?v=4&only=exits'); }
     });
     at.appendChild(bar); at.appendChild(main); at.appendChild(ex);
   } else if(!want&&bar){
@@ -7951,6 +7953,7 @@ window.syncRamzorFromSheet = async function() {
 </script>
 <script src="msg.js?v=3"></script>
 <script src="home.js?v=1"></script>
-<script src="push.js?v=1"></script>
+<script src="chk.js?v=1"></script>
+<script src="push.js?v=2"></script>
 </body>
 </html>

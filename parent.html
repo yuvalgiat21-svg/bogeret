@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>אישור הורים ליציאה — מבואות ים</title>
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;800;900&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<!--
+  דף אישור ההורים ליציאה מהכפר. ההורה מקבל/ת קישור אישי מהחניך/ה בוואטסאפ (parent.html?t=<קוד חד-פעמי>).
+  בלי כניסה ובלי סיסמה: הקישור עצמו הוא המפתח, ואפשר לענות עליו פעם אחת בלבד.
+  התשובה נשמרת ב- portal/bogeret/secure/par/<קוד>/ans ועוברת אוטומטית למדריך/ה בפורטל.
+-->
+<style>
+:root{--o:#FC5028;--b:#8E033C;--bg:#FFF1EB;--bd:#F3C2B0;--mut:#7A6A66;--ok:#15803d;--err:#b91c1c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Assistant,Heebo,Arial,sans-serif;color:#2b1d1a;font-size:17px}
+.wrap{max-width:480px;margin:0 auto;padding:16px}
+.top{background:linear-gradient(135deg,var(--b),var(--o));color:#fff;padding:22px 18px;border-radius:0 0 24px 24px;margin:-16px -16px 16px}
+.top h1{margin:0;font:900 23px Heebo,sans-serif}
+.card{background:#fff;border:1px solid var(--bd);border-radius:18px;padding:18px;margin-bottom:14px}
+.big{font:800 21px Heebo,sans-serif;margin:6px 0}
+.mut{color:var(--mut);font-size:15px}
+label{display:block;font-weight:700;font-size:15px;margin:12px 0 4px}
+input,select{width:100%;font:17px Assistant,sans-serif;padding:12px;border:1.5px solid var(--bd);border-radius:12px;background:#fff}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:15px;font:800 18px Heebo,sans-serif;cursor:pointer;margin-top:10px}
+.yes{background:var(--ok);color:#fff}.no{background:#fff;color:var(--err);border:2px solid #fecaca}
+.btn:disabled{opacity:.5}
+.err{color:var(--err);font-weight:700;min-height:20px;margin-top:8px}
+.res{text-align:center;padding:26px 18px}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="top"><h1>👪 אישור הורים ליציאה</h1><small>פנימיית מבואות ים · השכבה הבוגרת</small></div><div id="app"><div class="card mut">טוען…</div></div></div>
+<script type="module">
+const FB_CONFIG={apiKey:"AIzaSyDytvmAX1Sm8KEKINOreUeRutDbnxinVXA",authDomain:"yudbet-almog.firebaseapp.com",databaseURL:"https://yudbet-almog-default-rtdb.europe-west1.firebasedatabase.app",projectId:"yudbet-almog",storageBucket:"yudbet-almog.firebasestorage.app",messagingSenderId:"933488998542",appId:"1:933488998542:web:c3a36396573c808ba071df"};
+const G='https://www.gstatic.com/firebasejs/10.12.0/';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+const fmt=s=>{const [y,m,d]=s.split('-');return `${+d}.${+m}.${y}`};
+const hh=h=>String(h).padStart(2,'0')+':00';
+const t=new URLSearchParams(location.search).get('t')||'';
+const bad=m=>$('#app').innerHTML=`<div class="card res"><div style="font-size:40px">🔗</div><div class="big">${m}</div><div class="mut">אם משהו לא ברור — אפשר לפנות למדריך/ה של הקבוצה.</div></div>`;
+if(!/^[a-z0-9]{20,40}$/.test(t)) bad('הקישור לא תקין');
+else{
+  const appM=await import(G+'firebase-app.js'), dbM=await import(G+'firebase-database.js');
+  const app=appM.getApps().length?appM.getApp():appM.initializeApp(FB_CONFIG), rdb=dbM.getDatabase(app);
+  const R=dbM.ref(rdb,`portal/bogeret/secure/par/${t}`);
+  let e=null; try{ e=(await dbM.get(R)).val(); }catch(err){ console.warn(err); }
+  if(!e) bad('הקישור לא נמצא או שפג תוקפו');
+  else draw();
+  function draw(){
+    const first=String(e.n||'').split(' ')[0], day=DAYS[new Date(e.date+'T12:00').getDay()];
+    const det=`<div class="card"><div class="mut">${esc(first)} (${esc(e.g||'')}) מבקש/ת לצאת מהכפר:</div>
+      <div class="big">יום ${day}, ${fmt(e.date)}</div><div class="big">יציאה ${hh(e.from)} · חזרה ${hh(e.to)}</div>
+      <div style="margin-top:6px"><b>לאן ולמה:</b> ${esc(e.reason||'')}</div></div>`;
+    if(e.ans){ const a=e.ans;
+      $('#app').innerHTML=det+`<div class="card res"><div style="font-size:44px">${a.ok?'✅':'✋'}</div><div class="big" style="color:${a.ok?'var(--ok)':'var(--err)'}">${a.ok?'אישרת את היציאה':'לא אישרת את היציאה'}</div>
+        <div class="mut">${a.pn?esc(a.pn)+' · ':''}${new Date(a.at).toLocaleString('he-IL',{dateStyle:'short',timeStyle:'short'})}</div>
+        <div class="mut" style="margin-top:10px">${a.ok?'הבקשה עברה למדריך/ה לאישור השני. כשהכול יאושר, '+esc(first)+' יקבל/תקבל אישור יציאה בטלפון.':'הבקשה נסגרה. אם זו טעות — דברו עם המדריך/ה.'}</div></div>`;
+      return; }
+    $('#app').innerHTML=det+`<div class="card"><label>מי מאשר/ת?</label>
+      <div style="display:flex;gap:8px"><select id="rel" style="flex:0 0 40%"><option>אמא</option><option>אבא</option><option>אפוטרופוס/ית</option><option>אחר</option></select><input id="pn" placeholder="השם שלך"></div>
+      <button class="btn yes" id="ok">✓ אני מאשר/ת את היציאה</button><button class="btn no" id="no">✕ לא מאשר/ת</button>
+      <div class="err" id="er"></div><div class="mut" style="font-size:13px">אפשר לענות פעם אחת. התשובה נשמרת אצל צוות השכבה הבוגרת.</div></div>`;
+    const send=async ok=>{
+      const pn=$('#pn').value.trim(); if(!pn) return $('#er').textContent='כתבו את השם שלך';
+      if(!ok&&!confirm('לא לאשר את היציאה?')) return;
+      $('#ok').disabled=$('#no').disabled=true;
+      const a={ok,pn:$('#rel').value+' · '+pn.slice(0,40),at:Date.now()};
+      try{ await dbM.set(dbM.ref(rdb,`portal/bogeret/secure/par/${t}/ans`),a); e.ans=a; draw(); }
+      catch(err){ $('#ok').disabled=$('#no').disabled=false; $('#er').textContent='השמירה נכשלה. ייתכן שכבר נענה — רעננו את הדף.'; }
+    };
+    $('#ok').onclick=()=>send(true); $('#no').onclick=()=>send(false);
+  }
+}
+</script>
+</body>
+</html>
