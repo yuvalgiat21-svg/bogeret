@@ -351,7 +351,7 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 /* לינקים שימושיים — סרגל צדי קבוע (במחשב) / כפתור צף שפותח מגירה (בטלפון) */
 .app-row{display:flex;align-items:flex-start}
 .app-row>.main{flex:1;min-width:0}
-#lnkSide{display:none;width:210px;flex-shrink:0;position:sticky;top:12px;margin:20px 0 20px 16px;background:#fff;border:1px solid #F3C2B0;border-radius:16px;padding:12px;max-height:calc(100vh - 24px);overflow:auto}
+#lnkSide{display:none;width:210px;flex-shrink:0;position:sticky;top:12px;margin:20px 0 20px 16px;background:#fff;border:1px solid #F3C2B0;border-radius:16px;padding:12px;max-height:calc(100vh - 230px);overflow:auto}
 #lnkSide.on{display:block}
 .lnk-tool{background:#FFF1EB;border:1px solid #F3C2B0;margin-bottom:4px}.lnk-tool:hover{background:#ffe3d8}
 .lnk-h{font:800 14px Heebo,sans-serif;color:#8E033C;margin:0 4px 8px;display:flex;align-items:center;gap:6px}
@@ -581,7 +581,7 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 #pcal .pc-seg button{border:0;background:#fff;padding:6px 14px;font:600 14px Heebo,sans-serif;cursor:pointer;color:#7A6A66;}
 #pcal .pc-seg button.on{background:#FC5028;color:#fff;}
 #pcal .pc-wrap{display:flex;gap:14px;align-items:flex-start;}
-#pcal .pc-layers{width:225px;flex:none;background:#fff;border:1px solid #F3C2B0;border-radius:14px;padding:12px;position:sticky;top:10px;}
+#pcal .pc-layers{width:225px;flex:none;background:#fff;border:1px solid #F3C2B0;border-radius:14px;padding:12px;position:sticky;top:10px;max-height:calc(100vh - 290px);overflow:auto;}
 #pcal .pc-lh{font:800 15px Heebo,sans-serif;margin-bottom:6px;color:#8E033C;}
 #pcal .pc-grp{border-top:1px solid #f6dcd2;padding-top:6px;margin-top:6px;}
 #pcal .pc-gh{display:flex;justify-content:space-between;font:700 13px Heebo,sans-serif;color:#7A6A66;margin-bottom:3px;}
@@ -620,7 +620,7 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 #pcal .pc-tgall{border-top:1px solid #f6dcd2;border-bottom:2px solid #F3C2B0;}
 #pcal .pc-lbl{font-size:11px;color:#7A6A66;padding:4px;text-align:center;}
 #pcal .pc-allin{position:relative;}
-#pcal .pc-tgbody{max-height:620px;overflow-y:auto;}
+#pcal .pc-tgbody{max-height:max(320px,calc(100vh - 330px));overflow-y:auto;}
 #pcal .pc-hours div{font-size:11px;color:#7A6A66;text-align:center;box-sizing:border-box;padding-top:2px;}
 #pcal .pc-col{position:relative;border-left:1px solid #f6dcd2;}
 #pcal .pc-col.today{background:#fffaf7;}
@@ -3937,13 +3937,17 @@ const pcBar=(s,n,top,h)=>`<div class="pc-bar" data-k="${pcEsc(s.e.k)}" title="${
 function pcMonth(list,anchor,today){
   const x=pcDt(anchor), first=pcIso(new Date(x.getFullYear(),x.getMonth(),1));
   const start=pcAdd(first,-pcDt(first).getDay()), mo=x.getMonth();
-  const MAXL=4, LH=19, TOP=30;
+  /* גודל דף בלי גלילה (בקשת יובל 27.11.2026): גובה השבוע לפי גובה המסך */
+  let rows=0; for(let w=0;w<6;w++){ const a=pcAdd(start,w*7); if(w>3&&pcDt(a).getMonth()!==mo) break; rows++; }
+  const prev=document.querySelector('#pcal .pc-month'), top0=prev&&prev.offsetParent?prev.getBoundingClientRect().top+window.scrollY:240;
+  const WH=Math.max(64,Math.min(150,Math.floor((window.innerHeight-top0-105)/rows)));
+  const LH=19, TOP=26, MAXL=Math.max(1,Math.floor((WH-TOP-16)/LH));
   let h=`<div class="pc-mhead">${PC_DAYS.map((d,i)=>`<div class="${i>=5?'we':''}">${d}'</div>`).join('')}</div>`;
   for(let w=0; w<6; w++){
     const a=pcAdd(start,w*7), b=pcAdd(a,6); if(w>3&&pcDt(a).getMonth()!==mo) break;
     const segs=pcLanes(list.filter(e=>pcOver(e,a,b)),a,b), hid=Array(7).fill(0);
     segs.filter(s=>s.lane>=MAXL).forEach(s=>{ for(let c=s.c0;c<=s.c1;c++) hid[c]++; });
-    h+=`<div class="pc-week" style="height:${TOP+MAXL*LH+20}px">${Array.from({length:7},(_,c)=>{ const day=pcAdd(a,c), dx=pcDt(day);
+    h+=`<div class="pc-week" style="height:${WH}px">${Array.from({length:7},(_,c)=>{ const day=pcAdd(a,c), dx=pcDt(day);
       return `<div class="pc-cell${dx.getMonth()!==mo?' out':''}${day===today?' today':''}${c>=5?' we':''}" data-day="${day}" style="right:${c*100/7}%;width:${100/7}%">
         <div class="pc-num"><a href="#" data-goday="${day}">${dx.getDate()}</a><span>${pcEsc(pcHeb(day))}${PC.par[day]?' · '+pcEsc(PC.par[day].replace('פרשת ','')):''}</span></div>
         ${hid[c]?`<a href="#" class="pc-more" data-goday="${day}">+${hid[c]} נוספים</a>`:''}</div>`; }).join('')}
@@ -4458,16 +4462,30 @@ window.socRender=function(){
 
 /* ═══════════ לינקים חשובים ═══════════ */
 const LINKS=[
-  {ic:'🏫',t:'סמרט קמפוס',d:'מערכת הפנימייה: תיק אישי, רשימות חניכים ונוכחות',u:'https://mevootyam.smart-campus.co.il'},
-  {ic:'📚',t:'סמרט סקול',d:'מערכת בית הספר: ציונים, מערכת שעות והודעות',u:'https://www.smartschool.co.il/'},
-  {ic:'🛡️',t:'סייף סקול',d:'בטיחות וביטחון במוסדות חינוך',u:'https://safe-school.co.il/'},
-  {ic:'🔧',t:'תחזוקנית',d:'פתיחת קריאה לתחזוקה ותקלות',u:'https://tachzukanit.ramdor.net/m_yam/callorder/'},
+  {ic:'🏫',t:'סמרט קמפוס',d:'מערכת הפנימייה: תיק אישי, רשימות חניכים ונוכחות',u:'https://mevootyam.smart-campus.co.il',fav:'https://www.google.com/s2/favicons?sz=64&domain=smart-campus.co.il'},
+  {ic:'📚',t:'סמרט סקול',d:'מערכת בית הספר: ציונים, מערכת שעות והודעות',u:'https://www.smartschool.co.il/',fav:'https://icons.duckduckgo.com/ip3/www.smartschool.co.il.ico'},
+  {ic:'🛡️',t:'סייף סקול',d:'אתר לתכנים חינוכיים',u:'https://safe-school.co.il/'},
+  {ic:'🔧',t:'תחזוקנית',d:'פתיחת קריאה לתחזוקה ותקלות',u:'https://tachzukanit.ramdor.net/m_yam/callorder/',fav:'https://www.google.com/s2/favicons?sz=64&domain=ramdor.net'},
   {ic:'🗺️',t:'אשף המסלולים',d:'תכנון מסלול לטיול: אזור, אורך, רמת קושי ודגשי בטיחות',u:'https://www.mokedteva.co.il/InfoCenter/TrackWizard'},
-  {ic:'🏘️',t:'שריון מתחמים',d:'הזמנת מתחמים וחדרים בכפר (גיליון משותף)',u:'https://docs.google.com/spreadsheets/d/17g_UWjBBaSHq0mQ-5ZhvlgTLnZ0hyqxt4jaW5oajWkk/edit'},
 ];
 /* סרגל צדי — נבנה אחרי הכניסה מאותה רשימת LINKS */
-function lnkHtml(){ return `<div class="lnk-h">🧰 כלים</div><a class="lnk-a lnk-tool" href="#" onclick="lnkDrawer(false);show('rooms');return false;"><span class="i">🏘️</span><span><b>שריון מתחמים</b><small>לוח המתחמים — מחובר לגיליון של פז</small></span></a>
-  <div class="lnk-h" style="margin-top:12px">🔗 לינקים שימושיים</div>`+LINKS.filter(x=>x.u).map(x=>`<a class="lnk-a" href="${x.u}" target="_blank" rel="noopener"><span class="i">${x.ic}</span><span><b>${x.t}</b><small>${x.d}</small></span></a>`).join(''); }
+const TOOLS=[
+  {ic:'🏘️',t:'שריון מתחמים',d:'לוח המתחמים — מחובר לגיליון של פז',go:"show('rooms')"},
+  {ic:'📌',t:'גאנט שנתי',d:'כל אירועי השנה על ציר הזמן',go:"calTool('gantt')"},
+  {ic:'🗓️',t:'לוח שבתות ואירועים',d:'שבתות, חופשות ואירועי תשפ"ז',go:"calTool('events')"},
+  {ic:'🕘',t:'לו"ז רכז עקרוני',d:'השבוע הקבוע של הרכז',go:"calTool('luz')"},
+];
+/* פתיחת לשונית מתוך היומן (שורת הלשוניות של היומן הוסתרה — הכול דרך "כלים") */
+/* שינוי גודל החלון — היומן מתאים את עצמו לגובה המסך */
+let _pcRz=null; window.addEventListener('resize',()=>{ clearTimeout(_pcRz); _pcRz=setTimeout(()=>{ const b=document.getElementById('cal-board'); if(b&&b.classList.contains('active')&&b.offsetParent&&window.pcalRender) pcalRender(); },250); });
+window.calTool=function(k){ show('calendar'); document.querySelectorAll('#sec-calendar .subsec').forEach(x=>x.classList.remove('active')); const e=document.getElementById('cal-'+k); if(e) e.classList.add('active'); if(k==='board'&&window.pcalRender) pcalRender(); };
+function lnkHtml(){ return `<div class="lnk-h">🧰 כלים</div>`+TOOLS.map(x=>`<a class="lnk-a lnk-tool" href="#" onclick="lnkDrawer(false);${x.go};return false;"><span class="i">${x.ic}</span><span><b>${x.t}</b><small>${x.d}</small></span></a>`).join('')+`
+  <div class="lnk-h" style="margin-top:12px">🔗 לינקים שימושיים</div>`+LINKS.filter(x=>x.u).map(x=>`<a class="lnk-a" href="${x.u}" target="_blank" rel="noopener"><span class="i">${lnkIco(x)}</span><span><b>${x.t}</b><small>${x.d}</small></span></a>`).join(''); }
+/* האייקון המקורי של כל אתר (favicon); אם לא נטען — האימוג'י */
+const LNK_FAV={'docs.google.com':'https://ssl.gstatic.com/docs/spreadsheets/favicon3.ico'};
+function lnkIco(x){ let h=''; try{ h=new URL(x.u).hostname; }catch(e){ return x.ic; }
+  const src=x.fav||LNK_FAV[h]||`https://www.google.com/s2/favicons?domain=${h}&sz=64`;
+  return `<img src="${src}" alt="" width="22" height="22" style="border-radius:5px;vertical-align:middle" onerror="this.replaceWith(document.createTextNode('${x.ic}'))">`; }
 window.lnkSideRender=function(){ const a=document.getElementById('lnkSide'), f=document.getElementById('lnkFab'); if(!a) return;
   a.innerHTML=lnkHtml(); a.classList.add('on'); if(f) f.classList.add('on'); document.querySelector('#lnkDrawer .lnk-dr').innerHTML=lnkHtml(); };
 window.lnkDrawer=function(o){ document.getElementById('lnkDrawer').classList.toggle('open',!!o); };
@@ -6271,6 +6289,7 @@ function navSync(){
   navClose();
 }
 function show(id) {
+  if (id==='calendar'){ document.querySelectorAll('#sec-calendar .subsec').forEach(x=>x.classList.toggle('active',x.id==='cal-board')); setTimeout(()=>{ if(window.pcalRender) pcalRender(); },60); }
   if (id==='lc'){ const f=document.getElementById('lcFrame'); if(f && !f.getAttribute('src')){ f.dataset.mode=NAV_MODE; f.setAttribute('src',lcSrc()); } }
   document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
@@ -6373,7 +6392,7 @@ function buildAllSections() {
   const KIND_CLR = {shabbat:'#1d4ed8',holiday:'#15803d',bogeret:'#be123c',milestone:'#b45309',event:'#0e7490'};
 
   h += `<div class="sec" id="sec-calendar">
-    <div class="subnav" id="calSubnav">
+    <div class="subnav" id="calSubnav" style="display:none">
       <button class="active" onclick="subTab('cal','board',this);pcalRender()">🗓️ לוח שנה</button>
       <button onclick="subTab('cal','gantt',this)">📌 גאנט שנתי</button>
       <button onclick="subTab('cal','events',this)">🗓️ לוח שבתות ואירועים</button>
