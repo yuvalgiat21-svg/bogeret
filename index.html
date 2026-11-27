@@ -5194,30 +5194,78 @@ function viewBody(b){
 }
 
 
-/* ═══════════ מטרות ויעדים ═══════════ */
-const GOALS_KEY='bogeret_goals_v1';
-function goalsLoad(){ try{const r=localStorage.getItem(GOALS_KEY); if(r) return JSON.parse(r);}catch(e){} 
-  return [{t:'',why:'',how:'',who:'',when:'',st:'לא התחיל'}]; }
-function goalsSave(o){ try{localStorage.setItem(GOALS_KEY,JSON.stringify(o));}catch(e){} }
-window.goalSet=function(i,f,v){ const g=goalsLoad(); g[i][f]=v; goalsSave(g); if(f==='st') renderGoals(); };
-window.goalAdd=function(){ const g=goalsLoad(); g.push({t:'',why:'',how:'',who:'',when:'',st:'לא התחיל'}); goalsSave(g); renderGoals(); };
-window.goalDel=function(i){ const g=goalsLoad(); g.splice(i,1); goalsSave(g.length?g:[{t:'',why:'',how:'',who:'',when:'',st:'לא התחיל'}]); renderGoals(); };
+/* ═══════════ מטרות ויעדים — נשמרים בענן (portal/bogeret/secure/goals), טיוטה/פורסם לצוות ═══════════
+   רק מנהל עורך. שאר הצוות רואה רק יעדים שסומנו "פורסם לצוות". */
+const GOALS_KEY='bogeret_goals_v1', GOALS_PATH='portal/bogeret/secure/goals';
+const GOAL_BLANK=()=>({t:'',why:'',how:'',who:'',when:'',st:'לא התחיל',pub:false});
+const GOALS_SEED=[
+ {t:'🚦 כל חניך/ה מסיים/ת את השנה (שימור)',why:'נשירה היא הכישלון הכי יקר — לחניך/ה, למשפחה ולשכבה. זיהוי מוקדם מאפשר להציל.',how:'לפחות 95% מהחניכים מסיימים את השנה בפנימייה. כל חניך/ה שעובר/ת לאדום ברמזור מקבל/ת תוכנית טיפול תוך שבוע. בדיקה חודשית ברמזור הנשירה.',who:'המדריכים, הרכז מלווה',when:'מעקב חודשי, יעד סופי: סוף השנה'},
+ {t:'📚 הצלחה בלימודים ובבגרות',why:'תעודת בגרות פותחת דלתות להמשך — צבא, מכינה ולימודים.',how:'י"ב: לפחות 85% זכאות לבגרות. י"א: אף חניך/ה לא מסיים/ת מחצית עם 2 נכשלים ומעלה בלי תוכנית תגבור. מדידה במעקב לימודי ובמרכז הלמידה.',who:'מנהלת מרכז הלמידה והרכז',when:'בדיקה בסוף כל מחצית'},
+ {t:'🏫 נוכחות בבית הספר',why:'נוכחות היא הסימן המוקדם ביותר לקושי — לימודי או רגשי.',how:'נוכחות של 92% ומעלה. כל היעדרות מדאיגה מטופלת תוך 48 שעות. מדידה בדשבורד הנוכחות.',who:'המדריכים',when:'שבועי'},
+ {t:'🤝 כל חניך/ה שייך/ת למשהו (מנהיגות ומעורבות)',why:'שייכות ואחריות בונות ביטחון, מחויבות ומוטיבציה להישאר.',how:'י"ב: 100% משובצים בגוף מנהיגות, מעורבות חברתית או חוג. י"א: 80%. מדידה: הסינון "בלי שיבוץ" בתוכנית מלווה יורד לאפס.',who:'פז (רכזת המח"מ) והרכז',when:"עד סוף מחצית א'"},
+ {t:'🧭 "היום שאחרי" — לכל חניך/ה בי"ב תוכנית המשך',why:'המעבר מהפנימייה לחיים הוא רגע פגיע. תוכנית ברורה מקטינה את הסיכון ללכת לאיבוד.',how:'עד אפריל — לכל חניך/ה בי"ב מסלול ברור (צבא / מכינה / שנת שירות / לימודים) ולפחות שיחת הכוון אישית אחת. אחרי הסיום: קשר עם 80% מהבוגרים 3 חודשים אחרי. מדידה בלשונית בוגרים.',who:'הרכז והמדריכים',when:'עד אפריל; מעקב בוגרים עד ספטמבר'},
+ {t:'👨‍👩‍👧 קשר עם המשפחות',why:'משפחה מעורבת היא שותפה — וקשר רציף מונע הפתעות.',how:'כל משפחה מקבלת לפחות ביקור בית אחד עד פסח, ושיחת טלפון יזומה פעם בחודש. עד סוף דצמבר הסימון "חסר פרט הורה" באלפון יורד לאפס.',who:'המדריכים',when:'פרטי הורים: סוף דצמבר; ביקורים: עד פסח'},
+ {t:'👥 צוות חזק ושיטתי',why:'כל היעדים האחרים תלויים בצוות שמדווח, מתאם ועובד באותה שפה.',how:'לפחות 95% עמידה בדיווח הנוכחות של הצוות. ישיבת בוגרת מתקיימת כל שבוע. מדידה בטבלת משמעת הדיווח בלשונית נוכחות.',who:'הרכז',when:'שבועי'}
+].map(g=>Object.assign(GOAL_BLANK(),g));
+let GOALS=null, GOALS_ERR='', GOALS_T=null;
+const goalAdmin=()=>!!(ME&&ME.mode==='admin');
+const gEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function goalsFetch(){
+  try{
+    const {dbm,rdb}=await secureDb(); const s=await dbm.get(dbm.ref(rdb,GOALS_PATH));
+    let g=null; if(s.exists()){ try{ g=JSON.parse(s.val()); }catch(e){} }
+    if(!Array.isArray(g)||!g.length){
+      g=[];
+      if(goalAdmin()){ /* פעם ראשונה: מה שהוזן קודם בדפדפן הזה + היעדים המומלצים, כולם כטיוטה */
+        try{ const L=JSON.parse(localStorage.getItem(GOALS_KEY)||'[]'); (L||[]).filter(x=>x&&String(x.t||'').trim()).forEach(x=>g.push(Object.assign(GOAL_BLANK(),x,{pub:false}))); }catch(e){}
+        GOALS_SEED.forEach(x=>g.push(Object.assign({},x)));
+        await dbm.set(dbm.ref(rdb,GOALS_PATH),JSON.stringify(g));
+      }
+    }
+    GOALS=g; GOALS_ERR='';
+  }catch(e){ GOALS=GOALS||[]; GOALS_ERR='לא ניתן לטעון את היעדים מהענן. בדקו חיבור ונסו לרענן.'; console.warn('goals',e); }
+}
+function goalsSave(){
+  clearTimeout(GOALS_T); const st=document.getElementById('goalsSaved'); if(st) st.textContent='שומר…';
+  GOALS_T=setTimeout(async()=>{ try{ const {dbm,rdb}=await secureDb(); await dbm.set(dbm.ref(rdb,GOALS_PATH),JSON.stringify(GOALS));
+      const s=document.getElementById('goalsSaved'); if(s) s.textContent='✓ נשמר בענן'; }
+    catch(e){ const s=document.getElementById('goalsSaved'); if(s) s.textContent='⚠️ השמירה נכשלה'; } },600);
+}
+window.goalSet=function(i,f,v){ if(!goalAdmin()||!GOALS[i]) return; GOALS[i][f]=v; goalsSave(); if(f==='st'||f==='pub') renderGoals(); };
+window.goalAdd=function(){ if(!goalAdmin()) return; GOALS.push(GOAL_BLANK()); goalsSave(); renderGoals(); };
+window.goalDel=function(i){ if(!goalAdmin()||!GOALS[i]) return; if(!confirm('למחוק את היעד "'+(GOALS[i].t||'ללא שם')+'"?')) return; GOALS.splice(i,1); goalsSave(); renderGoals(); };
+window.goalMove=function(i,d){ if(!goalAdmin()) return; const j=i+d; if(j<0||j>=GOALS.length) return; const tmp=GOALS[i]; GOALS[i]=GOALS[j]; GOALS[j]=tmp; goalsSave(); renderGoals(); };
 const GOAL_ST={'לא התחיל':'#8496ab','בתהליך':'#b45309','הושג':'#047857'};
-window.renderGoals=function(){
+window.renderGoals=async function(){
   const el=document.getElementById('goalsBody'); if(!el) return;
-  const g=goalsLoad();
-  el.innerHTML = g.map((x,i)=>`<div style="background:#fff;border:1px solid var(--border);border-right:5px solid ${GOAL_ST[x.st]||'#8496ab'};border-radius:12px;padding:14px;margin-bottom:11px;">
-    <div style="display:flex;gap:9px;align-items:center;margin-bottom:9px;">
-      <input value="${(x.t||'').replace(/"/g,'&quot;')}" oninput="goalSet(${i},'t',this.value)" placeholder="שם היעד…" style="flex:1;border:none;border-bottom:2px solid var(--border);padding:5px 2px;font-family:'Rubik';font-weight:700;font-size:15px;outline:none;">
-      <select onchange="goalSet(${i},'st',this.value)" style="border:1px solid var(--border);border-radius:7px;padding:5px 9px;font-family:'Heebo';font-size:12px;">
+  if(GOALS===null){ el.innerHTML='<div style="color:var(--text2);font-size:13px;">טוען יעדים…</div>'; await goalsFetch(); }
+  const A=goalAdmin(), list=GOALS.map((x,i)=>({x,i})).filter(o=>A||o.x.pub);
+  const addB=document.getElementById('goalAddBtn'); if(addB) addB.style.display=A?'':'none';
+  const nPub=GOALS.filter(x=>x.pub).length;
+  const head=(GOALS_ERR?`<div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:13px;">${GOALS_ERR}</div>`:'')+
+    (A?`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#FFF1EB;border:1px solid #F3C2B0;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:13px;">
+      <span>📝 <b>${GOALS.length-nPub}</b> טיוטות (רק אתה רואה) · 📢 <b>${nPub}</b> פורסמו לצוות</span>
+      <span style="color:#7A6A66;">סמנו "פרסם לצוות" ביעד כדי שהצוות יראה אותו. כל שינוי נשמר בענן אוטומטית.</span>
+      <span id="goalsSaved" style="margin-inline-start:auto;color:#047857;font-weight:600;"></span></div>`:'');
+  if(!list.length){ el.innerHTML=head+`<div style="color:var(--text2);font-size:13.5px;padding:10px;">${A?'אין יעדים. לחצו "הוסף יעד".':'עוד לא פורסמו יעדים לצוות.'}</div>`; return; }
+  const ro=A?'':'readonly disabled', fld="width:100%;margin-top:4px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-family:'Heebo';font-size:12.5px;";
+  el.innerHTML=head+list.map(({x,i},k)=>`<div style="background:#fff;border:1px solid var(--border);border-right:5px solid ${GOAL_ST[x.st]||'#8496ab'};border-radius:12px;padding:14px;margin-bottom:11px;${A&&!x.pub?'background:repeating-linear-gradient(135deg,#fff,#fff 14px,#fffaf7 14px,#fffaf7 28px);':''}">
+    <div style="display:flex;gap:9px;align-items:center;margin-bottom:9px;flex-wrap:wrap;">
+      <div style="flex:1 1 340px;display:flex;gap:8px;align-items:center;min-width:0;"><span style="font-family:'Rubik';font-weight:800;color:#8E033C;font-size:15px;">${k+1}.</span>
+      <input value="${gEsc(x.t)}" ${ro} oninput="goalSet(${i},'t',this.value)" placeholder="שם היעד…" style="flex:1;min-width:0;border:none;border-bottom:2px solid var(--border);padding:5px 2px;font-family:'Rubik';font-weight:700;font-size:15px;outline:none;background:transparent;color:inherit;"></div>
+      <select ${ro} onchange="goalSet(${i},'st',this.value)" style="border:1px solid var(--border);border-radius:7px;padding:5px 9px;font-family:'Heebo';font-size:12px;">
         ${['לא התחיל','בתהליך','הושג'].map(s=>`<option ${s===x.st?'selected':''}>${s}</option>`).join('')}</select>
-      <button onclick="goalDel(${i})" class="btn btn-secondary" style="padding:4px 10px;font-size:12px;">מחק</button>
+      ${A?`<label style="display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:${x.pub?'#047857':'#b45309'};background:${x.pub?'#ecfdf5':'#fff7ed'};border:1px solid ${x.pub?'#a7f3d0':'#fed7aa'};border-radius:999px;padding:4px 10px;cursor:pointer;">
+          <input type="checkbox" ${x.pub?'checked':''} onchange="goalSet(${i},'pub',this.checked)"> ${x.pub?'📢 פורסם לצוות':'📝 טיוטה — פרסם לצוות'}</label>
+        <button onclick="goalMove(${i},-1)" class="btn btn-secondary" title="הזז למעלה" style="padding:4px 8px;font-size:12px;">▲</button>
+        <button onclick="goalMove(${i},1)" class="btn btn-secondary" title="הזז למטה" style="padding:4px 8px;font-size:12px;">▼</button>
+        <button onclick="goalDel(${i})" class="btn btn-secondary" style="padding:4px 10px;font-size:12px;">מחק</button>`:''}
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
-      <label style="font-size:11.5px;color:var(--text2);font-weight:600;">למה זה חשוב<textarea oninput="goalSet(${i},'why',this.value)" style="width:100%;min-height:52px;margin-top:4px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-family:'Heebo';font-size:12.5px;resize:vertical;">${x.why||''}</textarea></label>
-      <label style="font-size:11.5px;color:var(--text2);font-weight:600;">איך מודדים הצלחה<textarea oninput="goalSet(${i},'how',this.value)" style="width:100%;min-height:52px;margin-top:4px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-family:'Heebo';font-size:12.5px;resize:vertical;">${x.how||''}</textarea></label>
-      <label style="font-size:11.5px;color:var(--text2);font-weight:600;">מי אחראי<input value="${(x.who||'').replace(/"/g,'&quot;')}" oninput="goalSet(${i},'who',this.value)" style="width:100%;margin-top:4px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-family:'Heebo';font-size:12.5px;"></label>
-      <label style="font-size:11.5px;color:var(--text2);font-weight:600;">יעד זמן<input value="${(x.when||'').replace(/"/g,'&quot;')}" oninput="goalSet(${i},'when',this.value)" placeholder="למשל: סוף מחצית א'" style="width:100%;margin-top:4px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-family:'Heebo';font-size:12.5px;"></label>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:9px;">
+      <label style="font-size:11.5px;color:var(--text2);font-weight:600;">למה זה חשוב<textarea ${ro} oninput="goalSet(${i},'why',this.value)" style="${fld}min-height:52px;resize:vertical;">${gEsc(x.why)}</textarea></label>
+      <label style="font-size:11.5px;color:var(--text2);font-weight:600;">איך מודדים הצלחה<textarea ${ro} oninput="goalSet(${i},'how',this.value)" style="${fld}min-height:52px;resize:vertical;">${gEsc(x.how)}</textarea></label>
+      <label style="font-size:11.5px;color:var(--text2);font-weight:600;">מי אחראי<input value="${gEsc(x.who)}" ${ro} oninput="goalSet(${i},'who',this.value)" style="${fld}"></label>
+      <label style="font-size:11.5px;color:var(--text2);font-weight:600;">יעד זמן<input value="${gEsc(x.when)}" ${ro} oninput="goalSet(${i},'when',this.value)" placeholder="למשל: סוף מחצית א'" style="${fld}"></label>
     </div></div>`).join('');
 };
 
@@ -5251,8 +5299,8 @@ function reorganize(){
 
   const sGoals=mkSub('ov-goals');
   sGoals.innerHTML = info('🎯','מטרות ויעדים — שכבה בוגרת תשפ"ז',
-    'היעדים המרכזיים לשנה. לכל יעד: למה הוא חשוב, איך מודדים הצלחה, מי אחראי ומתי. נשמר בדפדפן.')
-    + `<div class="panel"><div class="panel-h"><h2>🎯 יעדי השנה</h2><button class="btn" onclick="goalAdd()">➕ הוסף יעד</button></div>
+    'היעדים המרכזיים לשנה. לכל יעד: למה הוא חשוב, איך מודדים הצלחה, מי אחראי ומתי. נשמר בענן; הצוות רואה רק יעדים שפורסמו.')
+    + `<div class="panel"><div class="panel-h"><h2>🎯 יעדי השנה</h2><button class="btn" id="goalAddBtn" onclick="goalAdd()">➕ הוסף יעד</button></div>
        <div class="panel-b" id="goalsBody"></div></div>`;
   const sMed=mkSub('ov-med');
   sMed.innerHTML = info('🏥','מידע רפואי — מבט שכבתי','הנתונים נמשכים אוטומטית ממה שהמדריכים מזינים בכל קבוצה, תחת <b>ניהול קבוצה ← רפואי</b>.')
