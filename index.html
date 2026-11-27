@@ -1570,6 +1570,8 @@ const GRP_CLR = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','ח�
    סרגל קודם (classic): כל הלשוניות בשורה אחת, כמו שהיה. המנהל בוחר בין השניים, והבחירה נשמרת בענן לכל הצוות. */
 const NAV_GROUPS = { plan:{icon:'🎓', label:'תוכניות'} };
 const NEW_TABS = [
+  {id:'home',     icon:'🎛️', label:'חדר בקרה',       tier:'main', admin:true},
+  {id:'mine',     icon:'🏠', label:'הקבוצה שלי',     tier:'main', staff:true},
   {id:'overview', icon:'📊', label:'סקירה',          tier:'main'},
   {id:'msg',      icon:'💬', label:'CRM',            tier:'main'},
   {id:'groups',   icon:'👥', label:'ניהול קבוצה',    tier:'main'},
@@ -3794,6 +3796,7 @@ const PC_LAYERS=[
   {id:'sch_all',g:'בית ספר',n:'בית-ספרי כללי',c:'#64748b'},
   {id:'heb',g:'כללי',n:'חגים ומועדים',c:'#ca8a04'},
   {id:'mine',g:'כללי',n:'אירועים שנוספו בפורטל',c:'#FC5028'},
+  {id:'grp',g:'כללי',n:'יומני קבוצות (של המדריכים)',c:'#7c3aed'},
 ];
 const PCL=Object.fromEntries(PC_LAYERS.map(l=>[l.id,l]));
 const PC_DAYS=['א','ב','ג','ד','ה','ו','ש'];
@@ -3816,7 +3819,9 @@ function pcPrefs(){ if(!PC_PF){ let p={}; try{ p=JSON.parse(localStorage.getItem
   const p=JSON.parse(JSON.stringify(PC_PF)); p.layers=p.layers||{}; return p; }
 function pcSavePrefs(ch){ PC_PF=Object.assign(pcPrefs(),ch); try{ localStorage.setItem('bogeret_pcal_prefs',JSON.stringify(PC_PF)); }catch(e){} }
 const pcLayerOn=(pf,id)=>pf.layers[id]!==undefined?pf.layers[id]:!PCL[id].off;
-const pcCanEdit=()=>typeof ME!=='undefined'&&ME&&(ME.mode==='admin'||ME.mode==='edit');
+/* יומן הפנימייה: רק המנהל מוסיף. מדריכים מוסיפים רק ליומן הקבוצה שלהם (הכרעת יובל 27.11.2026) */
+const pcCanEdit=()=>typeof ME!=='undefined'&&ME&&(ME.mode==='admin'||(ME.mode==='edit'&&window.homeCalGroups&&homeCalGroups().length>0));
+const pcSrcOf=x=>(x.grp?'יומן קבוצת '+x.grp:'נוסף בפורטל')+(x.by?' · ע"י '+x.by:'');
 
 /* "27-31.8" / "20.9-4.10" / "4.6" → [התחלה, סוף] */
 function pcParseD(d){
@@ -3856,7 +3861,7 @@ async function pcLoad(){
 }
 async function pcLoadCustom(){
   try{ const {dbm,rdb}=await secureDb(); const s=await dbm.get(dbm.ref(rdb,PCAL_PATH)); const v=s.exists()?s.val():{};
-    PC.custom=Object.entries(v).map(([id,x])=>({...x, k:'c_'+id, id, l:'mine', src:'נוסף בפורטל'+(x.by?' ע"י '+x.by:'')}));
+    PC.custom=Object.entries(v).map(([id,x])=>({...x, k:'c_'+id, id, l:x.grp?'grp':'mine', src:pcSrcOf(x)}));
   }catch(e){ PC.custom=[]; }
 }
 const pcAll=()=>(PC.ev||[]).concat(PC.custom||[]);
@@ -3942,7 +3947,7 @@ function pcPanel(pf){
 }
 function pcDetails(k){
   const e=pcAll().find(x=>x.k===k); if(!e) return '';
-  const L=PCL[e.l]||PCL.mine, mine=e.l==='mine', canDel=mine&&typeof ME!=='undefined'&&ME&&(ME.mode==='admin'||e.uid===ME.id);
+  const L=PCL[e.l]||PCL.mine, mine=e.l==='mine'||e.l==='grp', canDel=mine&&typeof ME!=='undefined'&&ME&&(ME.mode==='admin'||e.uid===ME.id);
   const when=e.s===e.e?`יום ${PC_DAYS[pcDt(e.s).getDay()]}' ${pcShort(e.s)}.${pcDt(e.s).getFullYear()}`:`${pcShort(e.s)} – ${pcShort(e.e)}.${pcDt(e.e).getFullYear()} (${pcDays(e.s,e.e)+1} ימים)`;
   return `<div class="pc-ov" data-close="1"><div class="pc-pop" style="--c:${L.c}">
     <button class="pc-x" data-close="1">✕</button>
@@ -3962,22 +3967,26 @@ function pcForm(){
     <label>שם האירוע<input name="t" required maxlength="120" value="${pcEsc(f.t||'')}"></label>
     <div class="pc-row"><label>מתאריך<input type="date" name="s" required value="${f.s}"></label><label>עד תאריך<input type="date" name="e" value="${f.e||f.s}"></label></div>
     <div class="pc-row"><label>שעה (לא חובה)<input type="time" name="tm" value="${f.tm||''}"></label><label>עד שעה<input type="time" name="et" value="${f.et||''}"></label></div>
+    ${(()=>{ const G=window.homeCalGroups?homeCalGroups():[], adm=ME&&ME.mode==='admin'; if(!G.length&&adm) return '';
+      return `<label>באיזה יומן?<select name="grp">${adm?`<option value="" ${!f.grp?'selected':''}>יומן הפנימייה (כללי — לכל הצוות)</option>`:''}${G.map(g=>`<option ${f.grp===g?'selected':''}>${pcEsc(g)}</option>`).join('')}</select></label>`; })()}
     <label>מקום<input name="p" maxlength="80" value="${pcEsc(f.p||'')}"></label>
     <label>הערה<input name="note" maxlength="200" value="${pcEsc(f.note||'')}"></label>
-    <div class="pc-note">האירוע נשמר באזור המוגן ומוצג לכל הצוות המחובר, בשכבה "אירועים שנוספו בפורטל". לא לכתוב פרטים אישיים של חניכים.</div>
+    <div class="pc-note">האירוע נשמר באזור המוגן ומוצג לצוות המחובר. אירוע ביומן קבוצה יוצג בעתיד גם לחניכי הקבוצה ויסונכרן ליומן הגוגל שלהם. לא לכתוב פרטים אישיים של חניכים.</div>
     <div class="pc-acts"><button class="btn" type="submit" style="background:#FC5028;color:#fff;border-color:#FC5028">שמירה</button><button class="btn" type="button" data-close="1">ביטול</button></div>
   </form></div>`;
 }
 async function pcSave(fd){
   const o={t:fd.get('t').trim(), s:fd.get('s'), e:fd.get('e')||fd.get('s')};
   if(!o.t||!o.s) return; if(o.e<o.s) o.e=o.s;
+  const g=(fd.get('grp')||'').trim(); if(g) o.grp=g;
+  if(!o.grp&&!(ME&&ME.mode==='admin')){ alert('מדריכים מוסיפים אירועים ליומן הקבוצה בלבד — בחרו קבוצה.'); return; }
   ['tm','et','p','note'].forEach(k=>{ const v=(fd.get(k)||'').trim(); if(v) o[k]=v; });
   if(!o.tm) delete o.et;
   const id=PC.form.id||(Date.now().toString(36)+Math.random().toString(36).slice(2,6));
   const old=(PC.custom||[]).find(x=>x.id===id);
   o.by=old?old.by:(ME&&ME.n||''); o.uid=old?old.uid:(ME&&ME.id||''); o.at=new Date().toISOString();
   const {dbm,rdb}=await secureDb(); await dbm.set(dbm.ref(rdb,PCAL_PATH+'/'+id), o);
-  PC.custom=(PC.custom||[]).filter(x=>x.id!==id).concat([{...o,k:'c_'+id,id,l:'mine',src:'נוסף בפורטל'+(o.by?' ע"י '+o.by:'')}]);
+  PC.custom=(PC.custom||[]).filter(x=>x.id!==id).concat([{...o,k:'c_'+id,id,l:o.grp?'grp':'mine',src:pcSrcOf(o)}]);
   PC.form=null; PC.anchor=o.s;
 }
 async function pcDel(id){
@@ -6017,8 +6026,9 @@ function initApp() {
   lcMount();
   if (window.msgMount) msgMount();
   if (window.renderGrads) renderGrads('');
+  if (window.homeMount) homeMount();
   navRender();
-  if (ME && ME.lcOnly) show('lc'); else show('overview');
+  show(navLanding());
   navLoadMode();
 }
 
@@ -6037,11 +6047,23 @@ function lcMount(){
 }
 
 /* ── סרגל לשוניות עם לשוניות אב ותפריט נפתח ── */
+/* סרגל לפי תפקיד: מה בשורה הראשית ומה תחת "עוד" */
+const NAV_LAYOUT={
+  admin:['home','overview','msg','groups','attendance','lc','eduplan','companion','calendar'],
+  staff:['mine','groups','msg','calendar','attendance']
+};
+const navRole=()=>ME&&ME.mode==='admin'?'admin':'staff';
 function navVisible(){
   if(ME&&ME.lcOnly) return NEW_TABS.filter(x=>x.id==='lc');
-  return NEW_TABS.filter(x=>(!x.admin||(ME&&ME.mode==='admin'))
-    && !(x.id==='lc'&&typeof lcRole==='function'&&!lcRole()));
+  const adm=ME&&ME.mode==='admin', main=NAV_LAYOUT[navRole()];
+  return NEW_TABS.filter(x=>(!x.admin||adm) && !(x.staff&&adm)
+    && !(x.id==='lc'&&typeof lcRole==='function'&&!lcRole())
+    && !(NAV_MODE==='classic'&&(x.id==='home'||x.id==='mine')))
+    .map(x=>Object.assign({},x,{tier:main.includes(x.id)?'main':'more'}))
+    .sort((a,b)=>{ const ia=main.indexOf(a.id), ib=main.indexOf(b.id); return (ia<0?99:ia)-(ib<0?99:ib); });
 }
+/* דף הנחיתה אחרי הכניסה */
+const navLanding=()=>ME&&ME.lcOnly?'lc':NAV_MODE==='classic'?'overview':(ME&&ME.mode==='admin'?'home':'mine');
 function navBuild(list){
   const B=x=>`<button onclick="show('${x.id}')" id="tab-${x.id}"${x.danger?' class="nv-danger"':''}>${x.icon} ${x.label}</button>`;
   const isAdm=ME&&ME.mode==='admin';
@@ -6055,8 +6077,10 @@ function navBuild(list){
     if(!x.grp){ h+=B(x); return; }
     if(done[x.grp]) return; done[x.grp]=1;
     const G=NAV_GROUPS[x.grp];
+    const kids=main.filter(y=>y.grp===x.grp);
+    if(kids.length===1){ h+=B(x); return; }
     h+=`<div class="nv-grp" data-grp="${x.grp}"><button class="nv-par" id="par-${x.grp}" onclick="navToggle('${x.grp}',event)">${G.icon} ${G.label}<span class="nv-cur"></span> <span class="nv-car">▾</span></button>
-      <div class="nv-menu" id="menu-${x.grp}">${main.filter(y=>y.grp===x.grp).map(B).join('')}</div></div>`;
+      <div class="nv-menu" id="menu-${x.grp}">${kids.map(B).join('')}</div></div>`;
   });
   if(more.length||isAdm){
     h+=`<span class="nv-sp"></span><div class="nv-grp nv-more" data-grp="more"><button class="nv-par" id="par-more" onclick="navToggle('more',event)">☰ עוד<span class="nv-cur"></span> <span class="nv-car">▾</span></button>
@@ -6082,7 +6106,7 @@ window.navSetMode=async function(m){
   const msg=m==='classic'?'לחזור לסרגל הקודם (כל הלשוניות בשורה אחת, אישורי יציאה בתוך מרכז הלמידה)? השינוי יחול על כל הצוות.':'לעבור לסרגל החדש? השינוי יחול על כל הצוות.';
   if(!confirm(msg)) return;
   NAV_MODE=m; try{ localStorage.setItem(NAV_MODE_KEY,m); }catch(e){}
-  navRender();
+  navRender(); show(navLanding());
   try{ const {dbm,rdb}=await secureDb(); await dbm.set(dbm.ref(rdb,NAV_MODE_PATH),m); }
   catch(e){ alert('הסרגל הוחלף אצלך, אבל השמירה לכל הצוות נכשלה. נסו שוב.'); }
 };
@@ -6091,7 +6115,7 @@ async function navLoadMode(){
   try{ const {dbm,rdb}=await secureDb(); const s=await dbm.get(dbm.ref(rdb,NAV_MODE_PATH));
     const m=s.exists()&&s.val()==='classic'?'classic':'new';
     try{ localStorage.setItem(NAV_MODE_KEY,m); }catch(e){}
-    if(m!==NAV_MODE){ NAV_MODE=m; navRender(); }
+    if(m!==NAV_MODE){ NAV_MODE=m; navRender(); show(navLanding()); }
   }catch(e){}
 }
 /* נוכחות ← אישורי יציאה (בסרגל החדש). בסרגל הקודם הם נשארים בתוך מרכז הלמידה */
@@ -7858,5 +7882,6 @@ window.syncRamzorFromSheet = async function() {
 };
 </script>
 <script src="msg.js?v=2"></script>
+<script src="home.js?v=1"></script>
 </body>
 </html>
