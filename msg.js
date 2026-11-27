@@ -276,7 +276,10 @@ window.msgRender=function(){
    מספרי החניכים: מתוך רשימת החניכים בפורטל (שדה הטלפון). */
 const waNum=ph=>{ let d=String(ph||'').replace(/\D/g,''); if(!d) return ''; if(d.startsWith('972')) return d; if(d.startsWith('0')) return '972'+d.slice(1); return d.length===9?'972'+d:d; };
 const waTxt=(title,body,from)=>[title?'*'+title+'*':'',body,from?'— '+from:''].filter(Boolean).join('\n');
-const waHref=(ph,txt)=>`https://wa.me/${waNum(ph)}?text=${encodeURIComponent(txt)}`;
+/* במחשב — ישר לוואטסאפ ווב, תמיד באותה לשונית (WA_WIN), בלי דף המעבר של wa.me. בטלפון — לאפליקציה */
+const WA_MOBILE=/android|iphone|ipad|ipod/i.test(navigator.userAgent), WA_WIN='bogeret_whatsapp';
+const waHref=(ph,txt)=>WA_MOBILE?`https://wa.me/${ph?waNum(ph):''}?text=${encodeURIComponent(txt)}`
+  :`https://web.whatsapp.com/send?${ph?'phone='+waNum(ph)+'&':''}text=${encodeURIComponent(txt)}`;
 window.msgWa=function(k,id){ M.wa={k,id}; msgRender(); };
 function waRows(){
   const w=M.wa; if(!w) return {txt:'',rows:[]};
@@ -293,11 +296,13 @@ function waModal(){
     <div class="m-dlg-h"><b>📲 שליחה בוואטסאפ</b><button class="m-x" onclick="msgClose()">✕</button></div>
     <div class="m-meta">ההודעה כבר נשמרה ${M.wa.k==='staff'?'בפורטל':'לחניכים'}. כאן שולחים אותה גם בוואטסאפ: כל לחיצה פותחת שיחה עם ההודעה מוכנה — רק ללחוץ "שליחה" בוואטסאפ.</div>
     <div class="m-wa-txt">${E(txt).replace(/\n/g,'<br>')}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button class="m-btn2" onclick="msgWaCopy()">📋 העתקת ההודעה (לקבוצת וואטסאפ)</button><span class="m-sub" style="align-self:center">${has} מתוך ${rows.length} עם מספר</span></div>
+    <div class="m-wa-grp"><a class="m-wa-b big" target="${WA_WIN}" rel="noopener" href="${waHref('',txt)}">📲 שליחה לקבוצת וואטסאפ</a>
+      <div class="m-sub">וואטסאפ ייפתח עם ההודעה מוכנה — בוחרים את הקבוצה (למשל קבוצת הצוות) ולוחצים שליחה. אפשר גם <a href="#" onclick="msgWaCopy();return false">להעתיק את ההודעה</a> ולהדביק.</div></div>
+    <details class="m-wa-one"><summary>או לשלוח לכל אחד בנפרד (${has} מתוך ${rows.length} עם מספר)</summary>
     <div class="m-wa-list">${rows.map((r,i)=>`<div class="m-wa-r"><div style="flex:1;min-width:0"><b>${E(r.n)}</b> <small>${E(r.sub||'')}</small></div>
-      ${waNum(r.ph)?`<a class="m-wa-b" target="_blank" rel="noopener" href="${waHref(r.ph,txt)}" onclick="this.classList.add('sent')">📲 שליחה</a>`
+      ${waNum(r.ph)?`<a class="m-wa-b" target="${WA_WIN}" rel="noopener" href="${waHref(r.ph,txt)}" onclick="this.classList.add('sent')">📲 שליחה</a>`
         :r.uid&&(isAdmin()||r.uid===me().id)?`<input class="m-wa-in" id="wap-${i}" placeholder="05X-XXXXXXX" inputmode="tel"><button class="m-btn2 sm" onclick="msgPhone('${r.uid}','wap-${i}')">שמירה</button>`
-        :'<span class="m-sub">אין מספר</span>'}</div>`).join('')||'<div class="m-empty">אין נמענים</div>'}</div>
+        :'<span class="m-sub">אין מספר</span>'}</div>`).join('')||'<div class="m-empty">אין נמענים</div>'}</div></details>
     <div class="m-dlg-f"><button class="m-btn2" onclick="msgClose()">סגירה</button></div></div></div>`;
 }
 window.msgWaCopy=function(){ const {txt}=waRows(); navigator.clipboard.writeText(txt).then(()=>msgToast('📋 ההודעה הועתקה'),()=>prompt('העתיקו:',txt)); };
@@ -428,6 +433,9 @@ const css=document.createElement('style'); css.textContent=`
 .m-wa-b{background:#25D366;color:#fff;border-radius:999px;padding:5px 12px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap}
 .m-wa-b.sent{background:#9ca3af}.m-wa-b.sent::after{content:' ✓'}
 .m-wa-in{width:130px!important;padding:5px 8px!important}
+.m-wa-grp{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;margin:10px 0;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.m-wa-b.big{font-size:15px;padding:9px 18px}
+.m-wa-one summary{cursor:pointer;font-weight:700;color:#7A6A66;margin:6px 0}
 .m-crow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.m-crow select{width:auto}.m-crow label{font-size:13.5px;font-weight:600;display:flex;gap:5px;align-items:center}
 .m-cb input{width:auto!important}
 .m-btn{background:#FC5028;color:#fff;border:none;border-radius:10px;padding:9px 18px;font:800 14px Heebo,sans-serif;cursor:pointer;margin-inline-start:auto}
