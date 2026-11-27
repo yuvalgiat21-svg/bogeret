@@ -330,6 +330,11 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 @media (min-width:900px){ .nav { flex-wrap:wrap; overflow:visible; } }
 .nv-sp { flex:1; min-width:6px; }
 #grTopNav { margin-bottom:6px; } #grTopNav button { font-size:15px; font-weight:700; }
+/* תוכנית מלווה: כל לשונית משנה במסגרת משלה */
+#cpSubnav{gap:8px}
+#cpSubnav button{border:1.5px solid #F3C2B0;background:#fff;flex:0 1 auto;min-width:130px}
+#cpSubnav button:hover{border-color:#FC5028;background:#FFF1EB}
+#cpSubnav button.active{background:var(--blue);color:#fff;border-color:var(--blue)}
 .subnav.subnav-2 { background:#FFF1EB; border:1px solid #F3C2B0; border-radius:12px; padding:6px; margin:0 0 12px; }
 .subnav.subnav-2 button { font-size:13.5px; }
 .nav.nv-new > button, .nav.nv-new > .nv-grp:not(.nv-more) > .nv-par { font-size:clamp(12.5px,0.95vw,14px); padding:7px clamp(9px,0.9vw,14px); font-weight:700; }
@@ -5219,12 +5224,22 @@ const BODIES = [
   {k:'security',icon:'🛡️', label:'אבטחה', clr:'#047857',
    staff:['אודי'], src:null,
    desc:'גוף האבטחה — סיירת ביטחון ומועדון ה-5.'},
-  {k:'bartali',icon:'🎭', label:'ברטלי', clr:'#be185d',
+  {k:'bartali',icon:'🚴', label:'ברטלי', clr:'#be185d',
    staff:[], src:'bartali',
    desc:'גוף ברטלי.'},
   {k:'army',   icon:'🪖', label:'הכנה לצבא', clr:'#4d7c0f',
    staff:['ארבל'], src:null,
    desc:'הכנה לצבא — אימונים, מיונים והכנה לגיוס.'},
+  /* נוספו 27.11.2026 (בקשת יובל) — הרשימות יתמלאו כשיגיעו השמות */
+  {k:'arabic', icon:'🗣️', label:'ערבית מדוברת', clr:'#0f766e',
+   staff:[], src:'arabic',
+   desc:'לימוד ערבית מדוברת.'},
+  {k:'chess',  icon:'♟️', label:'שחמט', clr:'#374151',
+   staff:[], src:'chess',
+   desc:'חוג שחמט.'},
+  {k:'dj',     icon:'🎧', label:'ניגון חוזר (DJ)', clr:'#7c3aed',
+   staff:[], src:'dj',
+   desc:'ניגון חוזר — תקלוט ו-DJ.'},
 ];
 
 function memberCard(entry, clr){
