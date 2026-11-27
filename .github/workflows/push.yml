@@ -3,7 +3,7 @@
 name: push
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '2-57/5 * * * *'   # כל 5 דקות, לא בדיוק בתחילת השעה (אז גיטהאב עמוס ומדלג)
   workflow_dispatch:
 concurrency:
   group: push
