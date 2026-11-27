@@ -13,7 +13,7 @@ const AREAS=['רווחה ורמזור','לימודים','נוכחות','משפח
 const PRI={low:{l:'רגיל',c:'#7A6A66'},high:{l:'חשוב',c:'#b45309'},urgent:{l:'דחוף',c:'#b91c1c'}};
 const STS={open:{l:'פתוחה',c:'#8496ab'},doing:{l:'בעבודה',c:'#c2410c'},done:{l:'הושלמה',c:'#047857'}};
 const AUD={all:'כל הצוות',ya:"צוות י\"א",yb:"צוות י\"ב",academy:'צוות האקדמיה',pick:'אנשים מסוימים'};
-const M={tasks:{},posts:{},ok:false,err:'',view:'mine',f:{st:'active',who:'',area:'',q:''},open:null,form:null,started:false,notified:{}};
+const M={tasks:{},posts:{},phones:{},smsg:{},wa:null,sf:{},ok:false,err:'',view:'mine',f:{st:'active',who:'',area:'',q:''},open:null,form:null,started:false,notified:{}};
 window.MSG=M;
 const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -62,7 +62,7 @@ function restartListen(){ if(UNSUB){ try{ UNSUB(); }catch(e){} UNSUB=null; } M.s
 async function msgStart(){
   if(M.started||!me()) return; M.started=true;
   try{ const {dbm,rdb}=await db();
-    UNSUB=dbm.onValue(dbm.ref(rdb,MSG_PATH),snap=>{ const v=snap.val()||{}; const prev=M.ok; M.tasks=v.tasks||{}; M.posts=v.posts||{}; M.ok=true; M.err=''; RETRY=0;
+    UNSUB=dbm.onValue(dbm.ref(rdb,MSG_PATH),snap=>{ const v=snap.val()||{}; const prev=M.ok; M.tasks=v.tasks||{}; M.posts=v.posts||{}; M.phones=v.phones||{}; M.smsg=v.smsg||{}; M.ok=true; M.err=''; RETRY=0;
       if(prev) notifyNew(); else markKnown(); badge(); if(active()) softRender(); },
       e=>{ console.warn('msg listen',e); DB=null; UNSUB=null; M.started=false;
         /* ההאזנה נותקה (בדרך כלל בגלל ניתוק רגעי של הכניסה) — מתחברים מחדש לבד */
@@ -105,8 +105,9 @@ window.msgSend=function(){
   const g=k=>document.getElementById('mp-'+k); const body=g('body').value.trim(), title=g('title').value.trim();
   if(!body&&!title){ msgToast('כתבו תוכן להודעה'); return; }
   let to=g('to').value; if(to==='pick'){ to=[...document.querySelectorAll('.mp-pick:checked')].map(x=>x.value); if(!to.length){ msgToast('בחרו למי לשלוח'); return; } }
-  const id=uid(); put('posts/'+id,{title,body,to,urgent:g('urgent').checked,ack:g('ack').checked,by:me().id,at:Date.now()});
-  g('body').value=''; g('title').value=''; g('urgent').checked=false; msgToast('📢 ההודעה נשלחה');
+  const id=uid(), wa=g('wa').checked; put('posts/'+id,{title,body,to,urgent:g('urgent').checked,ack:g('ack').checked,by:me().id,at:Date.now()});
+  g('body').value=''; g('title').value=''; g('urgent').checked=false; g('wa').checked=false; msgToast('📢 ההודעה נשלחה בפורטל');
+  if(wa){ M.wa={k:'staff',id,p:{title,body,to,by:me().id}}; msgRender(); }
 };
 window.msgTaskSt=function(id,st){ const t=M.tasks[id]; if(!t||!canEditSt(t)) return;
   const ch={st,upd:Date.now()}; if(st==='done'){ ch.doneAt=Date.now(); ch.doneBy=me().id; } else { ch.doneAt=null; ch.doneBy=null; }
@@ -116,7 +117,7 @@ window.msgTaskComment=function(id){ const i=document.getElementById('tc-'+id); c
 window.msgTaskDel=function(id){ const t=M.tasks[id]; if(!t||!(isAdmin()||t.by===me().id)) return; if(confirm('למחוק את המשימה "'+t.t+'"?')){ M.open=null; del('tasks/'+id); } };
 const canEditSt=t=>isAdmin()||t.by===me().id||mineT(t);
 window.msgOpenTask=function(id){ M.open=id; const t=M.tasks[id]; if(t&&mineT(t)&&!(t.seen||{})[me().id]) patch('tasks/'+id+'/seen',{[me().id]:Date.now()}); msgRender(); };
-window.msgClose=function(){ M.open=null; M.form=null; msgRender(); };
+window.msgClose=function(){ M.open=null; M.form=null; M.wa=null; msgRender(); };
 window.msgNewTask=function(pre){ if(!canTask()) return; M.form=Object.assign({id:null,t:'',d:'',area:'',who:[],due:'',pri:'low',stu:''},pre||{}); msgRender(); };
 window.msgEditTask=function(id){ const t=M.tasks[id]; if(!t) return; M.open=null; M.form=Object.assign({},t,{id,who:[...(t.who||[])]}); msgRender(); };
 window.msgSaveTask=function(){
@@ -153,7 +154,7 @@ function postCard(p){
   const audTxt=Array.isArray(p.to)?p.to.map(uName).join(', '):AUD[p.to||'all'];
   return `<div class="m-post${p.urgent?' urgent':''}${need?' need':''}">
     <div class="m-post-h">${av(p.by,34)}<div style="flex:1;min-width:0"><b>${E(uName(p.by))}</b> <small>${E(uRole(p.by))}</small><div class="m-sub">${fmtAt(p.at)} · אל: ${E(audTxt)}</div></div>
-      ${p.urgent?'<span class="m-urg">🔴 דחוף</span>':''}${(mine||isAdmin())?`<button class="m-x" title="מחיקה" onclick="msgDelPost('${p.id}')">🗑️</button>`:''}</div>
+      ${p.urgent?'<span class="m-urg">🔴 דחוף</span>':''}${(mine||isAdmin())?`<button class="m-x" title="שליחה גם בוואטסאפ" onclick="msgWa('staff','${p.id}')">📲</button><button class="m-x" title="מחיקה" onclick="msgDelPost('${p.id}')">🗑️</button>`:''}</div>
     ${p.title?`<div class="m-post-t">${E(p.title)}</div>`:''}<div class="m-post-b">${E(p.body).replace(/\n/g,'<br>')}</div>
     <div class="m-post-a">${need?`<button class="m-ack" onclick="msgAck('${p.id}')">✓ קראתי</button>`:(p.ack!==false&&!mine&&acks[me().id]?`<span class="m-acked">✓ אישרת קריאה</span>`:'')}
       ${p.ack!==false&&(mine||isAdmin())&&aud.length?`<details class="m-ackd"><summary>✓ ${nAck}/${aud.length} אישרו קריאה</summary><div class="m-ackl">
@@ -169,6 +170,7 @@ function composeBox(){
     <div class="m-crow"><label>אל: <select id="mp-to" onchange="document.getElementById('mp-pickbox').style.display=this.value==='pick'?'flex':'none'">${opts}</select></label>
       <label class="m-cb"><input type="checkbox" id="mp-ack" checked> לבקש אישור קריאה</label>
       <label class="m-cb"><input type="checkbox" id="mp-urgent"> 🔴 דחוף</label>
+      <label class="m-cb"><input type="checkbox" id="mp-wa"> 📲 גם בוואטסאפ</label>
       <button class="m-btn" onclick="msgSend()">שליחה</button></div>
     <div id="mp-pickbox" class="m-pick" style="display:none">${staff().filter(u=>u.id!==me().id).map(u=>`<label><input type="checkbox" class="mp-pick" value="${u.id}"> ${E(u.n)} <small>${E(u.r)}</small></label>`).join('')}</div></div>`;
 }
@@ -260,14 +262,105 @@ window.msgRender=function(){
   badge();
   if(!M.ok){ el.innerHTML=M.err?`<div class="m-err">${E(M.err)}</div>`:'<div class="m-empty">טוען…</div>'; msgStart(); return; }
   const nP=list(M.posts).filter(needAck).length, nT=list(M.tasks).filter(t=>mineT(t)&&t.st!=='done').length;
-  const tabs=[['mine','📥 שלי',nP+nT],['tasks','✅ משימות',0],['posts','📢 הודעות',nP]].concat(isAdmin()?[['track','📊 מעקב',0]]:[]);
+  const tabs=[['mine','📥 שלי',nP+nT],['tasks','✅ משימות',0],['posts','📢 הודעות',nP]].concat(canTask()?[['stu','🎓 הודעות לחניכים',0]]:[]).concat(isAdmin()?[['track','📊 מעקב',0]]:[]);
   const nb=window.Notification&&Notification.permission==='default'?'<button class="m-btn2 sm" onclick="msgNotifOn()">🔔 הפעלת התראות בדפדפן</button>':'';
-  const body=M.view==='tasks'?vTasks():M.view==='posts'?vPosts():M.view==='track'&&isAdmin()?vTrack():vMine();
+  const body=M.view==='tasks'?vTasks():M.view==='posts'?vPosts():M.view==='stu'&&canTask()?vStu():M.view==='track'&&isAdmin()?vTrack():vMine();
   const t=M.open&&M.tasks[M.open]?Object.assign({id:M.open},M.tasks[M.open]):null;
-  el.innerHTML=`<div class="m-tabs">${tabs.map(([k,l,n])=>`<button class="${M.view===k?'on':''}" onclick="msgView('${k}')">${l}${n?` <span class="m-n">${n}</span>`:''}</button>`).join('')}<span style="flex:1"></span>${nb}</div>
-    ${body}${M.form?taskForm():t?taskModal(t):''}`;
+  el.innerHTML=`<div class="m-tabs">${tabs.map(([k,l,n])=>`<button class="${M.view===k?'on':''}" onclick="msgView('${k}')">${l}${n?` <span class="m-n">${n}</span>`:''}</button>`).join('')}<span style="flex:1"></span><button class="m-btn2 sm" onclick="msgMyPhone()" title="כדי שאפשר יהיה לשלוח לך הודעות מהפורטל בוואטסאפ">📱 ${M.phones[me().id]?'המספר שלי לוואטסאפ':'הוספת המספר שלי לוואטסאפ'}</button>${nb}</div>
+    ${body}${M.form?taskForm():t?taskModal(t):M.wa?waModal():''}`;
   if(t&&mineT(t)&&!(t.seen||{})[me().id]) patch('tasks/'+t.id+'/seen',{[me().id]:Date.now()});
 };
+
+/* ═══════════ וואטסאפ (בקשת יובל 27.11.2026): לחיצה אחת לכל נמען — נפתח וואטסאפ עם ההודעה מוכנה ═══════════
+   מספרי הצוות: portal/bogeret/secure/msg/phones/<מזהה משתמש> (כל אחד מוסיף את שלו, הרכז — של כולם).
+   מספרי החניכים: מתוך רשימת החניכים בפורטל (שדה הטלפון). */
+const waNum=ph=>{ let d=String(ph||'').replace(/\D/g,''); if(!d) return ''; if(d.startsWith('972')) return d; if(d.startsWith('0')) return '972'+d.slice(1); return d.length===9?'972'+d:d; };
+const waTxt=(title,body,from)=>[title?'*'+title+'*':'',body,from?'— '+from:''].filter(Boolean).join('\n');
+const waHref=(ph,txt)=>`https://wa.me/${waNum(ph)}?text=${encodeURIComponent(txt)}`;
+window.msgWa=function(k,id){ M.wa={k,id}; msgRender(); };
+function waRows(){
+  const w=M.wa; if(!w) return {txt:'',rows:[]};
+  if(w.k==='staff'){ const p=w.p||M.posts[w.id]; if(!p) return {txt:'',rows:[]};
+    const txt=waTxt(p.title,p.body,uName(p.by)+' · פורטל בוגרת');
+    return {txt,rows:audUsers(p).map(u=>({n:u.n,sub:u.r,ph:M.phones[u.id]||'',uid:u.id}))}; }
+  const m=M.smsg[w.id]; if(!m) return {txt:'',rows:[]};
+  const txt=waTxt(m.title,m.body,uName(m.by)+' · השכבה הבוגרת');
+  return {txt,rows:stuTargets(m).map(s=>({n:s.n,sub:s.g,ph:s.ph||''}))};
+}
+function waModal(){
+  const {txt,rows}=waRows(), has=rows.filter(r=>waNum(r.ph)).length;
+  return `<div class="m-modal" onclick="if(event.target===this)msgClose()"><div class="m-dlg">
+    <div class="m-dlg-h"><b>📲 שליחה בוואטסאפ</b><button class="m-x" onclick="msgClose()">✕</button></div>
+    <div class="m-meta">ההודעה כבר נשמרה ${M.wa.k==='staff'?'בפורטל':'לחניכים'}. כאן שולחים אותה גם בוואטסאפ: כל לחיצה פותחת שיחה עם ההודעה מוכנה — רק ללחוץ "שליחה" בוואטסאפ.</div>
+    <div class="m-wa-txt">${E(txt).replace(/\n/g,'<br>')}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><button class="m-btn2" onclick="msgWaCopy()">📋 העתקת ההודעה (לקבוצת וואטסאפ)</button><span class="m-sub" style="align-self:center">${has} מתוך ${rows.length} עם מספר</span></div>
+    <div class="m-wa-list">${rows.map((r,i)=>`<div class="m-wa-r"><div style="flex:1;min-width:0"><b>${E(r.n)}</b> <small>${E(r.sub||'')}</small></div>
+      ${waNum(r.ph)?`<a class="m-wa-b" target="_blank" rel="noopener" href="${waHref(r.ph,txt)}" onclick="this.classList.add('sent')">📲 שליחה</a>`
+        :r.uid&&(isAdmin()||r.uid===me().id)?`<input class="m-wa-in" id="wap-${i}" placeholder="05X-XXXXXXX" inputmode="tel"><button class="m-btn2 sm" onclick="msgPhone('${r.uid}','wap-${i}')">שמירה</button>`
+        :'<span class="m-sub">אין מספר</span>'}</div>`).join('')||'<div class="m-empty">אין נמענים</div>'}</div>
+    <div class="m-dlg-f"><button class="m-btn2" onclick="msgClose()">סגירה</button></div></div></div>`;
+}
+window.msgWaCopy=function(){ const {txt}=waRows(); navigator.clipboard.writeText(txt).then(()=>msgToast('📋 ההודעה הועתקה'),()=>prompt('העתיקו:',txt)); };
+window.msgPhone=function(u,inId){ const v=(document.getElementById(inId)||{}).value||''; const d=v.replace(/\D/g,'');
+  if(d.length<9){ msgToast('מספר לא תקין'); return; } M.phones[u]=v.trim(); put('phones/'+u,v.trim()); msgToast('📱 המספר נשמר'); msgRender(); };
+window.msgMyPhone=function(){ const cur=M.phones[me().id]||''; const v=prompt('המספר שלך לוואטסאפ (כדי שהצוות יוכל לשלוח לך הודעות מהפורטל):',cur); if(v==null) return;
+  const d=v.replace(/\D/g,''); if(d&&d.length<9){ msgToast('מספר לא תקין'); return; } put('phones/'+me().id,v.trim()||null); msgToast('📱 נשמר'); };
+
+/* ═══════════ הודעות לחניכים: באפליקציית החניכים (me.html) + וואטסאפ ═══════════
+   msg/smsg/<id> = {title, body, to:{g:[קבוצות]} או {n:[שמות]}, by, at, inApp}
+   לכל חניך/ה עם חשבון באפליקציה: secure/stu/<מזהה>/in/<id> (וסימון קריאה: stu/<מזהה>/inr/<id>) */
+const sGrade=s=>String(s.l||'').replace(/['׳"]/g,'');
+function stuGroups(){ const all=[...new Set(students().map(s=>s.g).filter(Boolean))].sort(), u=me(); if(!u) return [];
+  if(u.mode==='admin'||u.scope==='all') return all; const named=all.filter(g=>String(u.r||'').includes(g)); if(named.length) return named;
+  if(u.scope==='academy') return all.filter(g=>g==='אקדמיה');
+  if(u.scope==='ya') return all.filter(g=>students().some(s=>s.g===g&&sGrade(s)==='יא'));
+  if(u.scope==='yb') return all.filter(g=>students().some(s=>s.g===g&&sGrade(s)==='יב'));
+  return all; }
+function stuTargets(m){ const to=m.to||{}; return students().filter(s=>(to.n||[]).includes(s.n)||(to.g||[]).includes(s.g)); }
+const sKey=n=>typeof sha256hex==='function'?sha256hex('stu:'+n).slice(0,12):'';
+let STU_ACC=null;
+async function stuAcc(){ if(STU_ACC) return STU_ACC; try{ const {dbm,rdb}=await db(); STU_ACC=(await dbm.get(dbm.ref(rdb,'portal/bogeret/secure/stu'))).val()||{}; }catch(e){ STU_ACC={}; } setTimeout(()=>{STU_ACC=null},60000); return STU_ACC; }
+function vStu(){
+  const gs=stuGroups(), f=M.sf; if(!f.g) f.g=[];
+  const L=list(M.smsg).filter(m=>stuTargets(m).some(s=>gs.includes(s.g))).sort((a,b)=>b.at-a.at);
+  const pickList=f.g.length?students().filter(s=>f.g.includes(s.g)).sort((a,b)=>a.n.localeCompare(b.n,'he')):[];
+  return `<div class="m-compose"><div class="m-ch">🎓 הודעה חדשה לחניכים</div>
+    <input id="ms-title" placeholder="כותרת (לא חובה)" value="${E(f.title||'')}">
+    <textarea id="ms-body" placeholder="מה רוצים להגיד לחניכים?">${E(f.body||'')}</textarea>
+    <div class="m-lbl">לאילו קבוצות:</div><div class="m-pick">${gs.map(g=>`<label><input type="checkbox" class="ms-g" value="${E(g)}" ${f.g.includes(g)?'checked':''} onchange="msgStuG()"> ${E(g)}</label>`).join('')}</div>
+    ${pickList.length?`<label class="m-cb"><input type="checkbox" id="ms-some" ${f.some?'checked':''} onchange="msgStuG()"> רק לחלק מהחניכים</label>
+      ${f.some?`<div class="m-pick">${pickList.map(s=>`<label><input type="checkbox" class="ms-n" value="${E(s.n)}" ${(f.n||[]).includes(s.n)?'checked':''}> ${E(s.n)} <small>${E(s.g)}</small></label>`).join('')}</div>`:''}`:''}
+    <div class="m-crow"><label class="m-cb"><input type="checkbox" id="ms-wa" ${f.wa===false?'':'checked'}> 📲 גם בוואטסאפ</label>
+      <span class="m-sub">באפליקציה ההודעה מגיעה לחניכים שכבר קיבלו קוד כניסה (עם התראה לטלפון).</span><span style="flex:1"></span>
+      <button class="m-btn" onclick="msgStuSend()">שליחה</button></div></div>
+  ${L.map(m=>{ const tg=stuTargets(m), to=m.to||{};
+    return `<div class="m-post"><div class="m-post-h">${av(m.by,34)}<div style="flex:1;min-width:0"><b>${E(uName(m.by))}</b><div class="m-sub">${fmtAt(m.at)} · אל: ${E((to.n&&to.n.length)?to.n.length+' חניכים':(to.g||[]).join(', '))} (${tg.length})${m.inApp!=null?` · באפליקציה: ${m.inApp}`:''}</div></div>
+      <button class="m-x" title="שליחה בוואטסאפ" onclick="msgWa('stu','${m.id}')">📲</button>${(m.by===me().id||isAdmin())?`<button class="m-x" title="מחיקה" onclick="msgStuDel('${m.id}')">🗑️</button>`:''}</div>
+      ${m.title?`<div class="m-post-t">${E(m.title)}</div>`:''}<div class="m-post-b">${E(m.body).replace(/\n/g,'<br>')}</div></div>`; }).join('')||'<div class="m-empty">עוד לא נשלחו הודעות לחניכים</div>'}`;
+}
+function stuFormRead(){ const g=k=>document.getElementById('ms-'+k); const f=M.sf;
+  f.title=(g('title')||{}).value||''; f.body=(g('body')||{}).value||''; f.g=[...document.querySelectorAll('.ms-g:checked')].map(x=>x.value);
+  f.some=!!(g('some')&&g('some').checked); f.n=[...document.querySelectorAll('.ms-n:checked')].map(x=>x.value); f.wa=!!(g('wa')&&g('wa').checked); return f; }
+window.msgStuG=function(){ stuFormRead(); msgRender(); };
+window.msgStuSend=async function(){
+  const f=stuFormRead(), title=f.title.trim(), body=f.body.trim();
+  if(!title&&!body){ msgToast('כתבו תוכן להודעה'); return; }
+  if(!f.g.length){ msgToast('בחרו לפחות קבוצה אחת'); return; }
+  const to=f.some?{n:f.n.filter(n=>students().some(s=>s.n===n&&f.g.includes(s.g)))}:{g:f.g};
+  if(f.some&&!to.n.length){ msgToast('בחרו חניכים'); return; }
+  const id=uid(), at=Date.now(), m={title,body,to,by:me().id,at};
+  const acc=await stuAcc(), up={}; let n=0;
+  stuTargets(m).forEach(s=>{ const k=sKey(s.n); if(k&&acc[k]&&acc[k].p){ up[`${k}/in/${id}`]={title,body,by:uName(me().id),at}; n++; } });
+  m.inApp=n;
+  const ok=await put('smsg/'+id,m); if(!ok) return;
+  if(n) await run((dbm,rdb)=>dbm.update(dbm.ref(rdb,'portal/bogeret/secure/stu'),up),'⚠️ השליחה לאפליקציה נכשלה');
+  M.sf={wa:f.wa}; msgToast(`🎓 ההודעה נשמרה${n?` ונשלחה ל-${n} חניכים באפליקציה`:''}`);
+  if(f.wa){ M.smsg[id]=m; M.wa={k:'stu',id}; } msgRender();
+};
+window.msgStuDel=async function(id){ const m=M.smsg[id]; if(!m||!confirm('למחוק את ההודעה? היא תימחק גם מהאפליקציה של החניכים.')) return;
+  const acc=await stuAcc(), up={}; stuTargets(m).forEach(s=>{ const k=sKey(s.n); if(k&&acc[k]){ up[`${k}/in/${id}`]=null; up[`${k}/inr/${id}`]=null; } });
+  if(Object.keys(up).length) await run((dbm,rdb)=>dbm.update(dbm.ref(rdb,'portal/bogeret/secure/stu'),up));
+  del('smsg/'+id); };
 
 /* ---------- חיבור לפורטל ---------- */
 window.msgMount=function(){
@@ -329,6 +422,12 @@ const css=document.createElement('style'); css.textContent=`
 .m-ch{font:800 15px Heebo,sans-serif;color:#8E033C}
 .m-compose input,.m-compose textarea,.m-compose select,.m-dlg input,.m-dlg textarea,.m-dlg select,.m-bar select,.m-q{border:1px solid #F3C2B0;border-radius:9px;padding:8px 10px;font:14px Assistant,Heebo,sans-serif;background:#fff;width:100%;box-sizing:border-box}
 .m-compose textarea{min-height:70px;resize:vertical}
+.m-wa-txt{background:#dcf8c6;border-radius:10px;padding:10px 12px;font-size:14px;margin-top:8px}
+.m-wa-list{max-height:46vh;overflow:auto;border:1px solid #F3C2B0;border-radius:10px}
+.m-wa-r{display:flex;align-items:center;gap:8px;padding:7px 10px;border-top:1px solid #f6e3dc}.m-wa-r:first-child{border-top:0}
+.m-wa-b{background:#25D366;color:#fff;border-radius:999px;padding:5px 12px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap}
+.m-wa-b.sent{background:#9ca3af}.m-wa-b.sent::after{content:' ✓'}
+.m-wa-in{width:130px!important;padding:5px 8px!important}
 .m-crow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.m-crow select{width:auto}.m-crow label{font-size:13.5px;font-weight:600;display:flex;gap:5px;align-items:center}
 .m-cb input{width:auto!important}
 .m-btn{background:#FC5028;color:#fff;border:none;border-radius:10px;padding:9px 18px;font:800 14px Heebo,sans-serif;cursor:pointer;margin-inline-start:auto}

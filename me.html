@@ -87,7 +87,7 @@ const norm=c=>String(c||'').toUpperCase().replace(/[^0-9A-Z]/g,'');
 /* חלון הבדיקה: בוקר 05:00–13:59 · ערב 17:00–23:59 */
 function curSlot(){const d=new Date(),h=d.getHours();if(h>=5&&h<14)return {c:iso(d)+'_m',l:'בוקר',t:'08:00'};if(h>=17)return {c:iso(d)+'_e',l:'ערב',t:'20:00'};return null}
 
-let K=null, P=null, CFG={}, MYCHK=null, X={}, XS={}, unsub=[], VIEW='home';
+let K=null, P=null, CFG={}, MYCHK=null, X={}, XS={}, IN={}, INR={}, OPENM=null, unsub=[], VIEW='home';
 
 /* ── כניסה ── */
 function loginView(msg){
@@ -113,6 +113,8 @@ authM.onAuthStateChanged(auth,async u=>{
   get(ref(rdb,`${ROOT}/chk_cfg`)).then(s=>{CFG=s.val()||{};render()}).catch(()=>{});
   unsub.push(onValue(ref(rdb,`${ROOT}/stu/${K}/x`),s=>{X=s.val()||{};render()}));
   unsub.push(onValue(ref(rdb,`${ROOT}/stu/${K}/xs`),s=>{XS=s.val()||{};render();passRefresh()}));
+  unsub.push(onValue(ref(rdb,`${ROOT}/stu/${K}/in`),s=>{IN=s.val()||{};render()}));
+  unsub.push(onValue(ref(rdb,`${ROOT}/stu/${K}/inr`),s=>{INR=s.val()||{};render()}));
   watchChk();
   render(); pushRefresh();
   setInterval(()=>{ const s=curSlot(); if((s&&s.c)!==CUR){ watchChk(); render(); } },60000);
@@ -131,6 +133,7 @@ function render(){
   const first=String(P.n||'').split(' ')[0];
   $('#app').innerHTML=`<div class="top"><h1>שלום ${esc(first)} 👋</h1><small>${esc(P.g||'')} · השכבה הבוגרת, מבואות ים</small></div>
    ${chkCard()}
+   ${msgCard()}
    <div class="card"><h2>🚪 יציאה מהכפר</h2><div class="mut">ממלאים בקשה → שולחים להורה בוואטסאפ → ההורה מאשר/ת → המדריך/ה מאשר/ת → מקבלים כאן אישור לשער.</div>
     <button class="btn pri" id="nx">בקשת יציאה חדשה</button>${exitsList()}</div>
    ${pushCard()}
@@ -182,7 +185,20 @@ function bindHome(){
   on('lo',e=>{e.preventDefault();if(confirm('לצאת מהחשבון? כדי להיכנס שוב צריך את הקוד.'))authM.signOut(auth)});
   on('pushOn',pushEnable);
   document.querySelectorAll('[data-pass]').forEach(b=>b.onclick=()=>openPass(b.dataset.pass));
+  document.querySelectorAll('[data-msg]').forEach(b=>b.onclick=()=>{ const id=b.dataset.msg; OPENM=OPENM===id?null:id;
+    if(!INR[id]) set(ref(rdb,`${ROOT}/stu/${K}/inr/${id}`),Date.now()).catch(()=>{}); render(); });
   document.querySelectorAll('[data-wa]').forEach(b=>b.onclick=()=>shareParent(b.dataset.wa));
+}
+
+/* ── הודעות מהצוות ── */
+function msgCard(){
+  const L=Object.entries(IN).filter(([,m])=>m&&m.at).sort((a,b)=>b[1].at-a[1].at).slice(0,15);
+  if(!L.length) return '';
+  const un=L.filter(([id])=>!INR[id]).length;
+  return `<div class="card"><h2>📩 הודעות מהצוות ${un?`<span class="tag e">${un} חדשות</span>`:''}</h2>${L.map(([id,m])=>{ const open=OPENM===id||(!OPENM&&!INR[id]&&L.findIndex(x=>!INR[x[0]])===L.findIndex(x=>x[0]===id));
+    return `<div class="ex" data-msg="${id}" style="cursor:pointer"><b>${INR[id]?'':'🔴 '}${esc(m.title||String(m.body||'').slice(0,40))}</b>
+      <div class="mut" style="font-size:13px">${esc(m.by||'')} · ${new Date(m.at).toLocaleString('he-IL',{dateStyle:'short',timeStyle:'short'})}</div>
+      ${open?`<div style="white-space:pre-wrap;margin-top:6px">${esc(m.body||'')}</div>`:''}</div>`; }).join('')}</div>`;
 }
 
 /* ── בקשת יציאה ── */

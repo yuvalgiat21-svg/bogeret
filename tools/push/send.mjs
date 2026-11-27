@@ -161,6 +161,15 @@ for (const [k, u] of Object.entries(stu)) {
   }
 }
 
+/* ── הודעות מהצוות לחניכים (stu/<k>/in) ── */
+for (const [k, u] of Object.entries(stu)) {
+  if (!u || !u.in) continue;
+  for (const [id, m] of Object.entries(u.in)) {
+    if (!m || !fresh(m.at) || (u.inr || {})[id]) continue;
+    add(`st_${k}`, `sm_${id}_${k}`, `📩 הודעה מ${m.by || 'הצוות'}`, String(m.title || m.body || '').slice(0, 120), ME_URL);
+  }
+}
+
 let ok = 0, bad = 0;
 const upd = {};
 for (const q of queue) {
