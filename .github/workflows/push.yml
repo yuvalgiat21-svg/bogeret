@@ -25,3 +25,8 @@ jobs:
         working-directory: tools/push
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+      - run: node rooms.mjs          # שריון מתחמים: סנכרון עם הגיליון של פז
+        if: always()
+        working-directory: tools/push
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
