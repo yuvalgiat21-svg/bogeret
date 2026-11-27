@@ -70,6 +70,7 @@ function myCount(){ if(!me()) return 0;
 function badge(){ const b=document.getElementById('tab-msg'); if(!b) return; let s=b.querySelector('.msg-badge'); const n=myCount();
   if(!s){ s=document.createElement('span'); s.className='msg-badge'; b.appendChild(s); } s.textContent=n; s.style.display=n?'':'none';
   document.title=(n?`(${n}) `:'')+document.title.replace(/^\(\d+\)\s*/,''); }
+window.msgBadgeRefresh=()=>{ if(M.ok) badge(); };
 function markKnown(){ list(M.posts).forEach(p=>M.notified['p'+p.id]=1); list(M.tasks).forEach(t=>M.notified['t'+t.id]=1); }
 function notifyNew(){
   const out=[];

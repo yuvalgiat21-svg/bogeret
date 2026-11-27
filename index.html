@@ -319,6 +319,24 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 .nav button { flex-shrink:0; padding:6px clamp(6px,0.65vw,10px); border-radius:10px; font-size:clamp(11px,0.82vw,12.5px); font-weight:600; color:var(--text2); cursor:pointer; border:1.5px solid #F3C2B0; background:#fff; font-family:'Heebo'; white-space:nowrap; transition:all .15s; box-shadow:0 1px 2px rgba(142,3,60,.06); }
 .nav button:hover { color:var(--text); background:#FFF1EB; border-color:#FC5028; }
 .nav button.active { color:#fff; background:var(--blue); border:1px solid var(--blue); font-weight:700; box-shadow:0 2px 8px rgba(29,78,216,.35); }
+.nv-grp { display:flex; flex-shrink:0; }
+.nav .nv-par.open { background:#FFF1EB; border-color:#FC5028; color:var(--text); }
+.nv-car { font-size:10px; opacity:.7; }
+.nv-menu { display:none; position:fixed; z-index:8000; background:#fff; border:1px solid #F3C2B0; border-radius:12px; padding:6px; box-shadow:0 12px 32px rgba(142,3,60,.18); min-width:190px; flex-direction:column; gap:3px; }
+.nv-menu.open { display:flex; }
+.nav .nv-menu button { text-align:right; border:none; box-shadow:none; border-radius:8px; padding:9px 12px; font-size:14px; }
+.nav .nv-menu button:hover { background:#FFF1EB; }
+.nav .nv-menu button.active { background:#FC5028; color:#fff; border:none; box-shadow:none; }
+@media (min-width:900px){ .nav { flex-wrap:wrap; overflow:visible; } }
+.nv-sp { flex:1; min-width:6px; }
+.nav.nv-new > button, .nav.nv-new > .nv-grp:not(.nv-more) > .nv-par { font-size:clamp(12.5px,0.95vw,14px); padding:7px clamp(9px,0.9vw,14px); font-weight:700; }
+.nav .nv-more > .nv-par { background:#fff; color:var(--text2); border-style:dashed; }
+.nav .nv-more > .nv-par.active { background:var(--blue); color:#fff; border-style:solid; }
+.nav .nv-menu button.nv-danger { color:#b91c1c; }
+.nav .nv-menu button.nv-danger.active { background:#b91c1c; color:#fff; }
+.nv-sep { height:1px; background:#F3C2B0; margin:4px 6px; }
+.nav button.nv-mode { font-size:12px; color:var(--text3); border-style:dashed; }
+.nav .nv-menu button.nv-mode { font-size:12.5px; color:var(--text2); }
 
 /* MAIN */
 .main { padding:20px 24px; max-width:1500px; margin:0 auto; }
@@ -1547,23 +1565,31 @@ const EDU_PLAN_YB = [
 const GROUPS_YA = ['שלדג','שחף','שיר'];
 const GRP_CLR = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','חוף':'#0891b2','צוק':'#65a30d','אקדמיה':'#c2410c'};
 
+/* ── סרגל הלשוניות ──
+   סרגל חדש: לשוניות ראשיות (main) לעבודה היומיומית + תפריט "עוד" (more) לשאר.
+   סרגל קודם (classic): כל הלשוניות בשורה אחת, כמו שהיה. המנהל בוחר בין השניים, והבחירה נשמרת בענן לכל הצוות. */
+const NAV_GROUPS = { plan:{icon:'🎓', label:'תוכניות'} };
 const NEW_TABS = [
-  {id:'overview', icon:'📊', label:'סקירה'},
-  {id:'msg',      icon:'💬', label:'CRM'},
-  {id:'calendar', icon:'📅', label:'יומן'},
-  {id:'attendance',icon:'✅', label:'נוכחות'},
-  {id:'team',     icon:'🧑‍🤝‍🧑', label:'צוות'},
-  {id:'groups',   icon:'👥', label:'ניהול קבוצה'},
-  {id:'pedagogy', icon:'📚', label:'מעקב לימודי'},
-  {id:'lc',       icon:'🏫', label:'מרכז למידה'},
-  {id:'companion',icon:'🧭', label:'תוכנית מלווה'},
-  {id:'eduplan',  icon:'🎓', label:'תוכנית חינוכית'},
-  {id:'evacplan', icon:'🚨', label:'פינוי בחירום'},
-  {id:'prof',     icon:'📂', label:'חומרים מקצועיים'},
-  {id:'graduates',icon:'🎖️', label:'בוגרים'},
-  {id:'links',    icon:'🔗', label:'לינקים שימושיים'},
-  {id:'users',    icon:'🔐', label:'משתמשים', admin:true},
+  {id:'overview', icon:'📊', label:'סקירה',          tier:'main'},
+  {id:'msg',      icon:'💬', label:'CRM',            tier:'main'},
+  {id:'groups',   icon:'👥', label:'ניהול קבוצה',    tier:'main'},
+  {id:'attendance',icon:'✅', label:'נוכחות',         tier:'main'},
+  {id:'lc',       icon:'🏫', label:'מרכז למידה',     tier:'main'},
+  {id:'eduplan',  icon:'🎓', label:'תוכנית חינוכית', tier:'main', grp:'plan'},
+  {id:'companion',icon:'🧭', label:'תוכנית מלווה',   tier:'main', grp:'plan'},
+  {id:'calendar', icon:'📅', label:'יומן',           tier:'main'},
+  {id:'pedagogy', icon:'📚', label:'מעקב לימודי',    tier:'more'},
+  {id:'team',     icon:'🧑‍🤝‍🧑', label:'צוות',          tier:'more'},
+  {id:'graduates',icon:'🎖️', label:'בוגרים',         tier:'more'},
+  {id:'prof',     icon:'📂', label:'חומרים מקצועיים', tier:'more'},
+  {id:'links',    icon:'🔗', label:'לינקים שימושיים', tier:'more'},
+  {id:'evacplan', icon:'🚨', label:'פינוי בחירום',   tier:'more', danger:true},
+  {id:'users',    icon:'🔐', label:'משתמשים',        tier:'more', admin:true},
 ];
+/* סדר הסרגל הקודם (כפי שהיה באוויר לפני השינוי) */
+const CLASSIC_ORDER = ['overview','msg','calendar','attendance','team','groups','pedagogy','lc','companion','eduplan','evacplan','prof','graduates','links','users'];
+const NAV_MODE_KEY='bogeret_nav_mode', NAV_MODE_PATH='portal/bogeret/secure/settings/nav_mode';
+let NAV_MODE=(()=>{ try{ return localStorage.getItem(NAV_MODE_KEY)==='classic'?'classic':'new'; }catch(e){ return 'new'; } })();
 
 const $ = s => document.querySelector(s);
 const panelByH2 = txt => [...document.querySelectorAll('#mainContent .panel')]
@@ -5581,8 +5607,7 @@ function reorganize(){
   const us=mkSec('users'); us.innerHTML=viewUsers(); main.appendChild(us);
 
   const nav=document.getElementById('navBar');
-  nav.innerHTML = NEW_TABS.filter(t=>!t.admin || (ME&&ME.mode==='admin'))
-    .map(t=>`<button onclick="show('${t.id}')" id="tab-${t.id}">${t.icon} ${t.label}</button>`).join('');
+  navRender();
   renderGoals();
   if(window.refreshEduMain) refreshEduMain();
   if(window.refreshMedMain) refreshMedMain();
@@ -5992,8 +6017,9 @@ function initApp() {
   lcMount();
   if (window.msgMount) msgMount();
   if (window.renderGrads) renderGrads('');
-  if (ME && ME.lcOnly){ nav.querySelectorAll('button').forEach(b=>{ if(b.id!=='tab-lc') b.remove(); }); show('lc'); }
-  else show('overview');
+  navRender();
+  if (ME && ME.lcOnly) show('lc'); else show('overview');
+  navLoadMode();
 }
 
 /* ═══════ מרכז למידה (תגבורים, חוגים, אישורי יציאה) ═══════
@@ -6010,14 +6036,116 @@ function lcMount(){
   document.getElementById('mainContent').appendChild(s);
 }
 
+/* ── סרגל לשוניות עם לשוניות אב ותפריט נפתח ── */
+function navVisible(){
+  if(ME&&ME.lcOnly) return NEW_TABS.filter(x=>x.id==='lc');
+  return NEW_TABS.filter(x=>(!x.admin||(ME&&ME.mode==='admin'))
+    && !(x.id==='lc'&&typeof lcRole==='function'&&!lcRole()));
+}
+function navBuild(list){
+  const B=x=>`<button onclick="show('${x.id}')" id="tab-${x.id}"${x.danger?' class="nv-danger"':''}>${x.icon} ${x.label}</button>`;
+  const isAdm=ME&&ME.mode==='admin';
+  if(NAV_MODE==='classic'||(ME&&ME.lcOnly)){
+    const ord=CLASSIC_ORDER.map(id=>list.find(x=>x.id===id)).filter(Boolean);
+    return ord.map(B).join('')+(isAdm&&!(ME&&ME.lcOnly)?`<span class="nv-sp"></span><button class="nv-mode" onclick="navSetMode('new')" title="מעבר לסרגל החדש">✨ לסרגל החדש</button>`:'');
+  }
+  const done={}; let h='';
+  const main=list.filter(x=>x.tier==='main'), more=list.filter(x=>x.tier==='more');
+  main.forEach(x=>{
+    if(!x.grp){ h+=B(x); return; }
+    if(done[x.grp]) return; done[x.grp]=1;
+    const G=NAV_GROUPS[x.grp];
+    h+=`<div class="nv-grp" data-grp="${x.grp}"><button class="nv-par" id="par-${x.grp}" onclick="navToggle('${x.grp}',event)">${G.icon} ${G.label}<span class="nv-cur"></span> <span class="nv-car">▾</span></button>
+      <div class="nv-menu" id="menu-${x.grp}">${main.filter(y=>y.grp===x.grp).map(B).join('')}</div></div>`;
+  });
+  if(more.length||isAdm){
+    h+=`<span class="nv-sp"></span><div class="nv-grp nv-more" data-grp="more"><button class="nv-par" id="par-more" onclick="navToggle('more',event)">☰ עוד<span class="nv-cur"></span> <span class="nv-car">▾</span></button>
+      <div class="nv-menu" id="menu-more">${more.map(B).join('')}${isAdm?`<div class="nv-sep"></div><button class="nv-mode" onclick="navSetMode('classic')">↩️ חזרה לסרגל הקודם</button>`:''}</div></div>`;
+  }
+  return h;
+}
+/* בונה את הסרגל מחדש ושומר על הלשונית הפתוחה */
+function navRender(){
+  const nav=document.getElementById('navBar'); if(!nav) return;
+  nav.classList.toggle('nv-new',NAV_MODE!=='classic');
+  nav.innerHTML=navBuild(navVisible());
+  const cur=document.querySelector('#mainContent .sec.active');
+  if(cur){ const b=document.getElementById('tab-'+cur.id.replace(/^sec-/,'')); if(b) b.classList.add('active'); }
+  navSync(); attExitsSync();
+  const lf=document.getElementById('lcFrame'); if(lf&&lf.getAttribute('src')&&lf.dataset.mode!==NAV_MODE){ lf.dataset.mode=NAV_MODE; lf.setAttribute('src',lcSrc()); }
+  if(window.msgBadgeRefresh) msgBadgeRefresh();
+}
+const lcSrc=()=>'lc.html?v=2'+(NAV_MODE==='classic'?'':'&nav=new');
+/* המנהל מחליף סרגל — נשמר בענן לכל הצוות, ומקומית למעבר מהיר */
+window.navSetMode=async function(m){
+  navClose();
+  const msg=m==='classic'?'לחזור לסרגל הקודם (כל הלשוניות בשורה אחת, אישורי יציאה בתוך מרכז הלמידה)? השינוי יחול על כל הצוות.':'לעבור לסרגל החדש? השינוי יחול על כל הצוות.';
+  if(!confirm(msg)) return;
+  NAV_MODE=m; try{ localStorage.setItem(NAV_MODE_KEY,m); }catch(e){}
+  navRender();
+  try{ const {dbm,rdb}=await secureDb(); await dbm.set(dbm.ref(rdb,NAV_MODE_PATH),m); }
+  catch(e){ alert('הסרגל הוחלף אצלך, אבל השמירה לכל הצוות נכשלה. נסו שוב.'); }
+};
+/* בכניסה: קוראים מהענן איזה סרגל המנהל בחר */
+async function navLoadMode(){
+  try{ const {dbm,rdb}=await secureDb(); const s=await dbm.get(dbm.ref(rdb,NAV_MODE_PATH));
+    const m=s.exists()&&s.val()==='classic'?'classic':'new';
+    try{ localStorage.setItem(NAV_MODE_KEY,m); }catch(e){}
+    if(m!==NAV_MODE){ NAV_MODE=m; navRender(); }
+  }catch(e){}
+}
+/* נוכחות ← אישורי יציאה (בסרגל החדש). בסרגל הקודם הם נשארים בתוך מרכז הלמידה */
+function attExitsSync(){
+  const at=document.getElementById('sec-attendance'); if(!at) return;
+  const want=NAV_MODE!=='classic'&&typeof lcRole==='function'&&!!lcRole()&&!(ME&&ME.lcOnly);
+  let bar=document.getElementById('atSubnav');
+  if(want&&!bar){
+    const main=document.createElement('div'); main.className='subsec active'; main.id='at-main';
+    while(at.firstChild) main.appendChild(at.firstChild);
+    const ex=document.createElement('div'); ex.className='subsec'; ex.id='at-exits';
+    ex.innerHTML='<iframe id="exitsFrame" title="אישורי יציאה" style="width:100%;height:calc(100vh - 210px);min-height:600px;border:0;border-radius:14px;background:#FBF6F3;display:block;"></iframe>';
+    bar=mkNav('at',[{k:'main',label:'📊 נוכחות'},{k:'exits',label:'🚪 אישורי יציאה'}],k=>{
+      at.querySelectorAll(':scope > .subsec').forEach(s=>s.classList.toggle('active',s.id==='at-'+k));
+      if(k==='exits'){ const f=document.getElementById('exitsFrame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','lc.html?v=2&only=exits'); }
+    });
+    at.appendChild(bar); at.appendChild(main); at.appendChild(ex);
+  } else if(!want&&bar){
+    const main=document.getElementById('at-main');
+    bar.remove(); const ex=document.getElementById('at-exits'); if(ex) ex.remove();
+    if(main){ while(main.firstChild) at.appendChild(main.firstChild); main.remove(); }
+  }
+}
+window.navToggle=function(g,ev){
+  if(ev) ev.stopPropagation();
+  const m=document.getElementById('menu-'+g), p=document.getElementById('par-'+g); if(!m||!p) return;
+  const open=m.classList.contains('open'); navClose(); if(open) return;
+  const r=p.getBoundingClientRect(); m.classList.add('open'); p.classList.add('open');
+  const w=m.offsetWidth; let left=r.right-w; if(left<8) left=8; if(left+w>innerWidth-8) left=innerWidth-8-w;
+  m.style.top=(r.bottom+6)+'px'; m.style.left=left+'px';
+};
+function navClose(){ document.querySelectorAll('.nv-menu.open,.nv-par.open').forEach(e=>e.classList.remove('open')); }
+document.addEventListener('click',e=>{ if(!e.target.closest('.nv-menu')) navClose(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') navClose(); });
+window.addEventListener('resize',navClose); window.addEventListener('scroll',navClose,{passive:true});
+document.addEventListener('scroll',e=>{ if(e.target&&e.target.id==='navBar') navClose(); },{capture:true,passive:true});
+/* אחרי בחירה: מסמנים את לשונית האב ומציגים בה את שם הלשונית שנבחרה; מסתירים אב בלי ילדים */
+function navSync(){
+  document.querySelectorAll('.nv-grp').forEach(g=>{
+    const kids=g.querySelectorAll('.nv-menu button'); if(!kids.length){ g.style.display='none'; return; }
+    const act=g.querySelector('.nv-menu button.active'), par=g.querySelector('.nv-par'), cur=g.querySelector('.nv-cur');
+    par.classList.toggle('active',!!act); cur.textContent=act?': '+act.textContent.replace(/^\S+\s/,''):'';
+  });
+  navClose();
+}
 function show(id) {
-  if (id==='lc'){ const f=document.getElementById('lcFrame'); if(f && !f.getAttribute('src')) f.setAttribute('src','lc.html?v=1'); }
+  if (id==='lc'){ const f=document.getElementById('lcFrame'); if(f && !f.getAttribute('src')){ f.dataset.mode=NAV_MODE; f.setAttribute('src',lcSrc()); } }
   document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   const sec = document.getElementById('sec-'+id);
   const btn = document.getElementById('tab-'+id);
   if (sec) sec.classList.add('active');
   if (btn) btn.classList.add('active');
+  navSync();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -7729,6 +7857,6 @@ window.syncRamzorFromSheet = async function() {
   }
 };
 </script>
-<script src="msg.js?v=1"></script>
+<script src="msg.js?v=2"></script>
 </body>
 </html>

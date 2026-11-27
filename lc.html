@@ -200,6 +200,8 @@ let S=null;
 /* ── מצב חי: כשהדף פתוח בתוך פורטל בוגרת — משתמשים בכניסה, ברשימת החניכים ובאזור המוגן של הפורטל ── */
 const P=(()=>{try{return window.parent!==window&&window.parent.LC_BRIDGE?window.parent.LC_BRIDGE:null}catch(e){return null}})();
 const LIVE=!!P;
+/* ?only=exits — מצב "אישורי יציאה" בתוך לשונית הנוכחות בפורטל · ?nav=new — בסרגל החדש היציאות לא מופיעות כאן */
+const QS=new URLSearchParams(location.search), ONLY=QS.get('only')||'', NAVNEW=QS.get('nav')==='new';
 const LC_PATH='portal/bogeret/secure/lc';
 const COLS=['settings','teachers','requests','sessions','activities','exits','notes','fixedGroups','log','sync','stu'];
 let LAST={},DB=null,ALLOWED=null,MY_GROUPS=null,ME_N='';
@@ -232,6 +234,9 @@ function madrichGroups(me){
 }
 function setupRole(){
   const me=P.me()||{};ME_N=me.n||'';
+  if(ONLY==='exits'){ALLOWED=['madrich'];UI.role='madrich';UI.tab='exits';
+    MY_GROUPS=(me.mode==='admin'||me.lc||me.scope==='all')?null:madrichGroups(me);UI.grp=MY_GROUPS?(MY_GROUPS[0]||''):'';
+    document.title='אישורי יציאה';const lg=document.querySelector('header .logo');if(lg)lg.innerHTML='<span style="font-size:26px">🚪</span><div>אישורי יציאה<small>מסונכרן עם מרכז הלמידה, החוגים והתוכניות</small></div>';return}
   if(me.mode==='admin'){ALLOWED=null;UI.role='coord'}
   else if(me.lc){ALLOWED=[me.lc];UI.role=me.lc}
   else{ALLOWED=['madrich'];UI.role='madrich';MY_GROUPS=madrichGroups(me);UI.grp=MY_GROUPS[0]||''}
@@ -427,7 +432,10 @@ function render(){
   const un=S.notes.filter(n=>n.to===UI.role&&!n.read).length;
   $('#bell').innerHTML='🔔'+(un?`<span class="n">${un}</span>`:'');
   const pend=S.requests.filter(r=>r.status==='pending').length,pex=S.exits.filter(e=>e.status==='pending'&&(!UI.grp||grpOf(ST(e.sid))===UI.grp)).length;
-  const nav=$('#nav'),tabs=ROLE_TABS[UI.role],bar=`<div class="rolebar">${ROLE_DESC[UI.role]}</div>`;
+  let tabs=ROLE_TABS[UI.role];
+  if(ONLY==='exits')tabs=['exits','calendars'];
+  else if(NAVNEW&&tabs)tabs=tabs.filter(k=>k!=='exits');
+  const nav=$('#nav'),bar=`<div class="rolebar">${ONLY==='exits'?'<b>אישורי יציאה</b> — המדריכים מאשרים יציאות. יציאה מאושרת נרשמת ביומן החניך/ה, ומרכז הלמידה והחוגים רואים אותה ומתריעים על התנגשות.':(NAVNEW&&UI.role==='madrich'?'<b>מדריך/ה</b> — יומני החניכים והתנגשויות. אישורי היציאה נמצאים בלשונית <b>נוכחות</b> בפורטל.':ROLE_DESC[UI.role])}</div>`;
   if(tabs){
     if(!tabs.includes(UI.tab))UI.tab=tabs[0];
     nav.style.display='flex';
