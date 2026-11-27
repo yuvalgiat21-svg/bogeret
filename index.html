@@ -351,8 +351,10 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 /* לינקים שימושיים — סרגל צדי קבוע (במחשב) / כפתור צף שפותח מגירה (בטלפון) */
 .app-row{display:flex;align-items:flex-start}
 .app-row>.main{flex:1;min-width:0}
-#lnkSide{display:none;width:210px;flex-shrink:0;position:sticky;top:12px;margin:20px 0 20px 16px;background:#fff;border:1px solid #F3C2B0;border-radius:16px;padding:12px;max-height:calc(100vh - 230px);overflow:auto}
-#lnkSide.on{display:block}
+#lnkSide{display:none;width:210px;flex-shrink:0;position:sticky;top:12px;margin:20px 0 0 16px;background:#fff;border:1px solid #F3C2B0;border-radius:16px;padding:10px;overflow:hidden;box-sizing:border-box}
+#lnkSide.on{display:flex;flex-direction:column}
+#lnkSide .lnk-a{padding:6px 8px}
+#lnkSide .lnk-a small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
 .lnk-tool{background:#FFF1EB;border:1px solid #F3C2B0;margin-bottom:4px}.lnk-tool:hover{background:#ffe3d8}
 .lnk-h{font:800 14px Heebo,sans-serif;color:#8E033C;margin:0 4px 8px;display:flex;align-items:center;gap:6px}
 .lnk-a{display:flex;align-items:center;gap:9px;padding:8px;border-radius:11px;text-decoration:none;color:inherit;font-size:13.5px;line-height:1.25}
@@ -4463,7 +4465,7 @@ window.socRender=function(){
 /* ═══════════ לינקים חשובים ═══════════ */
 const LINKS=[
   {ic:'🏫',t:'סמרט קמפוס',d:'מערכת הפנימייה: תיק אישי, רשימות חניכים ונוכחות',u:'https://mevootyam.smart-campus.co.il',fav:'https://www.google.com/s2/favicons?sz=64&domain=smart-campus.co.il'},
-  {ic:'📚',t:'סמרט סקול',d:'מערכת בית הספר: ציונים, מערכת שעות והודעות',u:'https://www.smartschool.co.il/',fav:'https://icons.duckduckgo.com/ip3/www.smartschool.co.il.ico'},
+  {ic:'📚',t:'סמרט סקול',d:'מערכת בית הספר: ציונים, מערכת שעות והודעות',u:'https://www.smartschool.co.il/',fav:"data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2064%2064%27%3E%3Crect%20width%3D%2764%27%20height%3D%2764%27%20rx%3D%2714%27%20fill%3D%27%23fff%27/%3E%3Ctext%20x%3D%2732%27%20y%3D%2756%27%20text-anchor%3D%27middle%27%20font-family%3D%27Arial%2CHelvetica%2Csans-serif%27%20font-size%3D%2768%27%20font-weight%3D%27700%27%20fill%3D%27%232E6A87%27%3ES%3C/text%3E%3C/svg%3E"  /* הלוגו של סמרט סקול (S טורקיז) */},
   {ic:'🛡️',t:'סייף סקול',d:'אתר לתכנים חינוכיים',u:'https://safe-school.co.il/'},
   {ic:'🔧',t:'תחזוקנית',d:'פתיחת קריאה לתחזוקה ותקלות',u:'https://tachzukanit.ramdor.net/m_yam/callorder/',fav:'https://www.google.com/s2/favicons?sz=64&domain=ramdor.net'},
   {ic:'🗺️',t:'אשף המסלולים',d:'תכנון מסלול לטיול: אזור, אורך, רמת קושי ודגשי בטיחות',u:'https://www.mokedteva.co.il/InfoCenter/TrackWizard'},
@@ -4473,7 +4475,6 @@ const TOOLS=[
   {ic:'🏘️',t:'שריון מתחמים',d:'לוח המתחמים — מחובר לגיליון של פז',go:"show('rooms')"},
   {ic:'📌',t:'גאנט שנתי',d:'כל אירועי השנה על ציר הזמן',go:"calTool('gantt')"},
   {ic:'🗓️',t:'לוח שבתות ואירועים',d:'שבתות, חופשות ואירועי תשפ"ז',go:"calTool('events')"},
-  {ic:'🕘',t:'לו"ז רכז עקרוני',d:'השבוע הקבוע של הרכז',go:"calTool('luz')"},
 ];
 /* פתיחת לשונית מתוך היומן (שורת הלשוניות של היומן הוסתרה — הכול דרך "כלים") */
 /* שינוי גודל החלון — היומן מתאים את עצמו לגובה המסך */
@@ -4487,7 +4488,12 @@ function lnkIco(x){ let h=''; try{ h=new URL(x.u).hostname; }catch(e){ return x.
   const src=x.fav||LNK_FAV[h]||`https://www.google.com/s2/favicons?domain=${h}&sz=64`;
   return `<img src="${src}" alt="" width="22" height="22" style="border-radius:5px;vertical-align:middle" onerror="this.replaceWith(document.createTextNode('${x.ic}'))">`; }
 window.lnkSideRender=function(){ const a=document.getElementById('lnkSide'), f=document.getElementById('lnkFab'); if(!a) return;
-  a.innerHTML=lnkHtml(); a.classList.add('on'); if(f) f.classList.add('on'); document.querySelector('#lnkDrawer .lnk-dr').innerHTML=lnkHtml(); };
+  a.innerHTML=lnkHtml(); a.classList.add('on'); lnkFit(); setTimeout(lnkFit,800); setTimeout(lnkFit,2500); if(f) f.classList.add('on'); document.querySelector('#lnkDrawer .lnk-dr').innerHTML=lnkHtml(); };
+/* הסרגל הצדי נמתח עד תחתית המסך, בלי גלילה */
+window.lnkFit=lnkFit;
+function lnkFit(){ const a=document.getElementById('lnkSide'); if(!a||!a.classList.contains('on')) return;
+  const top=Math.max(12,a.getBoundingClientRect().top); a.style.height=Math.max(300,window.innerHeight-top-14)+'px'; }
+window.addEventListener('resize',()=>lnkFit()); window.addEventListener('scroll',()=>lnkFit(),{passive:true});
 window.lnkDrawer=function(o){ document.getElementById('lnkDrawer').classList.toggle('open',!!o); };
 function viewLinks(){
   return info('🔗','לינקים שימושיים','המערכות שמשתמשים בהן כל יום. לחיצה על כרטיס פותחת את המערכת בלשונית חדשה.')
@@ -6299,6 +6305,7 @@ function show(id) {
   if (btn) btn.classList.add('active');
   navSync();
   window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(()=>{ if(window.lnkFit) lnkFit(); },120); setTimeout(()=>{ if(window.lnkFit) lnkFit(); },900);
 }
 
 const staffHTML = s => `<div class="staff-c">
