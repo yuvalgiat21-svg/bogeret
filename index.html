@@ -5241,7 +5241,7 @@ function reorganize(){
   const ov=mkSec('overview');
   const ovItems=[{k:'general',label:'📊 נתונים כלליים'},{k:'alphon',label:'📋 אלפון חניכים'},
     {k:'goals',label:'🎯 מטרות ויעדים'},{k:'ramzor',label:'🚦 רמזור נשירה'},
-    {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},{k:'visits',label:'🏡 ביקורי בית'},{k:'rooms',label:'🏠 שיבוץ חדרים'}];
+    {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},{k:'rooms',label:'🏠 שיבוץ חדרים'}];
   ov.appendChild(mkNav('ov',ovItems,pickIn(ov,'ov')));
   const sGen=mkSub('ov-general',true);
   while(old.overview.firstChild) sGen.appendChild(old.overview.firstChild);
@@ -5264,13 +5264,12 @@ function reorganize(){
   const sAlph=mkSub('ov-alphon');
   while(old.alphon.firstChild) sAlph.appendChild(old.alphon.firstChild);
   /* הרשימות שהיו מתחת לאלפון עוברות ללשוניות שלהן */
-  const sVis=mkSub('ov-visits'); /* פרטי המשפחה מוצגים עכשיו בתוך כרטיס החניך/ה באלפון (alphonFamFill) */
-  sVis.innerHTML=info('🏡','ביקורי בית — מבט שכבתי','ריכוז ביקורי הבית. המעקב השוטף לכל קבוצה נמצא תחת <b>ניהול קבוצה ← ביקורי בית</b>.');
+  /* פרטי המשפחה מוצגים בתוך כרטיס החניך/ה באלפון (alphonFamFill); ביקורי הבית נמצאים רק בלשוניות הקבוצות */
   [...old.personal.querySelectorAll(':scope > .panel')].forEach(pn=>{
     const h=(pn.querySelector('h2')||{}).textContent||'';
     if(h.includes('רפואי')) sMed.appendChild(pn);
     else if(h.includes('צמחונים')||h.includes('אלרגיות')) sDiet.appendChild(pn);
-    else if(h.includes('ביקורי בית')) sVis.appendChild(pn);
+    else if(h.includes('ביקורי בית')) pn.remove();
     else if(h.includes('פירוט חניכים')) pn.remove();  /* הוחלף בתצוגת כרטיסים (famRender) */
   });
   /* ---------- 💡 סיכום שבועי ותובנות (מתעדכן כל חמישי מ-insights.json) ---------- */
@@ -5280,7 +5279,7 @@ function reorganize(){
     <div class="panel-b" id="wiBody"><div style="color:var(--text2);font-size:13px;">טוען…</div></div></div>`;
   sGen.appendChild(wk); /* הנתונים הכלליים למעלה, התובנות אחריהם. ישיבת בוגרת נמצאת בחומרים מקצועיים */
   loadWeeklyInsights();
-  [sGen,sAlph,sGoals,sRam,sMed,sDiet,sVis,sRooms].forEach(x=>ov.appendChild(x));
+  [sGen,sAlph,sGoals,sRam,sMed,sDiet,sRooms].forEach(x=>ov.appendChild(x));
   setTimeout(()=>{ try{ alphonFamFill(); }catch(e){ console.warn('fam',e); } },0);
   main.appendChild(ov);
 
