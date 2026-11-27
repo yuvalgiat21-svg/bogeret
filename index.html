@@ -6086,6 +6086,7 @@ function initApp() {
   navRender();
   show(navLanding());
   navLoadMode();
+  if(window.pushAfterLogin) pushAfterLogin();
 }
 
 /* ═══════ מרכז למידה (תגבורים, חוגים, אישורי יציאה) ═══════
@@ -7950,5 +7951,6 @@ window.syncRamzorFromSheet = async function() {
 </script>
 <script src="msg.js?v=3"></script>
 <script src="home.js?v=1"></script>
+<script src="push.js?v=1"></script>
 </body>
 </html>
