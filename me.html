@@ -67,6 +67,8 @@ const auth=authM.getAuth(app), rdb=dbM.getDatabase(app);
 await authM.setPersistence(auth,authM.browserLocalPersistence).catch(()=>{});
 const {ref,get,set,update,onValue}=dbM;
 
+/* סיבות יציאה קבועות (בקשת יובל 27.11.2026) */
+const EX_R=['יציאה לאם הדרך','יציאה לאלונית','יציאה הביתה','רפואי','חופשה','מחלה','אחר'];
 const REASONS=['בבית / חופשה','מחלה','סיבה אישית / משפחתית','יציאה מאושרת','פעילות מחוץ לכפר','אחר'];
 const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
 const $=s=>document.querySelector(s);
@@ -76,6 +78,8 @@ const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const fmt=s=>{const [y,m,d]=s.split('-');return `${+d}.${+m}`};
 const dayN=s=>DAYS[new Date(s+'T12:00').getDay()];
 const hh=h=>pad(h)+':00';
+const endOf=e=>e.rdate&&e.rdate>e.date?e.rdate:e.date;
+const when=e=>endOf(e)!==e.date?`${dayN(e.date)} ${fmt(e.date)} ${hh(e.from)} ← ${dayN(endOf(e))} ${fmt(endOf(e))} ${hh(e.to)}`:`${dayN(e.date)} ${fmt(e.date)} · ${hh(e.from)}–${hh(e.to)}`;
 const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)};
 const rnd=n=>{const A='abcdefghijkmnpqrstuvwxyz23456789',a=new Uint32Array(n);crypto.getRandomValues(a);return [...a].map(x=>A[x%A.length]).join('')};
 async function sha(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
@@ -157,12 +161,12 @@ async function sendChk(h,r,d){
 function st(e,id){ return XS[id]||{st:'pending'}; }
 function exitsList(){
   const today=iso(new Date());
-  const ids=Object.keys(X).filter(id=>X[id]&&X[id].date>=today).sort((a,b)=>X[a].date.localeCompare(X[b].date)||X[a].from-X[b].from);
+  const ids=Object.keys(X).filter(id=>X[id]&&endOf(X[id])>=today).sort((a,b)=>X[a].date.localeCompare(X[b].date)||X[a].from-X[b].from);
   if(!ids.length) return '';
   return '<div style="margin-top:14px">'+ids.map(id=>{const e=X[id],s=st(e,id);
     const tags=s.st==='approved'?'<span class="tag ok">✓ אושר</span>':s.st==='rejected'?`<span class="tag e">✕ לא אושר${s.by?' ('+esc(s.by)+')':''}</span>`:
       `<span class="tag ${s.par?'ok':'w'}">${s.par?'✓':'⏳'} הורים</span><span class="tag ${s.mad?'ok':'w'}">${s.mad?'✓':'⏳'} מדריך/ה</span>${(s.need||[]).map(n=>`<span class="tag w">⏳ ${esc(n)}</span>`).join('')}`;
-    return `<div class="ex"><b>${dayN(e.date)} ${fmt(e.date)} · ${hh(e.from)}–${hh(e.to)}</b><div class="mut">${esc(e.reason)}</div><div>${tags}</div>
+    return `<div class="ex"><b>${when(e)}</b><div class="mut">${esc(e.reason)}</div><div>${tags}</div>
       ${(s.cf||[]).length&&s.st==='pending'?`<div class="mut" style="font-size:13px">⚠️ באותו זמן יש לך: ${s.cf.map(esc).join(' · ')}</div>`:''}
       ${s.st==='approved'?`<button class="btn yes" data-pass="${id}">🎫 אישור יציאה לשער</button>`:''}
       ${s.st==='pending'&&!s.par?`<button class="btn sec" data-wa="${id}">📲 שליחה שוב להורה בוואטסאפ</button>`:''}</div>`}).join('')+'</div>';
@@ -185,24 +189,29 @@ function bindHome(){
 function exitForm(){
   const t=new Date(), hrs=[...Array(18)].map((_,i)=>i+6);
   $('#app').innerHTML=`<div class="top"><h1>🚪 בקשת יציאה</h1><small>${esc(P.n||'')} · ${esc(P.g||'')}</small></div>
-  <div class="card"><label>באיזה יום?</label><input type="date" id="d" min="${iso(t)}" value="${iso(t)}">
+  <div class="card"><div class="row2"><div><label>יציאה ביום</label><input type="date" id="d" min="${iso(t)}" value="${iso(t)}"></div>
+   <div><label>חזרה ביום</label><input type="date" id="rd" min="${iso(t)}" value="${iso(t)}"></div></div>
    <div class="row2"><div><label>יציאה בשעה</label><select id="f">${hrs.map(h=>`<option value="${h}" ${h===16?'selected':''}>${hh(h)}</option>`).join('')}</select></div>
    <div><label>חזרה בשעה</label><select id="t">${hrs.map(h=>`<option value="${h}" ${h===20?'selected':''}>${hh(h)}</option>`).join('')}</select></div></div>
-   <label>לאן ולמה?</label><textarea id="r" placeholder="למשל: תור לרופא שיניים בחדרה"></textarea>
+   <label>סיבת היציאה</label><select id="rc">${EX_R.map(r=>`<option>${r}</option>`).join('')}</select>
+   <label>פירוט</label><textarea id="r" placeholder="למשל: תור לרופא שיניים בחדרה, אמא אוספת מהשער"></textarea>
    <div class="mut" style="margin-top:8px">אחרי השליחה תקבלו קישור לשלוח להורה בוואטסאפ.</div>
    <button class="btn pri" id="sx">שליחת הבקשה</button><button class="btn sec" id="cx">ביטול</button><div class="err" id="er"></div></div>`;
   $('#cx').onclick=()=>{VIEW='home';render()};
+  $('#d').onchange=()=>{ if($('#rd').value<$('#d').value) $('#rd').value=$('#d').value; $('#rd').min=$('#d').value; };
   $('#sx').onclick=async()=>{
-    const date=$('#d').value, from=+$('#f').value, to=+$('#t').value, reason=$('#r').value.trim();
+    const date=$('#d').value, rd=$('#rd').value||date, from=+$('#f').value, to=+$('#t').value, cat=$('#rc').value, det=$('#r').value.trim(), reason=det?`${cat} — ${det}`:cat;
     if(!date||date<iso(new Date())) return $('#er').textContent='בחרו תאריך מהיום והלאה';
-    if(to<=from) return $('#er').textContent='שעת החזרה צריכה להיות אחרי שעת היציאה';
-    if(!reason) return $('#er').textContent='כתבו לאן ולמה';
+    if(rd<date) return $('#er').textContent='יום החזרה לא יכול להיות לפני יום היציאה';
+    if(rd===date&&to<=from) return $('#er').textContent='שעת החזרה צריכה להיות אחרי שעת היציאה';
+    const rdate=rd>date?rd:'';
+    if(cat==='אחר'&&!det) return $('#er').textContent='בחרתם "אחר" — כתבו פירוט';
     $('#sx').disabled=true;
     const id=Date.now().toString(36)+rnd(4), tok=rnd(24), at=Date.now();
     try{
-      await set(ref(rdb,`${ROOT}/par/${tok}`),{k:K,n:P.n||'',g:P.g||'',date,from,to,reason,at});
-      await set(ref(rdb,`${ROOT}/stu/${K}/x/${id}`),{date,from,to,reason,at,t:tok});
-      VIEW='home'; render(); shareParent(id,{date,from,to,reason,t:tok});
+      await set(ref(rdb,`${ROOT}/par/${tok}`),Object.assign({k:K,n:P.n||'',g:P.g||'',date,from,to,reason,at},rdate?{rdate}:{}));
+      await set(ref(rdb,`${ROOT}/stu/${K}/x/${id}`),Object.assign({date,from,to,reason,at,t:tok},rdate?{rdate}:{}));
+      VIEW='home'; render(); shareParent(id,Object.assign({date,from,to,reason,t:tok},rdate?{rdate}:{}));
     }catch(e){ $('#sx').disabled=false; $('#er').textContent='השליחה נכשלה — בדקו אינטרנט ונסו שוב'; }
   };
 }
@@ -210,7 +219,7 @@ function parentLink(t){ return location.origin+location.pathname.replace(/[^/]*$
 function shareParent(id,e){
   e=e||X[id]; if(!e) return;
   const first=String(P.n||'').split(' ')[0];
-  const txt=`היי, זה ${first} 🙂 ביקשתי לצאת מהכפר ב${dayN(e.date)} ${fmt(e.date)} בין ${hh(e.from)} ל-${hh(e.to)} (${e.reason}).\nצריך את האישור שלך כאן: ${parentLink(e.t)}`;
+  const txt=`היי, זה ${first} 🙂 ביקשתי לצאת מהכפר: ${when(e)} (${e.reason}).\nצריך את האישור שלך כאן: ${parentLink(e.t)}`;
   const box=document.createElement('div');
   box.innerHTML=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8;display:flex;align-items:flex-end"><div class="card" style="width:100%;max-width:480px;margin:0 auto;border-radius:22px 22px 0 0">
    <h2>✓ הבקשה נשמרה — עכשיו להורה</h2><div class="mut">שלחו להורה את הקישור. ההורה פותח/ת, מאשר/ת, והבקשה עוברת למדריך/ה.</div>
@@ -227,11 +236,11 @@ function openPass(id){PASS=id;passRefresh();}
 function passRefresh(){
   const el=$('#pass'); if(!PASS){el.classList.remove('on');return}
   const e=X[PASS], s=XS[PASS]||{}; if(!e||s.st!=='approved'){PASS=null;el.classList.remove('on');return}
-  const today=iso(new Date())===e.date;
+  const td=iso(new Date()), today=td>=e.date&&td<=endOf(e);
   el.innerHTML=`<div class="pbox"><div style="color:var(--ok);font-weight:800">מבואות ים · שכבה בוגרת</div>
    <div class="hd" style="font-size:30px;font-weight:900;margin:6px 0">${esc(P.n||'')}</div><div class="mut">${esc(P.g||'')}</div>
-   <div class="hd" style="font-size:21px;font-weight:800;margin:14px 0">${dayN(e.date)} ${fmt(e.date)}<br>יציאה ${hh(e.from)} · חזרה ${hh(e.to)}</div>
-   <div class="hd ${today?'pulse':''}" style="font-size:20px;font-weight:900;color:${today?'var(--ok)':'var(--warn)'}">${today?'✓ יציאה מאושרת':'⚠️ האישור תקף רק ב-'+fmt(e.date)}</div>
+   <div class="hd" style="font-size:21px;font-weight:800;margin:14px 0">יציאה: ${dayN(e.date)} ${fmt(e.date)} ${hh(e.from)}<br>חזרה: ${dayN(endOf(e))} ${fmt(endOf(e))} ${hh(e.to)}</div>
+   <div class="hd ${today?'pulse':''}" style="font-size:20px;font-weight:900;color:${today?'var(--ok)':'var(--warn)'}">${today?'✓ יציאה מאושרת':'⚠️ האישור תקף רק '+(endOf(e)!==e.date?'מ-'+fmt(e.date)+' עד '+fmt(endOf(e)):'ב-'+fmt(e.date))}</div>
    <div class="clock" id="clk"></div><div class="mut" id="cld"></div>
    <div class="mut" style="font-size:13px;margin-top:8px">הורים ✓ · מדריך/ה ✓${(s.ovr||[]).map(r=>' · '+esc(r)+' ✓').join('')}</div>
    <div class="mut" style="font-size:12px">מספר אישור ${esc(s.no||'')}</div></div>

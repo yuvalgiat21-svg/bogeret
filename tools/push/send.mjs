@@ -107,7 +107,18 @@ if (ilHour >= 7 && ilHour < 9) {
   }
 }
 
-/* ── בדיקת נוכחות 08:00 / 20:00 לחניכים (רק כשהמנהל הפעיל) ── */
+/* ── בדיקת נוכחות 08:00 / 20:00 לחניכים (רק כשהמנהל הפעיל) ──
+   מי שנמצא/ת ביציאה מאושרת בשעת הבדיקה — לא מקבל/ת הודעה */
+function awayOnExit(u, t0) {
+  const h = t0 / 60;
+  return Object.entries(u.x || {}).some(([rid, x]) => {
+    if (!x || ((u.xs || {})[rid] || {}).st !== 'approved') return false;
+    const end = x.rdate && x.rdate > x.date ? x.rdate : x.date;
+    if (today < x.date || today > end) return false;
+    const lo = today === x.date ? +x.from : 0, hi = today === end ? +x.to : 24;
+    return h >= lo && h < hi;
+  });
+}
 const stuDevs = k => push[`st_${k}`] ? Object.keys(push[`st_${k}`]).length : 0;
 const first = n => String(n || '').split(' ')[0];
 if (cfg.on) {
@@ -117,7 +128,7 @@ if (cfg.on) {
     if (!first_ && !remind) continue;
     const c = `${today}_${sl}`, ans = (await db.ref(`${ROOT}/chk/${c}`).get()).val() || {};
     for (const [k, u] of Object.entries(stu)) {
-      if (!u || !u.p || ans[k] || !stuDevs(k)) continue;
+      if (!u || !u.p || ans[k] || !stuDevs(k) || awayOnExit(u, t0)) continue;
       if (first_) add(`st_${k}`, `c_${c}_${k}`, `📍 ${label} — ${first(u.p.n)}, איפה את/ה?`, 'לחיצה אחת: בכפר / לא בכפר', ME_URL);
       else add(`st_${k}`, `cr_${c}_${k}`, '⏰ עוד לא ענית על בדיקת הנוכחות', 'זה לוקח שנייה — בכפר / לא בכפר', ME_URL);
     }
@@ -138,9 +149,10 @@ function counselors(g, l) {
 for (const [k, u] of Object.entries(stu)) {
   if (!u || !u.p) continue;
   for (const [rid, x] of Object.entries(u.x || {})) {
-    if (!x || !x.at || x.at < START || now - x.at > 30 * 864e5 || x.date < today) continue;
+    if (!x || !x.at || x.at < START || now - x.at > 30 * 864e5 || (x.rdate || x.date) < today) continue;
     const s = (u.xs || {})[rid] || {}, a = x.t && par[x.t] && par[x.t].ans, nm = first(u.p.n);
-    const when = `${x.date.split('-').reverse().slice(0, 2).map(Number).join('.')} ${String(x.from).padStart(2, '0')}:00–${String(x.to).padStart(2, '0')}:00`;
+    const dd = d => d.split('-').reverse().slice(0, 2).map(Number).join('.'), hr = h => String(h).padStart(2, '0') + ':00';
+    const when = x.rdate && x.rdate > x.date ? `${dd(x.date)} ${hr(x.from)} עד ${dd(x.rdate)} ${hr(x.to)}` : `${dd(x.date)} ${hr(x.from)}–${hr(x.to)}`;
     if (a && a.ok && !s.mad && s.st !== 'rejected' && s.st !== 'approved')
       for (const c of counselors(u.p.g, u.p.l)) add(c, `xp_${rid}_${c}`, `🚪 בקשת יציאה של ${u.p.n}`, `ההורים אישרו (${when}) — מחכה לאישורך`, `${BASE}?open=exits:`);
     if (a && !a.ok) add(`st_${k}`, `xpn_${rid}`, '✋ ההורה לא אישר/ה את היציאה', `${when} · ${x.reason || ''}`.slice(0, 120), ME_URL);

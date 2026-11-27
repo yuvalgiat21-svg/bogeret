@@ -55,7 +55,8 @@ else{
   function draw(){
     const first=String(e.n||'').split(' ')[0], day=DAYS[new Date(e.date+'T12:00').getDay()];
     const det=`<div class="card"><div class="mut">${esc(first)} (${esc(e.g||'')}) מבקש/ת לצאת מהכפר:</div>
-      <div class="big">יום ${day}, ${fmt(e.date)}</div><div class="big">יציאה ${hh(e.from)} · חזרה ${hh(e.to)}</div>
+      ${e.rdate&&e.rdate>e.date?`<div class="big">יציאה: יום ${day}, ${fmt(e.date)} בשעה ${hh(e.from)}</div><div class="big">חזרה: יום ${DAYS[new Date(e.rdate+'T12:00').getDay()]}, ${fmt(e.rdate)} בשעה ${hh(e.to)}</div>`
+        :`<div class="big">יום ${day}, ${fmt(e.date)}</div><div class="big">יציאה ${hh(e.from)} · חזרה ${hh(e.to)}</div>`}
       <div style="margin-top:6px"><b>לאן ולמה:</b> ${esc(e.reason||'')}</div></div>`;
     if(e.ans){ const a=e.ans;
       $('#app').innerHTML=det+`<div class="card res"><div style="font-size:44px">${a.ok?'✅':'✋'}</div><div class="big" style="color:${a.ok?'var(--ok)':'var(--err)'}">${a.ok?'אישרת את היציאה':'לא אישרת את היציאה'}</div>
