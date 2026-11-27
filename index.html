@@ -1549,6 +1549,7 @@ const GRP_CLR = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','ח�
 
 const NEW_TABS = [
   {id:'overview', icon:'📊', label:'סקירה'},
+  {id:'msg',      icon:'💬', label:'CRM'},
   {id:'calendar', icon:'📅', label:'יומן'},
   {id:'attendance',icon:'✅', label:'נוכחות'},
   {id:'team',     icon:'🧑‍🤝‍🧑', label:'צוות'},
@@ -5989,6 +5990,7 @@ function initApp() {
   buildAllSections();
   reorganize();
   lcMount();
+  if (window.msgMount) msgMount();
   if (window.renderGrads) renderGrads('');
   if (ME && ME.lcOnly){ nav.querySelectorAll('button').forEach(b=>{ if(b.id!=='tab-lc') b.remove(); }); show('lc'); }
   else show('overview');
@@ -7727,5 +7729,6 @@ window.syncRamzorFromSheet = async function() {
   }
 };
 </script>
+<script src="msg.js?v=1"></script>
 </body>
 </html>
