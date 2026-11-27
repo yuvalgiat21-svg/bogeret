@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>אישור הורים ליציאה — מבואות ים</title>
+<title>הורים — מבואות ים</title>
 <meta name="robots" content="noindex">
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="favicon.ico">
@@ -42,9 +42,10 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const DAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
 const fmt=s=>{const [y,m,d]=s.split('-');return `${+d}.${+m}.${y}`};
 const hh=h=>String(h).padStart(2,'0')+':00';
-const t=new URLSearchParams(location.search).get('t')||'';
+const QS=new URLSearchParams(location.search), t=QS.get('t')||'', f=QS.get('f')||'';
 const bad=m=>$('#app').innerHTML=`<div class="card res"><div style="font-size:40px">🔗</div><div class="big">${m}</div><div class="mut">אם משהו לא ברור — אפשר לפנות למדריך/ה של הקבוצה.</div></div>`;
-if(!/^[a-z0-9]{20,40}$/.test(t)) bad('הקישור לא תקין');
+if(f) famArea();
+else if(!/^[a-z0-9]{20,40}$/.test(t)) bad('הקישור לא תקין');
 else{
   const appM=await import(G+'firebase-app.js'), dbM=await import(G+'firebase-database.js');
   const app=appM.getApps().length?appM.getApp():appM.initializeApp(FB_CONFIG), rdb=dbM.getDatabase(app);
@@ -77,6 +78,58 @@ else{
     };
     $('#ok').onclick=()=>send(true); $('#no').onclick=()=>send(false);
   }
+}
+/* ═══ אזור ההורים: parent.html?f=<קוד משפחה> — סיכומי שבוע, אישורי טיול, סקרים ═══ */
+async function famArea(){
+  if(!/^[a-z0-9]{20,40}$/.test(f)) return bad('הקישור לא תקין');
+  document.title='אזור ההורים — מבואות ים';
+  const appM=await import(G+'firebase-app.js'), dbM=await import(G+'firebase-database.js');
+  const app=appM.getApps().length?appM.getApp():appM.initializeApp(FB_CONFIG), rdb=dbM.getDatabase(app);
+  const P=`portal/bogeret/secure/fam/${f}`;
+  let F=null; try{ F=(await dbM.get(dbM.ref(rdb,P))).val(); }catch(err){ console.warn(err); }
+  if(!F) return bad('הקישור לא נמצא. ייתכן שהצוות החליף אותו בקישור חדש.');
+  const first=String(F.n||'').split(' ')[0];
+  document.querySelector('.top h1').textContent='👪 אזור ההורים של '+first;
+  document.querySelector('.top small').textContent=(F.g?F.g+' · ':'')+'השכבה הבוגרת · מבואות ים';
+  const dd=s=>s?fmt(s):'', when=at=>new Date(at).toLocaleDateString('he-IL',{day:'numeric',month:'numeric'});
+  let open=null;
+  function draw(){
+    const ins=Object.entries(F.in||{}).sort((a,b)=>b[1].at-a[1].at), ans=F.ans||{};
+    const pend=ins.filter(([id,it])=>it.type!=='week'&&!ans[id]);
+    if(!ins.length){ $('#app').innerHTML=`<div class="card res"><div style="font-size:40px">📭</div><div class="big">עוד אין כאן כלום</div><div class="mut">כאן יופיעו סיכומי השבוע, אישורים לטיולים וסקרים מהצוות. שמרו את הקישור.</div></div>`; return; }
+    $('#app').innerHTML=(pend.length?`<div class="card" style="border-color:#FC5028;background:#fff7f3"><b>⏳ מחכים לתשובתכם: ${pend.length}</b></div>`:'')+
+      ins.map(([id,it])=>{
+        const a=ans[id], ic=it.type==='week'?'📰':it.type==='trip'?'🚌':'📋', isOpen=open===id||(!a&&it.type!=='week'&&open==null&&pend[0]&&pend[0][0]===id);
+        const st=it.type==='week'?'':a?(it.type==='trip'?(a.ok?'<span style="color:var(--ok);font-weight:800">✓ אישרתם</span>':'<span style="color:var(--err);font-weight:800">✕ לא אישרתם</span>'):'<span style="color:var(--ok);font-weight:800">✓ עניתם</span>'):'<span style="color:#b45309;font-weight:800">⏳ מחכה לתשובה</span>';
+        return `<div class="card"><div data-o="${id}" style="cursor:pointer;display:flex;gap:8px;align-items:center"><span style="font-size:24px">${ic}</span><div style="flex:1"><b>${esc(it.title)}</b><div class="mut" style="font-size:13px">${when(it.at)}${it.by?' · '+esc(it.by):''}</div></div>${st}</div>
+          ${isOpen?`<div style="margin-top:10px">${it.date?`<div><b>מתי:</b> ${dd(it.date)}${it.place?' · <b>לאן:</b> '+esc(it.place):''}</div>`:''}${it.due?`<div><b>לאשר עד:</b> ${dd(it.due)}</div>`:''}
+            <div style="white-space:pre-wrap;margin:8px 0">${esc(it.body||'')}</div>${a?answered(it,a):form(id,it)}</div>`:''}</div>`;
+      }).join('');
+    document.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{open=open===b.dataset.o?'':b.dataset.o;draw();});
+    document.querySelectorAll('[data-send]').forEach(b=>b.onclick=()=>send(b.dataset.send,b.dataset.ok));
+  }
+  function answered(it,a){
+    return `<div class="mut" style="border-top:1px solid #f1e4df;padding-top:8px">ענה/תה: ${esc(a.pn||'')} · ${new Date(a.at).toLocaleString('he-IL',{dateStyle:'short',timeStyle:'short'})}</div>`+
+      (it.type==='survey'?(it.qs||[]).map((q,i)=>`<div style="font-size:14px"><b>${esc(q.q)}</b> ${esc((a.a||[])[i]||'—')}</div>`).join(''):'')+(a.note?`<div style="font-size:14px">הערה: ${esc(a.note)}</div>`:'');
+  }
+  function who(){ return `<label>מי עונה?</label><div style="display:flex;gap:8px"><select id="rel" style="flex:0 0 40%"><option>אמא</option><option>אבא</option><option>אפוטרופוס/ית</option><option>אחר</option></select><input id="pn" placeholder="השם שלך"></div>`; }
+  function form(id,it){
+    if(it.type==='week') return '';
+    if(it.type==='trip') return who()+`<label>הערה לצוות (לא חובה)</label><input id="note" placeholder="למשל: רגישות למזון, צריך לחזור מוקדם">
+      <button class="btn yes" data-send="${id}" data-ok="1">✓ אני מאשר/ת את ההשתתפות</button><button class="btn no" data-send="${id}" data-ok="0">✕ לא מאשר/ת</button><div class="err" id="er"></div>`;
+    return (it.qs||[]).map((q,i)=>`<label>${i+1}. ${esc(q.q)}</label>${q.o&&q.o.length?`<select id="q${i}"><option value="">בחרו…</option>${q.o.map(o=>`<option>${esc(o)}</option>`).join('')}</select>`:`<input id="q${i}" maxlength="400">`}`).join('')
+      +who()+`<button class="btn yes" data-send="${id}" data-ok="">שליחת התשובות</button><div class="err" id="er"></div>`;
+  }
+  async function send(id,ok){
+    const it=F.in[id], pn=$('#pn').value.trim(); if(!pn) return $('#er').textContent='כתבו את השם שלך';
+    const a={pn:$('#rel').value+' · '+pn.slice(0,40),at:Date.now()};
+    if(it.type==='trip'){ a.ok=ok==='1'; const n=$('#note').value.trim(); if(n) a.note=n.slice(0,300); if(!a.ok&&!confirm('לא לאשר את ההשתתפות?')) return; }
+    else { a.a=(it.qs||[]).map((q,i)=>($('#q'+i).value||'').trim().slice(0,400)); if(a.a.every(x=>!x)) return $('#er').textContent='ענו לפחות על שאלה אחת'; }
+    document.querySelectorAll('[data-send]').forEach(b=>b.disabled=true);
+    try{ await dbM.set(dbM.ref(rdb,`${P}/ans/${id}`),a); F.ans=Object.assign({},F.ans,{[id]:a}); open=id; draw(); }
+    catch(err){ document.querySelectorAll('[data-send]').forEach(b=>b.disabled=false); $('#er').textContent='השמירה נכשלה. ייתכן שכבר נענה — רעננו את הדף.'; }
+  }
+  draw();
 }
 </script>
 </body>

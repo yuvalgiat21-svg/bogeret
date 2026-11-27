@@ -1598,6 +1598,7 @@ const NEW_TABS = [
   {id:'msg',      icon:'💬', label:'CRM',            tier:'main'},
   {id:'groups',   icon:'👥', label:'ניהול קבוצה',    tier:'main'},
   {id:'attendance',icon:'✅', label:'נוכחות',         tier:'main'},
+  {id:'parents',  icon:'👪', label:'הורים',          tier:'main'},
   {id:'lc',       icon:'🏫', label:'מרכז למידה',     tier:'main'},
   {id:'eduplan',  icon:'🎓', label:'תוכנית חינוכית', tier:'main', grp:'plan'},
   {id:'companion',icon:'🧭', label:'תוכנית מלווה',   tier:'main', grp:'plan'},
@@ -1611,7 +1612,7 @@ const NEW_TABS = [
   {id:'users',    icon:'🔐', label:'משתמשים',        tier:'more', admin:true},
 ];
 /* סדר הסרגל הקודם (כפי שהיה באוויר לפני השינוי) */
-const CLASSIC_ORDER = ['overview','msg','calendar','attendance','team','groups','pedagogy','lc','companion','eduplan','evacplan','prof','graduates','links','users'];
+const CLASSIC_ORDER = ['overview','msg','calendar','attendance','parents','team','groups','pedagogy','lc','companion','eduplan','evacplan','prof','graduates','links','users'];
 const NAV_MODE_KEY='bogeret_nav_mode', NAV_MODE_PATH='portal/bogeret/secure/settings/nav_mode';
 let NAV_MODE=(()=>{ try{ return localStorage.getItem(NAV_MODE_KEY)==='classic'?'classic':'new'; }catch(e){ return 'new'; } })();
 
@@ -5668,6 +5669,9 @@ function reorganize(){
   while(old.attendance.firstChild) at.appendChild(old.attendance.firstChild);
   main.appendChild(at);
 
+  /* ---------- אזור ההורים (fam.js) ---------- */
+  const pa=mkSec('parents'); pa.innerHTML='<div id="famdash"></div>'; main.appendChild(pa);
+
   /* ---------- ניווט ראשי ---------- */
   const us=mkSec('users'); us.innerHTML=viewUsers(); main.appendChild(us);
 
@@ -5687,6 +5691,7 @@ function reorganize(){
   if(window.pcalRender) pcalRender();
   if(window.attdRender) attdRender();
   if(window.chkRender) chkRender();
+  if(window.famRender) famRender();
   if(window.gradDocsRender) gradDocsRender();
   if(window.renderYaSept) renderYaSept();
   if(window.renderYaFiles) renderYaFiles();
@@ -6108,8 +6113,8 @@ function lcMount(){
 /* ── סרגל לשוניות עם לשוניות אב ותפריט נפתח ── */
 /* סרגל לפי תפקיד: מה בשורה הראשית ומה תחת "עוד" */
 const NAV_LAYOUT={
-  admin:['home','overview','msg','groups','attendance','lc','eduplan','companion','calendar'],
-  staff:['mine','groups','msg','calendar','attendance']
+  admin:['home','overview','msg','groups','attendance','parents','lc','eduplan','companion','calendar'],
+  staff:['mine','groups','msg','calendar','attendance','parents']
 };
 const navRole=()=>ME&&ME.mode==='admin'?'admin':'staff';
 function navVisible(){
@@ -7954,6 +7959,7 @@ window.syncRamzorFromSheet = async function() {
 <script src="msg.js?v=3"></script>
 <script src="home.js?v=1"></script>
 <script src="chk.js?v=1"></script>
+<script src="fam.js?v=1"></script>
 <script src="push.js?v=2"></script>
 </body>
 </html>
