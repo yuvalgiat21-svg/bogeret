@@ -696,6 +696,7 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 .fam-p{background:#FFF1EB;border-radius:10px;padding:6px 8px;display:flex;flex-direction:column;min-width:0;}
 .fam-r{font-size:11px;color:#7A6A66;font-weight:700;} .fam-n{font-weight:700;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .fam-miss{opacity:.55;}
+.alphon-fam{flex-basis:100%;} .alphon-fam:empty{display:none;} .alphon-fam .fam-ps{margin-top:0;} .alphon-fam-st{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;} .alphon-fam .fam-st{max-width:none;}
 .fam-tel{font-size:12.5px;color:#8E033C;text-decoration:none;direction:ltr;text-align:right;} a.fam-tel:hover{text-decoration:underline;}
 .cmp-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 6px;} .cmp-q{flex:1;min-width:220px;border:1px solid #F3C2B0;border-radius:999px;padding:8px 14px;font:14.5px Assistant,sans-serif;}
 .cmp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
@@ -4279,6 +4280,21 @@ window.famRender=function(){
 };
 
 
+/* אלפון ← פרטי משפחה בתוך כרטיס כל חניך/ה (מהאזור המוגן, D.studentsYB — חניכי י"ב) */
+window.alphonFamFill=function(){
+  const L=(typeof D!=='undefined'&&D.studentsYB)||[]; if(!L.length) return;
+  const E=lbEsc, has=v=>v&&v!=='-'&&String(v).trim(), by={}; L.forEach(s=>{ if(s.name) by[String(s.name).trim()]=s; });
+  const parent=(role,name,ph)=>(has(name)||has(ph))?`<div class="fam-p"><span class="fam-r">${role}</span><span class="fam-n">${E(has(name)?name:'—')}</span>${famTel(ph)}</div>`:`<div class="fam-p fam-miss"><span class="fam-r">${role}</span><span class="fam-n">אין פרטים</span></div>`;
+  document.querySelectorAll('.alphon-card').forEach(card=>{
+    const slot=card.querySelector('.alphon-fam'); if(!slot) return;
+    const s=by[String(card.dataset.name||'').trim()]; if(!s){ slot.innerHTML=''; return; }
+    const st=famStatus(s.parentStatus), miss=!has(s.father)||!has(s.mother)||!(has(s.motherPhone)||has(s.fatherPhone));
+    slot.innerHTML=`${(st.k!=='none'||miss)?`<div class="alphon-fam-st">${st.k!=='none'?`<span class="fam-st" style="--s:${st.c}" title="סטטוס משפחתי">👨‍👩‍👧 ${E(st.l)}</span>`:''}${miss?'<span class="fam-st" style="--s:#b45309" title="חסרים פרטי הורה">⚠️ חסר פרט הורה</span>':''}</div>`:''}
+      <div class="fam-ps">${parent('אבא',s.father,s.fatherPhone)}${parent('אמא',s.mother,s.motherPhone)}</div>`;
+    card.dataset.fam=[s.father,s.mother,s.city,s.class].filter(has).join(' ');
+  });
+};
+
 /* ═══════════ תוכנית מלווה: לפי חניך + גופי המנהיגות + מעורבות חברתית ═══════════ */
 const CMP_NORM=s=>String(s||'').replace(/["'״׳\-]/g,' ').replace(/\s+/g,' ').trim();
 /* חברי הגוף מהנתונים: רשומות "שם (קבוצה) הערה" ב-D.leadership; ימאות נגזרת מעמודת המעורבות החברתית */
@@ -5225,7 +5241,7 @@ function reorganize(){
   const ov=mkSec('overview');
   const ovItems=[{k:'general',label:'📊 נתונים כלליים'},{k:'alphon',label:'📋 אלפון חניכים'},
     {k:'goals',label:'🎯 מטרות ויעדים'},{k:'ramzor',label:'🚦 רמזור נשירה'},
-    {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},{k:'family',label:'👨‍👩‍👧 פרטי משפחה'},{k:'visits',label:'🏡 ביקורי בית'},{k:'rooms',label:'🏠 שיבוץ חדרים'}];
+    {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},{k:'visits',label:'🏡 ביקורי בית'},{k:'rooms',label:'🏠 שיבוץ חדרים'}];
   ov.appendChild(mkNav('ov',ovItems,pickIn(ov,'ov')));
   const sGen=mkSub('ov-general',true);
   while(old.overview.firstChild) sGen.appendChild(old.overview.firstChild);
@@ -5248,8 +5264,7 @@ function reorganize(){
   const sAlph=mkSub('ov-alphon');
   while(old.alphon.firstChild) sAlph.appendChild(old.alphon.firstChild);
   /* הרשימות שהיו מתחת לאלפון עוברות ללשוניות שלהן */
-  const sFam=mkSub('ov-family'), sVis=mkSub('ov-visits');
-  sFam.innerHTML=info('👨‍👩‍👧','פרטי משפחה — שכבת י"ב','פרטי ההורים, טלפונים וסטטוס משפחתי של חניכי י"ב. לחיצה על מספר טלפון מחייגת, ולחיצה על כרטיס פותחת את פרטי החניך/ה.')+'<div id="famBody"></div>';
+  const sVis=mkSub('ov-visits'); /* פרטי המשפחה מוצגים עכשיו בתוך כרטיס החניך/ה באלפון (alphonFamFill) */
   sVis.innerHTML=info('🏡','ביקורי בית — מבט שכבתי','ריכוז ביקורי הבית. המעקב השוטף לכל קבוצה נמצא תחת <b>ניהול קבוצה ← ביקורי בית</b>.');
   [...old.personal.querySelectorAll(':scope > .panel')].forEach(pn=>{
     const h=(pn.querySelector('h2')||{}).textContent||'';
@@ -5265,8 +5280,8 @@ function reorganize(){
     <div class="panel-b" id="wiBody"><div style="color:var(--text2);font-size:13px;">טוען…</div></div></div>`;
   sGen.appendChild(wk); /* הנתונים הכלליים למעלה, התובנות אחריהם. ישיבת בוגרת נמצאת בחומרים מקצועיים */
   loadWeeklyInsights();
-  [sGen,sAlph,sGoals,sRam,sMed,sDiet,sFam,sVis,sRooms].forEach(x=>ov.appendChild(x));
-  setTimeout(()=>{ try{ famRender(); }catch(e){ console.warn('fam',e); } },0);
+  [sGen,sAlph,sGoals,sRam,sMed,sDiet,sVis,sRooms].forEach(x=>ov.appendChild(x));
+  setTimeout(()=>{ try{ alphonFamFill(); }catch(e){ console.warn('fam',e); } },0);
   main.appendChild(ov);
 
   /* ---------- 2. יומן ---------- */
@@ -6445,7 +6460,7 @@ function buildAllSections() {
       <div class="panel-h">
         <h2>🔍 סינון</h2>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-          <input type="text" id="alphon-search" placeholder="חיפוש לפי שם פרטי או משפחה..." oninput="filterAlphon()" style="padding:8px 12px;border:1px solid var(--brd);border-radius:8px;font-size:13px;width:220px;">
+          <input type="text" id="alphon-search" placeholder="חיפוש: שם חניך/ה, עיר או שם הורה..." oninput="filterAlphon()" style="padding:8px 12px;border:1px solid var(--brd);border-radius:8px;font-size:13px;width:220px;">
           <span id="alphon-count" style="font-size:12px;color:var(--t3);font-weight:500;"></span>
           <button class="btn alphon-grp-btn" data-group="all" onclick="filterAlphonGroup('all')" style="background:#fff;color:#1d4ed8;border:2px solid #2563eb;font-weight:700;">הכל</button>
           ${Object.keys(groupedStudents).map(g => `<button class="btn alphon-grp-btn" data-group="${g}" onclick="filterAlphonGroup('${g}')" style="background:transparent;color:var(--t2);border:1px solid var(--brd);">${g} (${groupedStudents[g].length})</button>`).join('')}
@@ -6453,7 +6468,7 @@ function buildAllSections() {
       </div>
     </div>
     
-    <div id="alphon-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;">
+    <div id="alphon-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
       ${alphonGrid(groupColors)}
     </div>
     
@@ -7151,7 +7166,7 @@ function alphonGrid(groupColors){
   rows.forEach(({s,i})=>{
     if(s.l!==cur){ cur=s.l; out+=alphonSep(cur); }
     out+=`
-        <div class="alphon-card" data-name="${s.n}" data-group="${s.g}" data-idx="${i}" onclick="showStudentDetails(${i})" style="background:#fff;border:1px solid var(--brd);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:all 0.2s;cursor:pointer;">
+        <div class="alphon-card" data-name="${s.n}" data-group="${s.g}" data-idx="${i}" onclick="showStudentDetails(${i})" style="background:#fff;border:1px solid var(--brd);border-radius:12px;padding:12px;display:flex;align-items:center;flex-wrap:wrap;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:all 0.2s;cursor:pointer;">
           ${s.p ? `<img src="${s.p}" alt="${s.n}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:3px solid ${groupColors[s.g]||'#94a3b8'};flex-shrink:0;">` : `<div style="width:54px;height:54px;border-radius:50%;flex-shrink:0;background:${groupColors[s.g]||'#94a3b8'}22;border:3px solid ${groupColors[s.g]||'#94a3b8'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:${groupColors[s.g]||'#475569'};">${s.n.split(' ').slice(0,2).map(w=>w[0]).join('')}</div>`}
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;font-size:13.5px;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.n}</div>
@@ -7161,6 +7176,7 @@ function alphonGrid(groupColors){
             </div>
             ${s.ph ? `<div style="font-size:10.5px;color:var(--t3);margin-top:2px;">📱 ${s.ph}</div>` : ''}
           </div>
+          <div class="alphon-fam"></div>
         </div>
       `;
   });
@@ -7171,7 +7187,7 @@ function alphonGrid(groupColors){
       .sort((x,y)=>(ALPHON_ORDER[x.s.l]||9)-(ALPHON_ORDER[y.s.l]||9)
         || String(x.s.n||'').localeCompare(String(y.s.n||''),'he'))
       .forEach(({s,i})=>{ out+=`
-        <div class="alphon-card" data-name="${s.n}" data-group="${s.g}" data-idx="${i}" onclick="showStudentDetails(${i})" style="background:#fff;border:1px solid var(--brd);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:all 0.2s;cursor:pointer;">
+        <div class="alphon-card" data-name="${s.n}" data-group="${s.g}" data-idx="${i}" onclick="showStudentDetails(${i})" style="background:#fff;border:1px solid var(--brd);border-radius:12px;padding:12px;display:flex;align-items:center;flex-wrap:wrap;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:all 0.2s;cursor:pointer;">
           ${s.p ? `<img src="${s.p}" alt="${s.n}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:3px solid ${groupColors[s.g]||'#94a3b8'};flex-shrink:0;">` : `<div style="width:54px;height:54px;border-radius:50%;flex-shrink:0;background:${groupColors[s.g]||'#94a3b8'}22;border:3px solid ${groupColors[s.g]||'#94a3b8'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:${groupColors[s.g]||'#475569'};">${s.n.split(' ').slice(0,2).map(w=>w[0]).join('')}</div>`}
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;font-size:13.5px;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.n}</div>
@@ -7181,6 +7197,7 @@ function alphonGrid(groupColors){
             </div>
             ${s.ph ? `<div style="font-size:10.5px;color:var(--t3);margin-top:2px;">📱 ${s.ph}</div>` : ''}
           </div>
+          <div class="alphon-fam"></div>
         </div>
       `;; });
   }
@@ -7213,7 +7230,8 @@ window.applyAlphonFilters = function() {
     const matchGroup = window.alphonGroupFilter === 'all' || card.dataset.group === window.alphonGroupFilter;
     const cardName = card.dataset.name || '';
     // מתאים אם כל מילה מהחיפוש מופיעה איפשהו בשם
-    const matchSearch = searchWords.length === 0 || searchWords.every(w => cardName.includes(w));
+    const famTxt = card.dataset.fam || '';
+    const matchSearch = searchWords.length === 0 || searchWords.every(w => cardName.includes(w) || famTxt.includes(w));
     const visible = matchGroup && matchSearch;
     card.style.display = visible ? 'flex' : 'none';
     if (visible) visibleCount++;
