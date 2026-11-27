@@ -1098,6 +1098,12 @@ const USERS = [
    {id:'lc_manager', eh:'<hash>', em:'..***@..', n:'<שם>', r:'מנהלת מרכז למידה', mode:'edit', scope:'all', lc:'manager', lcOnly:true},
    {id:'lc_coord',   eh:'<hash>', em:'..***@..', n:'<שם>', r:'רכזת מרכז למידה',  mode:'edit', scope:'all', lc:'coord',   lcOnly:true},
    {id:'paz',        eh:'<hash>', em:'..***@..', n:'פז',    r:'רכזת מח"מ',         mode:'edit', scope:'all', lc:'mahat',   lcOnly:true}, */
+/* בעלי תפקידים — "תצוגה מוגבלת" (limited): רואים רק את הלשוניות שב-tabs, ולא טוענים את נתוני החניכים הרגישים
+   (רפואי, דמי כיס, ביקורי בית, שיחות עו"ס). מוסיפים רק אחרי אישור של יובל ואחרי עדכון כללי האבטחה בענן:
+   {id:'hani', eh:'<hash>', em:'..***@..', n:'חני מירו', r:'מנהלת מרכז הלמידה', mode:'edit', scope:'all', lc:'manager', limited:true, tabs:['lc','attendance','msg','calendar']},
+   {id:'paz',  eh:'<hash>', em:'..***@..', n:'פז רוזן',  r:'רכזת המח"מ וההדרכה', mode:'edit', scope:'all', lc:'mahat',   limited:true, tabs:['lc','msg','calendar']},
+   {id:'roni', eh:'<hash>', em:'..***@..', n:'רוני רובין', r:'קב"ס ואחראי הבוגרים', mode:'view', scope:'all', lc:'madrich', limited:true, tabs:['graduates','attendance','msg','calendar']}, */
+const isLimited=()=>!!(window.ME&&ME.limited);
 const SCOPE_GROUPS ={ all:null, ya:['שלדג','שחף','שיר'], yb:['yb'], academy:['academy'] };
 
 var ME=null;
@@ -1353,6 +1359,14 @@ async function secureDb(){
 async function loadSecure(){
   if(SECURE_LOADED) return;
   const {dbm,rdb}=await secureDb();
+  if(isLimited()){
+    /* בעלי תפקידים: בלי נתוני החניכים הרגישים. הבוגרים נטענים מעותק נפרד שהמנהל מעדכן */
+    if((ME.tabs||[]).includes('graduates')) try{
+      const g=await dbm.get(dbm.ref(rdb,'portal/bogeret/secure/grads'));
+      if(g.exists()) _fill(GRADUATES, JSON.parse(g.val()));
+    }catch(e){ console.warn('grads',e); }
+    SECURE_LOADED=true; return;
+  }
   const snap=await dbm.get(dbm.ref(rdb,SECURE_PATH));
   if(!snap.exists()){ const e=new Error('הנתונים המאובטחים לא נמצאו בענן'); e.missing=true; throw e; }
   const B=snap.val(), P=k=>{ try{ return B[k]?JSON.parse(B[k]):undefined; }catch(e){ return undefined; } };
@@ -1373,6 +1387,11 @@ async function loadSecure(){
   _fill(ACADEMY_ROOMS, P('ACADEMY_ROOMS'));
   _fill(D, P('DATA_JSON'));
   syncRamzorRows(); buildAcadStudents(); syncAcadRamzor();
+  /* עותק של רשימת הבוגרים לבעלי תפקידים (רוני) — רק המנהל כותב, רק כשמשהו השתנה */
+  if(ME && ME.mode==='admin') try{
+    const gtxt=B.GRADUATES||'[]', gref=dbm.ref(rdb,'portal/bogeret/secure/grads');
+    const cur=await dbm.get(gref); if(!cur.exists()||cur.val()!==gtxt) await dbm.set(gref,gtxt);
+  }catch(e){ console.warn('grads copy',e); }
   if(window.ramzorRestore) ramzorRestore();   /* החזרת הסימונים ששמרו המדריכים */
   try{
     const as=await dbm.get(dbm.ref(rdb,'portal/bogeret/secure/attendance/latest'));
@@ -5924,6 +5943,7 @@ const SYNC = (() => {
   async function retry(){ status('מתחבר…'); const ok=await connect(); status(); if(ok){ offlineClear(); banner('החיבור הצליח ✓'); setTimeout(()=>location.reload(),900);} else offlineWarn(); }
 
   async function init(){
+    if(window.ME && ME.limited){ return; }   /* בעלי תפקידים לא מקבלים את המאגר המשותף (רפואי, דמי כיס וכו') */
     metaLoad();
     if(window.ME && ME.n) setUser(ME.n);
     else if(!localStorage.getItem(USER_KEY)) setUser('מדריך');
@@ -6091,6 +6111,7 @@ const NAV_LAYOUT={
 const navRole=()=>ME&&ME.mode==='admin'?'admin':'staff';
 function navVisible(){
   if(ME&&ME.lcOnly) return NEW_TABS.filter(x=>x.id==='lc');
+  if(isLimited()) return (ME.tabs||[]).map(id=>NEW_TABS.find(x=>x.id===id)).filter(Boolean).map(x=>Object.assign({},x,{tier:'main',grp:null}));
   const adm=ME&&ME.mode==='admin', main=NAV_LAYOUT[navRole()];
   return NEW_TABS.filter(x=>(!x.admin||adm) && !(x.staff&&adm)
     && !(x.id==='lc'&&typeof lcRole==='function'&&!lcRole())
@@ -6099,12 +6120,12 @@ function navVisible(){
     .sort((a,b)=>{ const ia=main.indexOf(a.id), ib=main.indexOf(b.id); return (ia<0?99:ia)-(ib<0?99:ib); });
 }
 /* דף הנחיתה אחרי הכניסה */
-const navLanding=()=>ME&&ME.lcOnly?'lc':NAV_MODE==='classic'?'overview':(ME&&ME.mode==='admin'?'home':'mine');
+const navLanding=()=>ME&&ME.lcOnly?'lc':isLimited()?(ME.tabs||['msg'])[0]:NAV_MODE==='classic'?'overview':(ME&&ME.mode==='admin'?'home':'mine');
 function navBuild(list){
   const B=x=>`<button onclick="show('${x.id}')" id="tab-${x.id}"${x.danger?' class="nv-danger"':''}>${x.icon} ${x.label}</button>`;
   const isAdm=ME&&ME.mode==='admin';
-  if(NAV_MODE==='classic'||(ME&&ME.lcOnly)){
-    const ord=CLASSIC_ORDER.map(id=>list.find(x=>x.id===id)).filter(Boolean);
+  if(NAV_MODE==='classic'||(ME&&ME.lcOnly)||isLimited()){
+    const ord=isLimited()?list:CLASSIC_ORDER.map(id=>list.find(x=>x.id===id)).filter(Boolean);
     return ord.map(B).join('')+(isAdm&&!(ME&&ME.lcOnly)?`<span class="nv-sp"></span><button class="nv-mode" onclick="navSetMode('new')" title="מעבר לסרגל החדש">✨ לסרגל החדש</button>`:'');
   }
   const done={}; let h='';
@@ -6135,7 +6156,7 @@ function navRender(){
   const lf=document.getElementById('lcFrame'); if(lf&&lf.getAttribute('src')&&lf.dataset.mode!==NAV_MODE){ lf.dataset.mode=NAV_MODE; lf.setAttribute('src',lcSrc()); }
   if(window.msgBadgeRefresh) msgBadgeRefresh();
 }
-const lcSrc=()=>'lc.html?v=2'+(NAV_MODE==='classic'?'':'&nav=new');
+const lcSrc=()=>'lc.html?v=3'+(NAV_MODE==='classic'?'':'&nav=new');
 /* המנהל מחליף סרגל — נשמר בענן לכל הצוות, ומקומית למעבר מהיר */
 window.navSetMode=async function(m){
   navClose();
@@ -6166,7 +6187,7 @@ function attExitsSync(){
     ex.innerHTML='<iframe id="exitsFrame" title="אישורי יציאה" style="width:100%;height:calc(100vh - 210px);min-height:600px;border:0;border-radius:14px;background:#FBF6F3;display:block;"></iframe>';
     bar=mkNav('at',[{k:'main',label:'📊 נוכחות'},{k:'exits',label:'🚪 אישורי יציאה'}],k=>{
       at.querySelectorAll(':scope > .subsec').forEach(s=>s.classList.toggle('active',s.id==='at-'+k));
-      if(k==='exits'){ const f=document.getElementById('exitsFrame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','lc.html?v=2&only=exits'); }
+      if(k==='exits'){ const f=document.getElementById('exitsFrame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','lc.html?v=3&only=exits'); }
     });
     at.appendChild(bar); at.appendChild(main); at.appendChild(ex);
   } else if(!want&&bar){

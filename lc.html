@@ -411,8 +411,8 @@ function commit(msg,type='ok'){save();render();if(msg)toast(msg,type)}
 
 /* ============ תפקידים והרשאות ============ */
 const ROLES=[['manager','👩‍💼','מנהלת המרכז'],['coord','🗂️','רכזת המרכז'],['mahat','🎭','פז · רכזת מח"מ'],['madrich','🧭','מדריך/ה'],['teacher','🧑‍🏫','מורה'],['student','🎓','חניך/ה']];
-const ROLE_TABS={manager:['dash','groups','teachers','students','cal','calendars','settings'],coord:['dash','cal','req','calendars','teachers'],mahat:['activities','calendars'],madrich:['exits','calendars']};
-const TAB_L={dash:'📊 לוח בקרה',cal:'🗓️ לוח שבועי',req:'📥 פניות',groups:'🧩 קבוצות לפי רמות',teachers:'🧑‍🏫 מורים',students:'🎓 חניכים ומערכות שעות',calendars:'📅 יומני חניכים',settings:'⚙️ הגדרות',activities:'🎭 חוגים ומשתתפים',exits:'🚪 אישורי יציאה'};
+const ROLE_TABS={manager:['dash','exok','groups','teachers','students','cal','calendars','settings'],coord:['dash','cal','req','calendars','teachers'],mahat:['activities','exok','calendars'],madrich:['exits','calendars']};
+const TAB_L={exok:'🚪 יציאות לאישורי',dash:'📊 לוח בקרה',cal:'🗓️ לוח שבועי',req:'📥 פניות',groups:'🧩 קבוצות לפי רמות',teachers:'🧑‍🏫 מורים',students:'🎓 חניכים ומערכות שעות',calendars:'📅 יומני חניכים',settings:'⚙️ הגדרות',activities:'🎭 חוגים ומשתתפים',exits:'🚪 אישורי יציאה'};
 const ROLE_DESC={manager:'<b>מנהלת מרכז הלמידה</b> — סנכרון מול מערכת הלמידה של בית הספר, בניית קבוצות לפי רמות, גיוס מורים ותמונת מצב.',
  coord:'<b>רכזת מרכז הלמידה</b> — המתפעלת הראשית: פניות, שיבוצים, לוח שבועי ונוכחות.',
  mahat:'<b>פז, רכזת המח"מ</b> — הזנת חוגים ומשתתפים, וזיהוי התנגשויות ביומני החניכים.',
@@ -426,7 +426,7 @@ function openNotes(){
   openModal(`<div class="mh"><h3>🔔 התראות · ${ROLES.find(r=>r[0]===UI.role)[2]}</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb feed">${my.map(n=>`<div style="${n.read?'':'font-weight:700'}"><small>${new Date(n.ts).toLocaleString('he-IL',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}</small>${esc(n.msg)}</div>`).join('')||'<div class="empty">אין התראות</div>'}</div>`);
   my.forEach(n=>n.read=true);save();render();
 }
-const VIEWS={dash:()=>vDash(),cal:()=>vCal(),req:()=>vReq(),groups:()=>vGroups(),teachers:()=>vTeachers(),students:()=>vStudents(),calendars:()=>vCalendars(),settings:()=>vSettings(),activities:()=>vActivities(),exits:()=>vExits()};
+const VIEWS={dash:()=>vDash(),cal:()=>vCal(),req:()=>vReq(),groups:()=>vGroups(),teachers:()=>vTeachers(),students:()=>vStudents(),calendars:()=>vCalendars(),settings:()=>vSettings(),activities:()=>vActivities(),exits:()=>vExits(),exok:()=>vExitOk()};
 function render(){
   $('#roleSw').innerHTML=ALLOWED&&ALLOWED.length===1?`<button class="on" style="cursor:default">${ROLES.find(r=>r[0]===UI.role).slice(1).join(' ')}${ME_N?' · '+esc(ME_N):''}</button>`:ROLES.filter(r=>!ALLOWED||ALLOWED.includes(r[0])).map(([k,i,l])=>`<button class="${UI.role===k?'on':''}" onclick="setRole('${k}')" title="${l}">${i} <span>${l}</span></button>`).join('');
   const un=S.notes.filter(n=>n.to===UI.role&&!n.read).length;
@@ -439,7 +439,7 @@ function render(){
   if(tabs){
     if(!tabs.includes(UI.tab))UI.tab=tabs[0];
     nav.style.display='flex';
-    nav.innerHTML=tabs.map(k=>`<button class="${UI.tab===k?'on':''}" onclick="go('${k}')">${TAB_L[k]}${k==='req'&&pend?`<span class="n">${pend}</span>`:''}${k==='exits'&&pex?`<span class="n">${pex}</span>`:''}</button>`).join('');
+    nav.innerHTML=tabs.map(k=>`<button class="${UI.tab===k?'on':''}" onclick="go('${k}')">${TAB_L[k]}${k==='req'&&pend?`<span class="n">${pend}</span>`:''}${k==='exits'&&pex?`<span class="n">${pex}</span>`:''}${k==='exok'&&exitsFor(UI.role).length?`<span class="n">${exitsFor(UI.role).length}</span>`:''}</button>`).join('');
     $('#app').innerHTML=bar+VIEWS[UI.tab]();
   }else{nav.style.display='none';$('#app').innerHTML=bar+(UI.role==='teacher'?vTeacher():vStudent())}
 }
@@ -464,7 +464,9 @@ function vDash(){
   if(nomatch.length)alerts.push(['err','⛔',`<b>${nomatch.length} פניות בלי שום התאמה</b> — ${[...new Set(nomatch.map(noMatchReason))].map(esc).join(' · ')}`,`go('teachers')`,'למורים']);
   if(old.length)alerts.push(['warn','⏳',`<b>${old.length} פניות ממתינות מעל 3 ימים</b>`,`go('req')`,'לטיפול']);
   const cfs=allConflicts(w),pex=S.exits.filter(e=>e.status==='pending'&&exitConflicts(e).some(c=>c.type==='tutor'));
-  if(pex.length)alerts.push(['warn','🚪',`<b>${pex.length} בקשות יציאה מתנגשות בתגבור</b> — ממתינות להחלטת המדריך/ה`,'','']);
+  const myx=exitsFor(UI.role);
+  if(myx.length)alerts.push(['err','🚪',`<b>${myx.length} בקשות יציאה מחכות לאישורך</b> — החניך/ה לא ייצא/תצא בלי האישור שלך`,`go('exok')`,'לאישור']);
+  else if(pex.length)alerts.push(['warn','🚪',`<b>${pex.length} בקשות יציאה מתנגשות בתגבור</b> — ממתינות לאישורים`,'','']);
   if(cfs.length)alerts.push(['warn','📅',`<b>${cfs.length} התנגשויות ביומני חניכים השבוע</b> (שיעורים, חוגים, תגבורים, יציאות)`,`go('calendars')`,'ליומנים']);
   if(solo.length)alerts.push(['warn','👤',`<b>${solo.length} תגבורים עם חניך/ה אחד/ת</b> — אפשר לאחד ולפנות שעות מורה`,`go('cal')`,'ללוח']);
   if(pend.length&&!urgent.length&&!nomatch.length)alerts.push(['info','⚡',`יש ${pend.length} פניות ממתינות. שיבוץ אוטומטי ימצא להן את הזמן הטוב ביותר.`,`runAuto()`,'שבצו עכשיו']);
@@ -875,7 +877,7 @@ function exitConflicts(e){
 function exitTag(e){
   if(e.status==='approved')return '<span class="tag ok">✓ אושר</span>';
   if(e.status==='rejected')return '<span class="tag err">✕ לא אושר</span>';
-  return `<span class="tag ${e.madOk?'ok':'warn'}" style="margin:1px">${e.madOk?'✓':'⏳'} מדריך/ה</span><span class="tag ${e.parOk?'ok':'warn'}" style="margin:1px">${e.parOk?'✓':'⏳'} הורים</span>${e.parOk&&e.parOk.how?`<div class="muted" style="font-size:11px">הורים: ${esc(e.parOk.how)}${e.parOk.who?' · '+esc(e.parOk.who):''}</div>`:''}`}
+  return `<span class="tag ${e.madOk?'ok':'warn'}" style="margin:1px">${e.madOk?'✓':'⏳'} מדריך/ה</span><span class="tag ${e.parOk?'ok':'warn'}" style="margin:1px">${e.parOk?'✓':'⏳'} הורים</span>${exitNeeds(e).map(r=>`<span class="tag ${(e.ovr||{})[r]?'ok':'warn'}" style="margin:1px">${(e.ovr||{})[r]?'✓':'⏳'} ${OVR_L[r]}</span>`).join('')}${e.parOk&&e.parOk.how?`<div class="muted" style="font-size:11px">הורים: ${esc(e.parOk.how)}${e.parOk.who?' · '+esc(e.parOk.who):''}</div>`:''}`}
 function vExits(){
   if(!UI.grp){const p=S.exits.find(e=>e.status==='pending');UI.grp=p?grpOf(ST(p.sid)):GROUPS()[0]}
   const ex=S.exits.filter(e=>grpOf(ST(e.sid))===UI.grp).sort((a,b)=>(a.status==='pending'?0:1)-(b.status==='pending'?0:1)||a.date.localeCompare(b.date));
@@ -883,22 +885,75 @@ function vExits(){
   <div class="panel" style="overflow-x:auto"><table class="tb"><thead><tr><th>חניך/ה</th><th>מתי</th><th>סיבה</th><th>מה יתפספס</th><th>סטטוס</th><th></th></tr></thead><tbody>
   ${ex.map(e=>{const cf=exitConflicts(e);return `<tr><td><b>${esc(ST(e.sid).name)}</b><div class="muted">ביקש/ה: ${esc(e.by)}</div></td><td>${DAYS[exitDay(e)]||'סופ"ש'} ${fmt(e.date)}<div class="muted">${hh(e.from)}–${hh(e.to)}</div></td><td>${esc(e.reason)}</td>
    <td>${cf.map(c=>`<span class="tag ${c.type==='tutor'?'err':'warn'}" style="margin:2px">${c.type==='tutor'?'📚':c.type==='act'?'🎭':'🏫'} ${esc(c.label)}</span>`).join('')||'<span class="tag ok">אין התנגשות</span>'}</td>
-   <td>${exitTag(e)}</td><td style="white-space:nowrap">${e.status==='pending'?`${e.madOk?'':`<button class="btn sm pri" onclick="approveExit('${e.id}')">✓ אישור מדריך/ה</button> `}${e.parOk?'':`<button class="btn sm" onclick="parentOkModal('${e.id}')">👪 הורים אישרו</button> `}<button class="btn sm ghost danger" onclick="decideExit('${e.id}',false)">✕ דחייה</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="6"><div class="empty">אין בקשות יציאה בקבוצה הזו</div></td></tr>'}
+   <td>${exitTag(e)}</td><td style="white-space:nowrap">${e.status==='approved'?`<button class="btn sm" onclick="gatePass('${e.id}')">🎫 אישור לשער</button>`:''}${e.status==='pending'?`${e.madOk?'':`<button class="btn sm pri" onclick="approveExit('${e.id}')">✓ אישור מדריך/ה</button> `}${e.parOk?'':`<button class="btn sm" onclick="parentOkModal('${e.id}')">👪 הורים אישרו</button> `}<button class="btn sm ghost danger" onclick="decideExit('${e.id}',false)">✕ דחייה</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="6"><div class="empty">אין בקשות יציאה בקבוצה הזו</div></td></tr>'}
   </tbody></table></div>`;
 }
+/* יציאה שמתנגשת בהתחייבות (הכרעת יובל 27.11.2026): תגבור → רק מנהלת מרכז הלמידה מתירה; חוג → רק רכזת המח"מ */
+const OVR_L={manager:'מנהלת מרכז הלמידה',mahat:'רכזת המח"מ'};
+function exitNeeds(e){const cf=exitConflicts(e),n=[];if(cf.some(c=>c.type==='tutor'))n.push('manager');if(cf.some(c=>c.type==='act'))n.push('mahat');return n}
+function exitMissing(e){return exitNeeds(e).filter(r=>!(e.ovr||{})[r])}
+function exitsFor(role){return role==='manager'||role==='mahat'?S.exits.filter(e=>e.status==='pending'&&exitMissing(e).includes(role)):[]}
+function askOverride(e){exitMissing(e).forEach(r=>{if(!(e.asked||{})[r]){e.asked=Object.assign({},e.asked,{[r]:Date.now()});notify(r,`בקשת יציאה של ${ST(e.sid).name} ב-${fmt(e.date)} (${hh(e.from)}–${hh(e.to)}) מתנגשת ב${r==='manager'?'תגבור':'חוג'} — מחכה לאישורך`)}})}
+function exitTry(e,msgWait){
+  if(!e.madOk||!e.parOk) return commit(msgWait);
+  const miss=exitMissing(e);
+  if(miss.length){askOverride(e);log(`יציאה של ${ST(e.sid).name} ב-${fmt(e.date)} — מדריך/ה והורים אישרו, ממתינה ל${miss.map(r=>OVR_L[r]).join(' ול')}`);
+    return commit(`המדריך/ה וההורים אישרו · ממתין לאישור ${miss.map(r=>OVR_L[r]).join(' ו')}`,'err');}
+  exitFinal(e,true);
+}
 function approveExit(id){
-  const e=S.exits.find(x=>x.id===id),tu=exitConflicts(e).filter(c=>c.type==='tutor');
-  if(!tu.length)return decideExit(id,true);
-  openModal(`<div class="mh"><h3>⚠️ היציאה מתנגשת בתגבור</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb">
+  const e=S.exits.find(x=>x.id===id),miss=exitMissing(e);
+  if(!miss.length)return decideExit(id,true);
+  const cf=exitConflicts(e).filter(c=>c.type==='tutor'||c.type==='act');
+  openModal(`<div class="mh"><h3>⚠️ היציאה מתנגשת בהתחייבות</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb">
    <p><b>${esc(ST(e.sid).name)}</b> מבקש/ת לצאת ב-${fmt(e.date)} בין ${hh(e.from)} ל-${hh(e.to)}, ויש לו/ה באותו זמן:</p>
-   ${tu.map(c=>`<div class="alert err"><span>📚</span><div>${esc(c.label)}</div></div>`).join('')}
-   <p class="muted">אם מאשרים, התגבור חוזר אוטומטית לרשימת הממתינים, ורכזת מרכז הלמידה מקבלת התראה כדי לשבץ זמן אחר.</p>
-  </div><div class="mf"><button class="btn pri" onclick="closeModal();decideExit('${id}',true)">אישור היציאה ושיבוץ מחדש של התגבור</button><button class="btn" onclick="closeModal()">לא עכשיו</button></div>`);
+   ${cf.map(c=>`<div class="alert err"><span>${c.type==='tutor'?'📚':'🎭'}</span><div>${esc(c.label)}</div></div>`).join('')}
+   <p class="muted">אפשר לאשר מצד המדריך/ה, אבל החניך/ה <b>לא ייצא/תצא</b> עד ש${miss.map(r=>OVR_L[r]).join(' ו')} ת${miss.length>1?'אשרנה':'אשר'}. הבקשה תגיע אליהן אוטומטית.</p>
+  </div><div class="mf"><button class="btn pri" onclick="closeModal();decideExit('${id}',true)">אישור המדריך/ה והעברה לאישור</button><button class="btn" onclick="closeModal()">לא עכשיו</button></div>`);
+}
+/* מסך האישור של מנהלת מרכז הלמידה / רכזת המח"מ */
+function vExitOk(){
+  const r=UI.role,list=exitsFor(r),label=r==='manager'?'תגבור':'חוג';
+  const done=S.exits.filter(e=>(e.ovr||{})[r]).slice(-8).reverse();
+  return `<div class="title"><h2>🚪 יציאות שמתנגשות ב${label} — מחכות לאישורך</h2></div>
+  <div class="alert info"><span>💡</span><div>חניך/ה שיש לו/ה ${label} בשעת היציאה <b>לא יוצא/ת מהכפר</b> בלי האישור שלך. אישור מחזיר את ה${label} לשיבוץ מחדש; דחייה סוגרת את הבקשה.</div></div>
+  <div class="panel" style="overflow-x:auto"><table class="tb"><thead><tr><th>חניך/ה</th><th>מתי</th><th>סיבה</th><th>מה יתפספס</th><th>אישורים</th><th></th></tr></thead><tbody>
+  ${list.map(e=>`<tr><td><b>${esc(ST(e.sid).name)}</b><div class="muted">${esc(grpOf(ST(e.sid)))}</div></td><td>${DAYS[exitDay(e)]||'סופ"ש'} ${fmt(e.date)}<div class="muted">${hh(e.from)}–${hh(e.to)}</div></td><td>${esc(e.reason)}</td>
+   <td>${exitConflicts(e).filter(c=>c.type===(r==='manager'?'tutor':'act')).map(c=>`<span class="tag err" style="margin:2px">${esc(c.label)}</span>`).join('')}</td><td>${exitTag(e)}</td>
+   <td style="white-space:nowrap"><button class="btn sm pri" onclick="overrideExit('${e.id}',true)">✓ מאשר/ת לצאת</button> <button class="btn sm ghost danger" onclick="overrideExit('${e.id}',false)">✕ לא מאשר/ת</button></td></tr>`).join('')||'<tr><td colspan="6" class="muted" style="text-align:center;padding:18px">אין בקשות שמחכות לך 🎉</td></tr>'}
+  </tbody></table></div>
+  ${done.length?`<div class="panel"><h3>החלטות אחרונות שלך</h3>${done.map(e=>`<div class="muted">${esc(ST(e.sid).name)} · ${fmt(e.date)} · ${e.ovr[r].ok?'✓ אושר':'✕ לא אושר'}</div>`).join('')}</div>`:''}`;
+}
+function overrideExit(id,ok){
+  const e=S.exits.find(x=>x.id===id),r=UI.role,name=ST(e.sid).name;
+  e.ovr=Object.assign({},e.ovr,{[r]:{ok,by:ME_N||OVR_L[r],at:Date.now()}});
+  if(!ok){e.status='rejected';e.decidedBy=OVR_L[r];notify('madrich',`${OVR_L[r]} לא אישרה את היציאה של ${name} ב-${fmt(e.date)} (מתנגשת ב${r==='manager'?'תגבור':'חוג'})`);
+    log(`${OVR_L[r]} לא אישרה יציאה של ${name} ב-${fmt(e.date)}`);return commit('הבקשה נסגרה — החניך/ה נשאר/ת להתחייבות');}
+  log(`${OVR_L[r]} אישרה יציאה של ${name} ב-${fmt(e.date)} למרות ה${r==='manager'?'תגבור':'חוג'}`);
+  if(e.madOk&&e.parOk&&!exitMissing(e).length)return exitFinal(e,true);
+  notify('madrich',`${OVR_L[r]} אישרה את היציאה של ${name} ב-${fmt(e.date)}`);
+  commit('האישור שלך נשמר ✓');
+}
+/* אישור יציאה להצגה בשער */
+function gatePass(id){
+  const e=S.exits.find(x=>x.id===id),s=ST(e.sid);
+  const ap=[['מדריך/ה',e.madOk],['הורים',e.parOk]].concat(Object.keys(e.ovr||{}).map(r=>[OVR_L[r],e.ovr[r].ok]));
+  openModal(`<div class="mh"><h3>🎫 אישור יציאה</h3><span class="sp"></span><button class="btn ghost" onclick="closeModal()">✕</button></div><div class="mb">
+   <div style="border:3px solid #15803d;border-radius:16px;padding:18px;text-align:center;background:#f0fdf4">
+    <div style="font-size:13px;color:#15803d;font-weight:800">מבואות ים · שכבה בוגרת</div>
+    <div style="font-size:26px;font-weight:900;margin:6px 0">${esc(s.name)}</div>
+    <div class="muted">${esc(grpOf(s))}</div>
+    <div style="font-size:20px;font-weight:800;margin:12px 0">${DAYS[exitDay(e)]||''} ${fmt(e.date)}<br>יציאה ${hh(e.from)} · חזרה ${hh(e.to)}</div>
+    <div style="font-size:15px;font-weight:900;color:#15803d">✓ יציאה מאושרת</div>
+    <div class="muted" style="margin-top:8px;font-size:12px">${ap.map(([l,v])=>`${l}: ${v?'✓':'—'}`).join(' · ')}</div>
+    <div class="muted" style="font-size:11px">מספר אישור ${esc(e.id.slice(-6).toUpperCase())}</div>
+   </div></div><div class="mf"><button class="btn pri" onclick="window.print()">🖨️ הדפסה</button><button class="btn" onclick="closeModal()">סגירה</button></div>`);
 }
 function decideExit(id,ok){
   const e=S.exits.find(x=>x.id===id),name=ST(e.sid).name;
   if(ok){ e.madOk={by:ME_N||'מדריך/ה',at:Date.now()};
-    if(!e.parOk){ log(`המדריך/ה אישר/ה יציאה של ${name} ב-${fmt(e.date)} — ממתין לאישור הורים`); return commit('אושר ע"י המדריך/ה · ממתין לאישור ההורים'); } }
+    if(!e.parOk) log(`המדריך/ה אישר/ה יציאה של ${name} ב-${fmt(e.date)} — ממתין לאישור הורים`);
+    return exitTry(e,'אושר ע"י המדריך/ה · ממתין לאישור ההורים'); }
   exitFinal(e,ok);
 }
 function parentOkModal(id){
@@ -912,10 +967,8 @@ function parentOkModal(id){
 function parentOk(id){
   const e=S.exits.find(x=>x.id===id),name=ST(e.sid).name;
   e.parOk={how:$('#po_how').value,who:$('#po_who').value.trim(),by:ME_N||'',at:Date.now()};closeModal();
-  if(!e.madOk){ log(`ההורים של ${name} אישרו יציאה ב-${fmt(e.date)} — ממתין לאישור המדריך/ה`); return commit('אישור ההורים נשמר · ממתין לאישור המדריך/ה'); }
-  const tu=exitConflicts(e).filter(c=>c.type==='tutor');
-  if(tu.length){ e.madOk=null; save(); return approveExit(id); }
-  exitFinal(e,true);
+  if(!e.madOk) log(`ההורים של ${name} אישרו יציאה ב-${fmt(e.date)} — ממתין לאישור המדריך/ה`);
+  exitTry(e,'אישור ההורים נשמר · ממתין לאישור המדריך/ה');
 }
 function exitFinal(e,ok){
   const name=ST(e.sid).name;
@@ -925,7 +978,8 @@ function exitFinal(e,ok){
     tu.forEach(c=>{const r=reqAt(c.key,e.sid);r?unassign(r.id):removeFromSession(c.key,e.sid)});
     if(tu.length)notify('coord',`${name} אושר/ה ליציאה ב-${fmt(e.date)} — ${tu.length} תגבורים חזרו לשיבוץ`);
   }
-  log(ok?`יציאה של ${name} ב-${fmt(e.date)} אושרה סופית (מדריך/ה + הורים)`:`המדריך/ה דחה/תה יציאה של ${name} ב-${fmt(e.date)}`);
+  if(ok) notify('madrich',`היציאה של ${name} ב-${fmt(e.date)} אושרה סופית — אפשר להפיק אישור לשער`);
+  log(ok?`יציאה של ${name} ב-${fmt(e.date)} אושרה סופית (מדריך/ה + הורים${Object.keys(e.ovr||{}).length?' + '+Object.keys(e.ovr).map(r=>OVR_L[r]).join(' + '):''})`:`המדריך/ה דחה/תה יציאה של ${name} ב-${fmt(e.date)}`);
   commit(ok?'היציאה אושרה סופית ✓ (מדריך/ה + הורים)':'הבקשה נדחתה',ok?'ok':'');
 }
 function newExitModal(sid,by){
