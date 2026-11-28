@@ -4523,7 +4523,27 @@ const TOOLS=[
   {ic:'📚',t:'מאגר חינוך',d:'חומרים מוכנים לפעולות מהדרייב',go:"show('edutopics');renderEduTopics()"},
   {ic:'📌',t:'גאנט שנתי',d:'כל אירועי השנה על ציר הזמן',go:"calTool('gantt')"},
   {ic:'🗓️',t:'לוח שבתות ואירועים',d:'שבתות, חופשות ואירועי תשפ"ז',go:"calTool('events')"},
+  {ic:'📘',t:'מדריכי שימוש',d:'לצוות ולחניכים — פתיחה והורדה ב-PDF',go:"guidesOpen()"},
 ];
+/* מדריכי שימוש (docs/guides): כל מדריך — פתיחה בלשונית חדשה + הורדה כ-PDF. כשמעדכנים מדריך: לעדכן את ה-HTML ולהפיק מחדש את ה-PDF */
+const GUIDES=[{ic:'🧑‍🏫',t:'מדריך שימוש לצוות',d:'כל יכולות הפורטל: קשר ומעקב, נוכחות, הורים, ניהול קבוצה ועוד',f:'staff',dl:'מדריך שימוש לצוות - פורטל בוגרת.pdf'},
+  {ic:'🎓',t:'מדריך שימוש לחניכים',d:'האפליקציה "בוגרת שלי": כניסה, בדיקת נוכחות, בקשת יציאה והודעות',f:'students',dl:'מדריך שימוש לחניכים - בוגרת שלי.pdf'}];
+window.guidesOpen=function(){ let m=document.getElementById('guidesDlg');
+  if(!m){ m=document.createElement('div'); m.id='guidesDlg'; m.onclick=e=>{ if(e.target===m) m.remove(); }; document.body.appendChild(m); }
+  m.innerHTML=`<div class="gd-box"><div class="gd-h"><b>📘 מדריכי שימוש</b><button onclick="document.getElementById('guidesDlg').remove()" title="סגירה">✕</button></div>
+    <div class="gd-sub">המדריכים מתעדכנים יחד עם המערכת.</div>
+    ${GUIDES.map(g=>`<div class="gd-row"><span class="gd-ic">${g.ic}</span><div style="flex:1;min-width:0"><b>${g.t}</b><small>${g.d}</small></div>
+      <div class="gd-acts"><a href="docs/guides/${g.f}.html" target="_blank" rel="noopener">פתיחה</a><a class="gd-pdf" href="docs/guides/${g.f}.pdf" download="${g.dl}">⬇️ PDF</a></div></div>`).join('')}</div>`; };
+(function(){ const c=document.createElement('style'); c.textContent=`
+#guidesDlg{position:fixed;inset:0;background:rgba(15,30,46,.45);z-index:9500;display:flex;align-items:flex-start;justify-content:center;padding:60px 12px;overflow:auto}
+#guidesDlg .gd-box{background:#fff;border-radius:16px;padding:16px 18px;width:min(560px,100%);box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:Assistant,Heebo,sans-serif}
+#guidesDlg .gd-h{display:flex;align-items:center}#guidesDlg .gd-h b{flex:1;font:800 19px Heebo,sans-serif;color:#8E033C}
+#guidesDlg .gd-h button{border:none;background:none;font-size:18px;cursor:pointer;opacity:.6}
+#guidesDlg .gd-sub{font-size:13px;color:#7A6A66;margin:2px 0 10px}
+#guidesDlg .gd-row{display:flex;align-items:center;gap:10px;border:1px solid #F3C2B0;border-radius:12px;padding:10px 12px;margin-bottom:8px;flex-wrap:wrap}
+#guidesDlg .gd-ic{font-size:26px}#guidesDlg .gd-row b{display:block;font:800 15px Heebo,sans-serif}#guidesDlg .gd-row small{color:#7A6A66;font-size:13px}
+#guidesDlg .gd-acts{display:flex;gap:6px}#guidesDlg .gd-acts a{background:#FC5028;color:#fff;text-decoration:none;border-radius:9px;padding:7px 14px;font:700 13.5px Heebo,sans-serif;white-space:nowrap}
+#guidesDlg .gd-acts a.gd-pdf{background:#fff;color:#8E033C;border:1px solid #F3C2B0}`; document.head.appendChild(c); })();
 /* פתיחת לשונית מתוך היומן (שורת הלשוניות של היומן הוסתרה — הכול דרך "כלים") */
 /* שינוי גודל החלון — היומן מתאים את עצמו לגובה המסך */
 let _pcRz=null; window.addEventListener('resize',()=>{ clearTimeout(_pcRz); _pcRz=setTimeout(()=>{ const b=document.getElementById('cal-board'); if(b&&b.classList.contains('active')&&b.offsetParent&&window.pcalRender) pcalRender(); },250); });
