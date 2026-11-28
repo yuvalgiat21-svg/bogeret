@@ -345,6 +345,8 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 .nv-sep { height:1px; background:#F3C2B0; margin:4px 6px; }
 .nav button.nv-mode { font-size:12px; color:var(--text3); border-style:dashed; }
 .nav .nv-menu button.nv-mode { font-size:12.5px; color:var(--text2); }
+.nav.nv-new { flex-wrap:wrap; overflow:visible; row-gap:6px; }
+.nav button.nv-mode-s { font-size:13px; padding:6px 9px; opacity:.55; border-style:dashed; margin-inline-start:auto; }
 
 /* MAIN */
 .main { padding:20px 24px; max-width:1500px; margin:0 auto; }
@@ -1029,11 +1031,11 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
   .nav::-webkit-scrollbar { display:none; }
   .nav button { white-space:nowrap; flex-shrink:0; font-size:12.5px; padding:7px 13px; }
 
-  .subnav { overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-  .subnav::-webkit-scrollbar { display:none; }
-  .subnav button { white-space:nowrap; flex-shrink:0; font-size:12px; padding:7px 12px; }
-  .subnav-grid { display:flex !important; grid-template-columns:none !important; }
-  .subnav-grid button { width:auto; }
+  /* לשוניות משנה: יורדות לשורה נוספת במקום לברוח מהמסגרת (תיקון 28.11.2026) */
+  .subnav { flex-wrap:wrap; }
+  .subnav button { white-space:nowrap; flex-shrink:0; font-size:12px; padding:7px 11px; }
+  .subnav-grid { display:flex !important; flex-wrap:wrap; grid-template-columns:none !important; }
+  .subnav-grid button { width:auto; flex:1 1 auto; }
 
   .cards { grid-template-columns:repeat(2,1fr); gap:9px; }
   .card { padding:13px; }
@@ -1662,19 +1664,17 @@ const NEW_TABS = [
   {id:'groups',   icon:'👥', label:'ניהול קבוצה',    tier:'main'},
   {id:'attendance',icon:'✅', label:'נוכחות',         tier:'main'},
   {id:'parents',  icon:'👪', label:'הורים',          tier:'main'},
-  {id:'lc',       icon:'🏫', label:'מרכז למידה',     tier:'main'},
+  {id:'lc',       icon:'📖', label:'מרכז למידה',     tier:'main'},
   {id:'eduplan',  icon:'🎓', label:'תוכנית חינוכית', tier:'main', grp:'plan'},
   {id:'companion',icon:'🧭', label:'תוכנית מלווה',   tier:'main', grp:'plan'},
   {id:'calendar', icon:'📅', label:'יומן',           tier:'main'},
-  {id:'pedagogy', icon:'📚', label:'מעקב לימודי',    tier:'more'},
-  {id:'team',     icon:'🧑‍🤝‍🧑', label:'צוות',          tier:'more'},
+  {id:'pedagogy', icon:'🏫', label:'בית ספר',        tier:'more'},
   {id:'graduates',icon:'🎖️', label:'בוגרים',         tier:'more'},
-  {id:'prof',     icon:'📂', label:'חומרים מקצועיים', tier:'more'},
   {id:'evacplan', icon:'🚨', label:'פינוי בחירום',   tier:'more', danger:true},
   {id:'users',    icon:'🔐', label:'משתמשים',        tier:'more', admin:true},
 ];
 /* סדר הסרגל הקודם (כפי שהיה באוויר לפני השינוי) */
-const CLASSIC_ORDER = ['overview','tik','msg','calendar','attendance','parents','team','groups','pedagogy','lc','companion','eduplan','evacplan','prof','graduates','users'];
+const CLASSIC_ORDER = ['overview','calendar','msg','attendance','groups','pedagogy','lc','eduplan','companion','tik','parents','graduates','evacplan','users'];
 const NAV_MODE_KEY='bogeret_nav_mode', NAV_MODE_PATH='portal/bogeret/secure/settings/nav_mode';
 let NAV_MODE=(()=>{ try{ return localStorage.getItem(NAV_MODE_KEY)==='classic'?'classic':'new'; }catch(e){ return 'new'; } })();
 
@@ -1688,8 +1688,8 @@ function mkNav(id, items, onPick, opts){
   opts=opts||{};
   const n=document.createElement('div'); n.className='subnav'+(opts.grid?' subnav-grid':''); n.id=id+'Subnav';
   if(opts.grid){
-    const cols=Math.ceil(items.length/2);
-    n.style.gridTemplateColumns='repeat('+cols+',1fr)';
+    /* כמה שורות שצריך — הכפתורים אף פעם לא יוצאים מהמסגרת (תיקון 28.11.2026) */
+    n.style.gridTemplateColumns='repeat(auto-fill,minmax(150px,1fr))';
   }
   n.innerHTML = items.map((it,i)=>`<button class="${i===0?'active':''}${it.hl?' hl':''}" data-k="${it.k}">${it.label}</button>`).join('');
   n.querySelectorAll('button').forEach(b=>b.onclick=()=>{
@@ -1813,7 +1813,7 @@ function grpOrder(items,subs,key,famG){
   const order=['cal','roster','school','edu','ramzor','lc','parents'];
   const rest=items.map(x=>x.k).filter(k=>!order.includes(k)&&k!=='limudi');
   const ks=order.concat(rest);
-  const it=ks.map(k=>lbl[k]||{k,label:GRP_NEW[k],hl:k==='school'});
+  const it=ks.map(k=>Object.assign({},lbl[k]||{k,label:GRP_NEW[k]},{hl:false}));
   const box=(kind)=>`<div data-grpx="${kind}" data-key="${String(key).replace(/"/g,'&quot;')}"><div style="color:var(--text3);padding:14px">טוען…</div></div>`;
   const add={cal:box('cal'),school:box('school'),lc:box('lc'),parents:`<div data-famgrp="${String(famG).replace(/"/g,'&quot;')}"></div>`};
   const sb={}; ks.forEach(k=>{ sb[k]=add[k]!==undefined?add[k]:subs[k]; });
@@ -4565,6 +4565,7 @@ const LINKS=[
 const TOOLS=[
   {ic:'🏘️',t:'שריון מתחמים',d:'לוח המתחמים — מחובר לגיליון של פז',go:"show('rooms')"},
   {ic:'📚',t:'מאגר חינוך',d:'חומרים מוכנים לפעולות מהדרייב',go:"show('edutopics');renderEduTopics()"},
+  {ic:'📂',t:'חומרים מקצועיים',d:'בטיחות וטיולים, ישיבות בוגרת, סיכומי שיחות, הספר הכחול, קבצים',go:"show('prof');if(window.renderTripLib)renderTripLib()"},
   {ic:'📌',t:'גאנט שנתי',d:'כל אירועי השנה על ציר הזמן',go:"calTool('gantt')"},
   {ic:'🗓️',t:'לוח שבתות ואירועים',d:'שבתות, חופשות ואירועי תשפ"ז',go:"calTool('events')"},
   {ic:'📘',t:'מדריכי שימוש',d:'לצוות ולחניכים — פתיחה והורדה ב-PDF',go:"guidesOpen()"},
@@ -5533,7 +5534,7 @@ function reorganize(){
   /* האלפון עבר ללשונית הראשית "חניכים" (תיק אישי לכל חניך/ה) */
   const ovItems=[{k:'general',label:'📊 נתונים כלליים'},
     {k:'goals',label:'🎯 מטרות ויעדים'},{k:'ramzor',label:'🚦 רמזור נשירה'},
-    {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},{k:'rooms',label:'🏠 שיבוץ חדרים'}];
+    {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},{k:'rooms',label:'🏠 שיבוץ חדרים'},{k:'team',label:'🧑‍🤝‍🧑 צוות'}];
   ov.appendChild(mkNav('ov',ovItems,pickIn(ov,'ov')));
   const sGen=mkSub('ov-general',true);
   while(old.overview.firstChild) sGen.appendChild(old.overview.firstChild);
@@ -5623,7 +5624,8 @@ function reorganize(){
   const dNN=mkSub('tmn-cnt'); dNN.innerHTML=viewNightCount(); nInner.appendChild(dNN);
   tNight.appendChild(nInner);
   [tMy,tNaat,tSh,tNight].forEach(x=>tm.appendChild(x));
-  main.appendChild(tm);
+  /* לשונית "צוות" עברה לתוך סקירה (בקשת יובל 28.11.2026) */
+  tm.className=''; tm.id='ov-team-inner'; const sTeam=mkSub('ov-team'); sTeam.appendChild(tm); ov.appendChild(sTeam);
 
   /* ---------- 3. חניכים ---------- */
   const gr=mkSec('groups');
@@ -5716,7 +5718,8 @@ function reorganize(){
                 med:viewMed(yb,'med-yb'),diet:viewDiet(yb,'diet-yb'),
                 kn:viewKnowledge('yb',"קהילת יב'"),kb:viewKB('yb',"קהילת יב'")};
   const {items:ybItems2,subs:ybSubs}=grpOrder(ybItems.filter(x=>x.k!=='siyum'),ybSubs0,'yb','קהילת יב');
-  secYB.appendChild(mkNav('gryb',ybItems2.concat(ybItems.filter(x=>x.k==='siyum')),pickIn(innerYB,'gryb'),{grid:true}));
+  const siyumIt=Object.assign({},ybItems.find(x=>x.k==='siyum'),{hl:false});
+  secYB.appendChild(mkNav('gryb',[ybItems2[0],siyumIt].concat(ybItems2.slice(1)),pickIn(innerYB,'gryb'),{grid:true}));
   Object.entries(ybSubs).forEach(([k,html],n)=>{ const d=mkSub('gryb-'+k,n===0); d.innerHTML=html; innerYB.appendChild(d); });
   const dSiyum=mkSub('gryb-siyum'); while(old.siyum.firstChild) dSiyum.appendChild(old.siyum.firstChild);
   innerYB.appendChild(dSiyum);
@@ -6299,7 +6302,7 @@ function lcMount(){
 /* ── סרגל לשוניות עם לשוניות אב ותפריט נפתח ── */
 /* סרגל לפי תפקיד: מה בשורה הראשית ומה תחת "עוד" */
 const NAV_LAYOUT={
-  admin:['home','overview','tik','msg','groups','attendance','parents','lc','eduplan','companion','calendar'],
+  admin:['home','overview','calendar','msg','attendance','groups','pedagogy','lc','eduplan','companion','tik','parents','graduates','evacplan','users'],
   staff:['mine','tik','groups','msg','calendar','attendance','parents']
 };
 const navRole=()=>ME&&ME.mode==='admin'?'admin':'staff';
@@ -6333,9 +6336,10 @@ function navBuild(list){
     h+=`<div class="nv-grp" data-grp="${x.grp}"><button class="nv-par" id="par-${x.grp}" onclick="navToggle('${x.grp}',event)">${G.icon} ${G.label}<span class="nv-cur"></span> <span class="nv-car">▾</span></button>
       <div class="nv-menu" id="menu-${x.grp}">${kids.map(B).join('')}</div></div>`;
   });
-  if(more.length||isAdm){
+  if(isAdm) h+=`<button class="nv-mode-s" onclick="navSetMode('classic')" title="חזרה לסרגל הקודם">↩️</button>`;
+  if(more.length){
     h+=`<span class="nv-sp"></span><div class="nv-grp nv-more" data-grp="more"><button class="nv-par" id="par-more" onclick="navToggle('more',event)">☰ עוד<span class="nv-cur"></span> <span class="nv-car">▾</span></button>
-      <div class="nv-menu" id="menu-more">${more.map(B).join('')}${isAdm?`<div class="nv-sep"></div><button class="nv-mode" onclick="navSetMode('classic')">↩️ חזרה לסרגל הקודם</button>`:''}</div></div>`;
+      <div class="nv-menu" id="menu-more">${more.map(B).join('')}</div></div>`;
   }
   return h;
 }
