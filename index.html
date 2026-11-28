@@ -1388,6 +1388,17 @@ async function secureDb(){
   const dbm=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
   return {dbm, rdb: dbm.getDatabase(appMod.getApp())};
 }
+/* בקשת יובל 28.11.2026: בכל הפורטל אין הבחנה בין חוף לצוק — כל חניכי י"ב רשומים תחת "קהילת יב".
+   הנתונים בענן לא משתנים; ההמרה נעשית בטעינה (הקבוצה המקורית נשמרת ב-g0). */
+function ybMerge(g){ return (g==='חוף'||g==='צוק')?'קהילת יב':g; }
+function ybMergeAll(){
+  const fix=x=>{ if(x&&ybMerge(x.g)!==x.g){ x.g0=x.g; x.g=ybMerge(x.g); } };
+  STUDENTS_DATA.forEach(fix); RAMZOR_DATA_NEW.forEach(fix);
+  (ROOMS_YB||[]).forEach(r=>{ fix(r); (r.m||[]).forEach(fix); });
+  (typeof ROOMS_UNPLACED!=='undefined'?ROOMS_UNPLACED:[]).forEach(fix);
+  if(typeof D!=='undefined'&&D){ (D.hugim||[]).forEach(h=>{ if(h&&h.group) h.group=ybMerge(h.group); });
+    Object.values(D.leadership||{}).forEach(arr=>{ if(Array.isArray(arr)) arr.forEach((e,i)=>{ if(typeof e==='string') arr[i]=e.replace(/\((חוף|צוק)\)/,'(קהילת יב)'); }); }); }
+}
 async function loadSecure(){
   if(SECURE_LOADED) return;
   const {dbm,rdb}=await secureDb();
@@ -1418,6 +1429,7 @@ async function loadSecure(){
   _fill(EVAC_DATA, P('EVAC_5787'));
   _fill(ACADEMY_ROOMS, P('ACADEMY_ROOMS'));
   _fill(D, P('DATA_JSON'));
+  ybMergeAll();
   syncRamzorRows(); buildAcadStudents(); syncAcadRamzor();
   /* עותק של רשימת הבוגרים לבעלי תפקידים (רוני) — רק המנהל כותב, רק כשמשהו השתנה */
   if(ME && ME.mode==='admin') try{
@@ -1433,6 +1445,7 @@ async function loadSecure(){
     const ls=await dbm.get(dbm.ref(rdb,'portal/bogeret/secure/limudi/latest'));
     window.LIMUDI = ls.exists() ? JSON.parse(ls.val()) : null;
   }catch(e){ window.LIMUDI=null; }
+  await clsFix(dbm,rdb);
   SECURE_LOADED=true;
   loadPhotos();   /* תמונות החניכים — נטענות ברקע, לא מעכבות את הכניסה */
 }
@@ -1445,6 +1458,22 @@ window.attPublish = async function(obj){
   await dbm.set(dbm.ref(rdb,'portal/bogeret/secure/attendance/history/'+(obj.date||Date.now()).toString().replace(/[.#$\[\]\/]/g,'-')), txt);
   return 'ok';
 };
+/* ═══ כיתה בבית הספר (תיקון 28.11.2026): הכיתה ברשימת החניכים נשארה משנה שעברה (כל י"ב הופיעו כ-יא).
+   המקור הנכון = סמרט סקול. הרכז שומר מפה {מזהה חניך: כיתה} ב-secure/stu_cls (בכל עדכון לימודי), וכולם קוראים אותה. ═══ */
+async function clsFix(dbm,rdb,force){
+  const all=STUDENTS_DATA.concat(typeof ACAD_STUDENTS!=='undefined'?ACAD_STUDENTS:[]), key=n=>sha256hex('stu:'+n).slice(0,12);
+  let map=null;
+  try{ const L=window.LIMUDI;
+    if(ME&&ME.mode==='admin'&&L&&L.students&&typeof limFind==='function'){
+      const cur=(await dbm.get(dbm.ref(rdb,'portal/bogeret/secure/stu_cls'))).val();
+      if(force||!cur||cur.date!==L.date){ const m={}; all.forEach(s=>{ const r=limFind(s.n); if(r&&r['כיתה']) m[key(s.n)]=String(r['כיתה']); });
+        map={date:L.date||'',m}; await dbm.set(dbm.ref(rdb,'portal/bogeret/secure/stu_cls'),map); } else map=cur;
+    } else map=(await dbm.get(dbm.ref(rdb,'portal/bogeret/secure/stu_cls'))).val();
+  }catch(e){ console.warn('stu_cls',e); }
+  if(!map||!map.m) return;
+  const fmt=c=>String(c).replace(/^(יא|יב|ט|י|ח)(\d+)$/,"$1'$2").replace(/^(יא|יב|ט|י|ח)$/,"$1'");
+  all.forEach(s=>{ const c=map.m[key(s.n)]; if(c){ if(s.cls0===undefined) s.cls0=s.cls||''; s.cls=fmt(c); } });
+}
 /* עדכון המצב הלימודי — מופעל ע"י העדכון השבועי מסמרט סקול (מנהל בלבד) */
 window.limudiPublish = async function(obj){
   if(!ME || ME.mode!=='admin') throw new Error('admin only');
@@ -1454,6 +1483,7 @@ window.limudiPublish = async function(obj){
   await dbm.set(dbm.ref(rdb,'portal/bogeret/secure/limudi/latest'), txt);
   await dbm.set(dbm.ref(rdb,'portal/bogeret/secure/limudi/history/'+(obj.date||String(Date.now())).replace(/[.#$\[\]\/]/g,'-')), txt);
   window.LIMUDI=obj;
+  try{ await clsFix(dbm,rdb,true); }catch(e){ console.warn('cls',e); }
   return obj.students.length;
 };
 /* קבלת הנתונים מלשונית סמרט סקול (אותו דפדפן, מנהל מחובר בלבד) */
@@ -1617,7 +1647,7 @@ const EDU_PLAN_YB = [
 
 /* ═══════════════ ארגון מחדש: 14 לשוניות → 5 ═══════════════ */
 const GROUPS_YA = ['שלדג','שחף','שיר'];
-const GRP_CLR = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','חוף':'#0891b2','צוק':'#65a30d','אקדמיה':'#c2410c'};
+const GRP_CLR = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','קהילת יב':'#0891b2','אקדמיה':'#c2410c'};
 
 /* ── סרגל הלשוניות ──
    סרגל חדש: לשוניות ראשיות (main) לעבודה היומיומית + תפריט "עוד" (more) לשאר.
@@ -5241,8 +5271,8 @@ function viewRoomsYB(){
    + `<div class="panel"><div class="panel-h"><h2>🏠 שיבוץ חדרים</h2>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="btn rm-f" data-g="all" onclick="filterRooms('all',this)" style="background:#fff;color:#1d4ed8;border:2px solid #2563eb;font-weight:700;">הכל</button>
-        <button class="btn rm-f" data-g="חוף" onclick="filterRooms('חוף',this)" style="background:transparent;color:var(--text2);border:1px solid var(--border);">חוף</button>
-        <button class="btn rm-f" data-g="צוק" onclick="filterRooms('צוק',this)" style="background:transparent;color:var(--text2);border:1px solid var(--border);">צוק</button>
+        
+        
       </div></div><div class="panel-b">${roomsYB()}</div></div>`;
 }
 function roomsYAall(){
@@ -6851,7 +6881,7 @@ function buildAllSections() {
   </div>`;
 
   // 9. ALPHON - עם תמונות
-  const groupColors = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','חוף':'#0891b2','צוק':'#65a30d','אקדמיה':'#c2410c'};
+  const groupColors = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','קהילת יב':'#0891b2','אקדמיה':'#c2410c'};
   const groupedStudents = {};
   STUDENTS_DATA.forEach(s => {
     if (!groupedStudents[s.g]) groupedStudents[s.g] = [];
@@ -6967,8 +6997,8 @@ function buildAllSections() {
 <div class="panel"><div class="panel-h"><h2>🏠 שיבוץ חדרים תשפ"ז</h2>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="btn rm-f" data-g="all" onclick="filterRooms('all',this)" style="background:#fff;color:#1d4ed8;border:2px solid #2563eb;font-weight:700;">הכל</button>
-        <button class="btn rm-f" data-g="חוף" onclick="filterRooms('חוף',this)" style="background:transparent;color:var(--text2);border:1px solid var(--border);">חוף</button>
-        <button class="btn rm-f" data-g="צוק" onclick="filterRooms('צוק',this)" style="background:transparent;color:var(--text2);border:1px solid var(--border);">צוק</button>
+        
+        
       </div></div><div class="panel-b">
       <div class="info-box" style="margin:0 0 16px;background:#eff6ff;border-color:#bfdbfe;"><div class="icon">🏗️</div><div><b>מעבר מבנים בתשפ"ז:</b> שכבת <b>יב'</b> עברה מוורד ל<b>זית</b> — 16 חדרים, למעט 2 חדרים שנשארו בוורד. שכבת <b>יא'</b> נמצאת ב<b>ורד</b>.</div></div>
 
@@ -6976,12 +7006,12 @@ function buildAllSections() {
         return `<h3 style="font-size:15px;color:var(--purple);margin:0 0 10px;font-family:'Rubik';">🏢 ${bld} — יב' <span style="font-size:12px;color:var(--text3);font-weight:400;">(${rs.length} חדרים · ${rs.reduce((a,r)=>a+r.m.length,0)} חניכים)</span></h3>
         <div class="rm-grid" style="margin-bottom:22px;">${rs.map(r=>{
           const gs=[...new Set(r.m.map(m=>m.g).filter(Boolean))];
-          const clr = gs.length>1 ? 'linear-gradient(90deg,#0891b2,#65a30d)' : (gs[0]==='צוק'?'#65a30d':'#0891b2');
+          const clr = '#0891b2';
           return `<div class="rm" data-groups="${gs.join(',')}">
             <div class="hd" style="background:${clr}"><span>חדר ${r.r}</span><span class="cap">${r.m.length}</span></div>
             <div class="bd">${r.m.map(m=>m.q
               ? `<div class="mb"><span class="gd" style="background:#d97706"></span><span class="qm">${m.n} ❓</span></div>`
-              : `<div class="mb"><span class="gd" style="background:${m.g==='צוק'?'#65a30d':'#0891b2'}"></span><span>${m.n}</span></div>`).join('')}</div>
+              : `<div class="mb"><span class="gd" style="background:#0891b2"></span><span>${m.n}</span></div>`).join('')}</div>
           </div>`;}).join('')}</div>`;}).join('')}
 
       ${ROOMS_UNPLACED.length ? `<div class="info-box" style="background:#fffbeb;border-color:#fcd34d;margin-bottom:22px;"><div class="icon">❓</div><div><b>ממתין להשלמה:</b> ללא שיבוץ: ${ROOMS_UNPLACED.map(u=>`<b>${u.n}</b> (${u.g})`).join(' · ')}.</div></div>` : ''}
@@ -7817,7 +7847,7 @@ window.showStudentDetails = function(idx) {
   if (!s) return;
   const modal = document.getElementById('student-modal');
   const body = document.getElementById('student-modal-body');
-  const groupColors = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','חוף':'#0891b2','צוק':'#65a30d','אקדמיה':'#c2410c'};
+  const groupColors = {'שלדג':'#0284c7','שחף':'#7c3aed','שיר':'#d97706','קהילת יב':'#0891b2','אקדמיה':'#c2410c'};
   const color = groupColors[s.g] || '#94a3b8';
   
   body.innerHTML = `
@@ -8098,8 +8128,8 @@ window.syncRamzorFromSheet = async function() {
 };
 </script>
 <script src="msg.js?v=7"></script>
-<script src="tik.js?v=5"></script>
-<script src="home.js?v=2"></script>
+<script src="tik.js?v=8"></script>
+<script src="home.js?v=4"></script>
 <script src="chk.js?v=1"></script>
 <script src="fam.js?v=2"></script>
 <script src="rooms.js?v=1"></script>

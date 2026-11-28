@@ -55,9 +55,11 @@ const sGrade=s=>String(s&&s.l||'').replace(/['׳"]/g,'');
 const isSocial=u=>/עו"ס|עו״ס|עובד[ת]? סוציאלי/.test(String(u&&u.r||''));
 /* מדריך/ה = בעל/ת הרשאת עריכה שאחראי/ת על הקבוצה (שינשינים לא רואים תוכן רגיש); עו"ס — רק בשכבה שלה */
 const layerOk=(u,s)=>u.scope==='all'||!u.scope||(u.scope==='ya'&&sGrade(s)==='יא')||(u.scope==='yb'&&sGrade(s)==='יב')||(u.scope==='academy'&&s.g==='אקדמיה');
-const GROUPS=['שלדג','שחף','שיר','חוף','צוק','אקדמיה'];
+const GROUPS=['שלדג','שחף','שיר','קהילת יב','חוף','צוק','אקדמיה'];
 function guideOf(u,s){ if(!u||!s||u.mode!=='edit') return false; const r=String(u.r||'');
-  if(s.g&&r.includes(s.g)) return true; if(GROUPS.some(g=>r.includes(g))) return false;
+  if(s.g&&r.includes(s.g)) return true;
+  if(s.g==='קהילת יב'&&(u.scope==='yb'||/חוף|צוק|יב/.test(r))) return true;   /* קהילת יב — כל מדריכי י"ב */
+  if(GROUPS.some(g=>r.includes(g))) return false;
   if(u.scope==='academy') return s.g==='אקדמיה';
   if(u.scope==='yb') return sGrade(s)==='יב';
   if(u.scope==='ya') return sGrade(s)==='יא'&&!/שלדג|שחף|שיר/.test(r);
@@ -73,6 +75,25 @@ const myEmail=()=>{ try{ const u=(typeof FBAUTH!=='undefined'&&FBAUTH&&FBAUTH.a&
 let DB=null; async function db(){ if(!DB) DB=await secureDb(); return DB; }
 async function run(op){ for(let i=0;i<2;i++){ try{ const {dbm,rdb}=await db(); await op(dbm,rdb); return true; }catch(e){ console.warn('tik',e); DB=null; if(i===0){ await new Promise(r=>setTimeout(r,1000)); continue; } toast('⚠️ השמירה נכשלה — בדקו חיבור ונסו שוב'); return false; } } }
 const put=(p,v)=>run((dbm,rdb)=>dbm.set(dbm.ref(rdb,ROOT+'/'+p),v));
+/* ═══ מרכז הלמידה: תגבורים (בקשות + קבוצות קבועות) — לסנכרון מול המצב הלימודי ═══ */
+const LC={req:[],grp:[],tch:[],ses:{},ok:false};
+function lcListen(dbm,rdb){ ['requests','fixedGroups','teachers','sessions'].forEach(k=>{ try{ dbm.onValue(dbm.ref(rdb,'portal/bogeret/secure/lc/'+k),sn=>{ let v=[]; try{ v=JSON.parse(sn.val()||'[]')||[]; }catch(e){}
+  if(k==='requests') LC.req=Array.isArray(v)?v:[]; else if(k==='fixedGroups') LC.grp=v; else if(k==='teachers') LC.tch=v; else LC.ses=v||{}; LC.ok=true; refresh();
+  /* מסך הבית מציג התראת "חלשים בלי תגבור" — מרעננים אותו כשהנתונים מגיעים */
+  clearTimeout(LC.t); LC.t=setTimeout(()=>{ if(document.querySelector('#sec-home.active,#sec-mine.active')&&window.homeRender) homeRender(); },400); },()=>{}); }catch(e){} }); }
+const nrm=x=>String(x||'').replace(/["'״׳`]/g,'').replace(/[יו]/g,'').replace(/\s+/g,'').replace(/\d.*$/,'');
+const sameSubj=(a,b)=>{ const x=nrm(a), y=nrm(b); return !!x&&!!y&&(x===y||x.startsWith(y)||y.startsWith(x)); };
+/* מקצועות חלשים = ציון מתחת ל-55; לכל אחד — האם יש תגבור (בקשה פעילה או קבוצה קבועה) */
+function tutorGap(name){ const lr=typeof limFind==='function'?limFind(name):null; if(!lr) return null;
+  let weak=[]; if(Array.isArray(lr['מקצועות'])) weak=lr['מקצועות'].filter(x=>x[2]!==''&&x[2]!=null&&+x[2]<55).map(x=>({s:x[0],g:+x[2]}));
+  else weak=String(lr['ציונים_נמוכים']||'').split(' · ').filter(Boolean).map(t=>{ const i=t.lastIndexOf(':'); return {s:t.slice(0,i),g:+t.slice(i+1)}; });
+  const reqs=(LC.req||[]).filter(r=>r&&r.sid===name&&!/reject|cancel|done|closed/.test(String(r.status||'')));
+  const grps=(LC.grp||[]).filter(g=>g&&(g.sids||[]).includes(name));
+  weak.forEach(w=>{ const r=reqs.find(r=>sameSubj(r.subject,w.s)), g=grps.find(g=>sameSubj(g.subject,w.s));
+    w.tut=g?'קבוצה קבועה':r?(r.status==='assigned'?'משובץ/ת לתגבור':'ביקש/ה תגבור — ממתין לשיבוץ'):''; });
+  const lvl=lr['רמה']; return {lvl,weak,missing:weak.filter(w=>!w.tut),bad:lvl==='אדום'||lvl==='כתום'||weak.length>0}; }
+window.tikTutorGap=tutorGap;
+const gapAlert=n=>{ const g=tutorGap(n); return !!(g&&g.missing.length); };
 const CONF_ON={};
 function confListen(dbm,rdb){ GROUPS.forEach(g=>{ if(CONF_ON[g]) return; CONF_ON[g]=1;
   try{ dbm.onValue(dbm.ref(rdb,CONF+'/'+g),snap=>{ T.c[g]=snap.val()||{}; refresh(); },()=>{ /* אין הרשאה לקבוצה הזו — זה תקין */ }); }catch(e){} }); }
@@ -87,31 +108,39 @@ async function migrate(dbm,rdb){ if(MIGR||!isAdmin()) return; MIGR=true;
     try{ await dbm.set(dbm.ref(rdb,CONF+'/'+r.g+'/'+r.id),{f:r.f||{},tr:r.tr||'',bm:'',at:r.at||Date.now()});
       await dbm.update(dbm.ref(rdb,ROOT+'/r/'+r.id),{f:null,tr:null,conf:1}); }catch(e){ console.warn('tik migrate',e); } } }
 function start(){ if(T.started||!me()) return; T.started=true;
-  db().then(({dbm,rdb})=>{ confListen(dbm,rdb); return dbm.onValue(dbm.ref(rdb,ROOT),snap=>{ const v=snap.val()||{}; T.r=v.r||{}; T.fmt=v.fmt||{}; T.ok=true; mineFetch(dbm,rdb); migrate(dbm,rdb); refresh(); },
+  db().then(({dbm,rdb})=>{ confListen(dbm,rdb); lcListen(dbm,rdb); return dbm.onValue(dbm.ref(rdb,ROOT),snap=>{ const v=snap.val()||{}; T.r=v.r||{}; T.fmt=v.fmt||{}; T.ok=true; mineFetch(dbm,rdb); migrate(dbm,rdb); refresh(); },
     e=>{ console.warn('tik listen',e); T.started=false; DB=null; setTimeout(start,3000); }); }).catch(()=>{ T.started=false; DB=null; setTimeout(start,3000); }); }
 function refresh(){ const ae=document.activeElement; if(T.ed||T.rec) return; if(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&ae.closest('#sec-tik,.tik-modal')) return;
   if(active()) render(); document.querySelectorAll('[data-tikgrp]').forEach(el=>{ el.innerHTML=grpHtml(el.dataset.tikgrp,el.dataset.tikt); }); }
 const active=()=>{ const s=document.getElementById('sec-tik'); return s&&s.classList.contains('active'); };
 
+/* חדר + מבנה (ורד / זית / ג׳נטילי) — מתוך שיבוץ החדרים בפועל */
+let RMAP=null, RMAP_T=0;
+function roomMap(){ if(RMAP&&Date.now()-RMAP_T<3000) return RMAP; RMAP={}; RMAP_T=Date.now();
+  if(typeof rmBuild==='function') [['ya','ורד'],['yb',''],['ac','ג׳נטילי']].forEach(([k,b0])=>{ try{ rmBuild(k).rooms.forEach(r=>(r.m||[]).forEach(m=>{ if(m&&m.n&&!RMAP[m.n]) RMAP[m.n]={r:r.r,b:r.b||b0}; })); }catch(e){} });
+  return RMAP; }
+const roomTxt=s=>{ const o=roomMap()[s.n]; if(o) return `חדר ${o.r}${o.b?' · '+o.b:''}`; return s.r?`חדר ${s.r}`:''; };
 /* ═══════════ רשימת החניכים ═══════════ */
 function myGroups(){ const all=[...new Set(students().map(s=>s.g).filter(Boolean))]; return all; }
 function listView(){
-  const q=T.q.trim(), L=students().filter(s=>(!T.g||s.g===T.g)&&(!q||s.n.includes(q)||String(s.r||'').includes(q))).sort((a,b)=>String(a.g).localeCompare(String(b.g),'he')||a.n.localeCompare(b.n,'he'));
+  const q=T.q.trim(), canLim=!!(window.LIMUDI&&LIMUDI.students), nGap=canLim?students().filter(s=>gapAlert(s.n)).length:0;
+  const L=students().filter(s=>(!T.g||s.g===T.g)&&(!q||s.n.includes(q)||String(s.r||'').includes(q))&&(!T.gap||gapAlert(s.n))).sort((a,b)=>String(a.g).localeCompare(String(b.g),'he')||a.n.localeCompare(b.n,'he'));
   const cm=window.MSG&&MSG.logs?MSG.logs:{};
   return `<div class="info-box"><div class="icon">🧑‍🎓</div><div><b>חניכים — תיק אישי</b><br>לחיצה על חניך/ה פותחת את כל המידע במקום אחד: יומן, שיחות, אירועים, חוזים, בריאות, לימודים ועוד.</div></div>
   <div class="tk-bar"><input class="tk-q" placeholder="🔍 חיפוש לפי שם או חדר" value="${E(T.q)}" oninput="tikQ(this.value)">
-    <select onchange="tikG(this.value)"><option value="">כל הקבוצות (${students().length})</option>${myGroups().map(g=>`<option ${T.g===g?'selected':''} value="${E(g)}">${E(g)} (${students().filter(s=>s.g===g).length})</option>`).join('')}</select></div>
+    ${nGap?`<button class="tk-chip${T.gap?' on':''}" onclick="tikGap()">📚⚠️ חלשים בלי תגבור <b>${nGap}</b></button>`:''}<select onchange="tikG(this.value)"><option value="">כל הקבוצות (${students().length})</option>${myGroups().map(g=>`<option ${T.g===g?'selected':''} value="${E(g)}">${E(g)} (${students().filter(s=>s.g===g).length})</option>`).join('')}</select></div>
   <div class="tk-grid">${L.map(s=>{ const R=ofStu(s.n), ev=R.filter(r=>r.t==='events').length, al=Object.values(cm).some(l=>l&&l.stu===s.n&&l.k==='alert'&&!l.res);
     return `<div class="tk-card" style="--g:${GC(s.g)}" onclick="tikOpen('${jq(s.n)}')">${typeof avatar==='function'?avatar(s,46,GC(s.g)):''}
-      <div style="min-width:0;flex:1"><b>${E(s.n)}</b><small>${E(s.g||'')}${s.cls?' · '+E(s.cls):''}${s.r?' · חדר '+E(s.r):''}</small>
+      <div style="min-width:0;flex:1"><b>${E(s.n)}</b><small>${E(s.g||'')}${s.cls?' · '+E(s.cls):''}${roomTxt(s)?' · '+E(roomTxt(s)):''}</small>
       ${s.ph?`<small>📱 ${E(s.ph)}</small>`:''}</div>
-      <div class="tk-tags">${al?'<span title="התרעת דאגה פתוחה">⚠️</span>':''}${ev?`<span title="אירועים">📊${ev}</span>`:''}${R.filter(r=>TYPES[r.t].priv).length?`<span title="שיחות">💬${R.filter(r=>TYPES[r.t].priv).length}</span>`:''}</div></div>`; }).join('')||'<div class="tk-empty">לא נמצאו חניכים</div>'}</div>`;
+      <div class="tk-tags">${canLim&&gapAlert(s.n)?'<span title="חלש/ה במקצוע ואין תגבור">📚⚠️</span>':''}${al?'<span title="התרעת דאגה פתוחה">⚠️</span>':''}${ev?`<span title="אירועים">📊${ev}</span>`:''}${R.filter(r=>TYPES[r.t].priv).length?`<span title="שיחות">💬${R.filter(r=>TYPES[r.t].priv).length}</span>`:''}</div></div>`; }).join('')||'<div class="tk-empty">לא נמצאו חניכים</div>'}</div>`;
 }
 window.tikQ=function(v){ T.q=v; const el=document.getElementById('tikBody'); const pos=document.activeElement&&document.activeElement.selectionStart; render(); const i=document.querySelector('#tikBody .tk-q'); if(i){ i.focus(); try{ i.setSelectionRange(pos,pos); }catch(e){} } };
 window.tikG=function(v){ T.g=v; render(); };
+window.tikGap=function(){ T.gap=!T.gap; render(); };
 
 /* ═══════════ התיק האישי ═══════════ */
-const TABS=[['info','📇 פרטים'],['diary','🕓 יומן אישי'],['talks','💬 שיחות ותיעוד'],['events','📊 מונה אירועים'],['contracts','📜 חוזים'],['clubs','🎨 חוגים ותוכנית מלווה'],['health','🏥 בריאות ותזונה'],['study','📚 לימודים (סמרט סקול)']];
+const TABS=[['info','📇 פרטים'],['diary','🕓 יומן אישי'],['talks','💬 שיחות ותיעוד'],['events','📊 מונה אירועים'],['contracts','📜 חוזים'],['clubs','🎨 חוגים ותוכנית מלווה'],['home','🏡 ביקורי בית ודמי כיס'],['health','🏥 בריאות ותזונה'],['study','🏫 בית ספר'],['lc','📖 מרכז למידה'],['ramzor','🚦 רמזור נשירה']];
 window.tikOpen=function(n,tab){ if(!stuBy(n)) return; const sm=document.getElementById('student-modal'); if(sm) sm.style.display='none';
   T.stu=n; T.tab=tab||'info'; if(!active()) show('tik'); else render(); window.scrollTo({top:0}); };
 window.tikBack=function(){ T.stu=null; render(); };
@@ -123,16 +152,16 @@ function fileView(){
   const cnt={talks:R.filter(r=>TYPES[r.t].priv).length+ML,events:R.filter(r=>r.t==='events').length,contracts:R.filter(r=>r.t==='contracts').length};
   let body='';
   if(T.tab==='info') body=infoTab(s); else if(T.tab==='diary') body=diaryTab(s); else if(T.tab==='talks') body=talksTab(s);
-  else if(T.tab==='events') body=eventsTab(s); else if(T.tab==='contracts') body=recTab(s,['contracts']); else if(T.tab==='clubs') body=clubsTab(s); else if(T.tab==='health') body=healthTab(s); else body=studyTab(s);
+  else if(T.tab==='events') body=eventsTab(s); else if(T.tab==='contracts') body=recTab(s,['contracts']); else if(T.tab==='clubs') body=clubsTab(s); else if(T.tab==='home') body=homeTab(s); else if(T.tab==='health') body=healthTab(s); else if(T.tab==='lc') body=lcTab(s); else if(T.tab==='ramzor') body=ramzorTab(s); else body=studyTab(s);
   return `<div class="tk-head" style="--g:${clr}"><button class="tk-back" onclick="tikBack()">→ כל החניכים</button>
-    <div class="tk-hm">${typeof avatar==='function'?avatar(s,64,clr):''}<div><h2>${E(s.n)}</h2><div class="tk-sub">${E(s.g||'')}${s.cls?' · '+E(s.cls):''}${s.r?' · חדר '+E(s.r):''}</div></div></div></div>
+    <div class="tk-hm">${typeof avatar==='function'?avatar(s,64,clr):''}<div><h2>${E(s.n)}</h2><div class="tk-sub">${E(s.g||'')}${s.cls?' · '+E(s.cls):''}${roomTxt(s)?' · '+E(roomTxt(s)):''}</div></div></div></div>
     <div class="tk-tabs">${TABS.map(([k,l])=>`<button class="${T.tab===k?'on':''}" onclick="tikTab('${k}')">${l}${cnt[k]?` <span>${cnt[k]}</span>`:''}</button>`).join('')}</div>
     <div class="tk-body">${body}</div>`;
 }
-const row=(l,v)=>v?`<div class="tk-row"><span>${l}</span><b>${v}</b></div>`:'';
+const row=(l,v)=>v?`<div class="tk-f"><span>${l}</span><b>${v}</b></div>`:'';
 const tel=p=>p?`<a href="tel:${E(String(p).replace(/[^\d+]/g,''))}">${E(p)}</a>`:'';
 function infoTab(s){
-  return `<div class="tk-cols"><div class="tk-box"><h3>פרטים</h3>${row('קבוצה',E(s.g))}${row('כיתה',E(s.cls))}${row('חדר',E(s.r))}${row('📱 נייד',tel(s.ph))}${row('תאריך לידה',E(s.bd))}${row('כתובת',E([s.addr,s.city].filter(Boolean).join(', ')))}</div>
+  return `<div class="tk-cols"><div class="tk-box"><h3>פרטים</h3>${row('קבוצה',E(s.g))}${row('כיתה',E(s.cls))}${row('חדר',E(roomTxt(s).replace(/^חדר /,'')))}${row('📱 נייד',tel(s.ph))}${row('תאריך לידה',E(s.bd))}${row('כתובת',E([s.addr,s.city].filter(Boolean).join(', ')))}</div>
     <div class="tk-box"><h3>👨‍👩‍👦 הורים</h3>${row('אבא',E(s.fa)+(s.fp?' · '+tel(s.fp):''))}${row('אמא',E(s.mo)+(s.mp?' · '+tel(s.mp):''))}${s.ps?`<div class="tk-note">${E(s.ps)}</div>`:''}${!s.fa&&!s.mo?'<div class="tk-empty">אין פרטי הורים</div>':''}</div></div>`;
 }
 function quick(s){ if(!canEdit()) return '';
@@ -186,6 +215,23 @@ function clubsTab(s){
     ${aft.length?`<div class="tk-box"><h3>📖 לימודי אחר הצהריים</h3><div class="tk-cnt">${aft.map(d=>`<span>${E(typeof d==='number'&&typeof DAYS5!=='undefined'?DAYS5[d]:d)}</span>`).join('')}</div></div>`:''}
     <div class="tk-note">עריכה: ניהול קבוצה ← חוגים / לימודי אחה"צ, ותוכנית מלווה. המידע מתעדכן כאן אוטומטית.</div>`;
 }
+function homeTab(s){
+  const V=typeof visLoad==='function'?visLoad():{}, ph0=sGrade(s)==='יב'?(typeof VIS_PHASES_YB!=='undefined'?VIS_PHASES_YB:['סוכות']):(typeof VIS_PHASES_YA!=='undefined'?VIS_PHASES_YA:[]);
+  const phs=[...new Set(ph0.concat(Object.keys(V).filter(k=>k.startsWith(s.n+'|')).map(k=>k.slice(s.n.length+1))))];
+  const VC={'מתוכנן':'#b45309','בוצע':'#047857','בוטל':'#b91c1c','לא רלוונטי':'#8496ab'};
+  const isUrl=x=>/^https?:\/\//.test(String(x||'').trim());
+  const vis=phs.map(ph=>{ const e=V[s.n+'|'+ph]||{}; const st=e.status||'';
+    return `<div class="tk-f"><span>🏡 ${E(ph)}</span><b>${st?`<span class="tk-pill" style="--c:${VC[st]||'#8496ab'}">${E(st)}</span>`:'<span class="tk-mut">לא תוכנן</span>'}${e.date?' · '+fmtD(e.date):''}</b>
+      <small>${e.form?(isUrl(e.form)?`<a href="${E(e.form)}" target="_blank" rel="noopener">📎 פורמט הביקור</a>`:'📎 '+E(e.form)):(st==='בוצע'?'📎 עוד לא צורף פורמט':'')}</small></div>`; }).join('');
+  const P=typeof pmLoad==='function'?(pmLoad()[s.n]||{}):{}, M=typeof MONTHS9!=='undefined'?MONTHS9:[], num=v=>{ const n=parseFloat(v); return isNaN(n)?0:n; };
+  const tot=M.reduce((a,m)=>a+num(P[m]),0), paid=M.filter(m=>num(P[m])>0);
+  const pm=num(P.base)||tot?`<div class="tk-f"><span>🔑 מפתח חודשי</span><b>${num(P.base)?num(P.base).toLocaleString()+' ₪':'—'}</b></div><div class="tk-f"><span>💰 סה"כ קיבל/ה השנה</span><b>${tot.toLocaleString()} ₪</b></div>
+    <div class="tk-wide"><div class="tk-cnt">${M.map(m=>`<span class="${num(P[m])>0?'':'tk-mut'}">${E(m)}: <b>${num(P[m])>0?num(P[m]).toLocaleString():'—'}</b></span>`).join('')}</div></div>`
+    :'<div class="tk-empty">לא מוגדרים דמי כיס לחניך/ה</div>';
+  return `<div class="tk-box"><h3>🏡 ביקורי בית</h3>${vis||'<div class="tk-empty">אין ביקורי בית</div>'}</div>
+    <div class="tk-box"><h3>💰 דמי כיס</h3>${pm}</div>
+    <div class="tk-note">עריכה: ניהול קבוצה ← ${E(s.g||'')} ← ביקורי בית / דמי כיס. המידע מתעדכן כאן אוטומטית.</div>`;
+}
 function healthTab(s){
   const m=typeof medLoad==='function'?(medLoad()[s.n]||{}):{}, d=typeof dietLoad==='function'?(dietLoad()[s.n]||{}):{};
   return `<div class="tk-cols"><div class="tk-box"><h3>🏥 רפואי</h3>${row('אבחנות / מידע',E(m.info))}${row('תרופות קבועות',E(m.meds))}${row('רגישויות',E(m.alrg))}${!m.info&&!m.meds&&!m.alrg?'<div class="tk-empty">אין מידע רפואי</div>':''}</div>
@@ -215,10 +261,50 @@ function studyTab(s){
       ${BG&&BG.length?`<h3 style="margin-top:14px">🎓 ציוני בגרות</h3><div class="tk-cnt">${BG.map(b=>`<span style="${+b[1]<55?'color:#b91c1c;border-color:#fecaca':''}">${E(b[0])}: <b>${E(b[1])}</b></span>`).join('')}</div>`:''}
       <h3 style="margin-top:14px">🗓️ מערכת שעות</h3>${ttHtml(TT)}`;
   }
-  return `<div class="tk-box"><h3>📚 מצב לימודי — סמרט סקול</h3>${lim}</div>
-    <div class="tk-box"><h3>🚦 רמזור נשירה</h3>${rzH?`<div class="tk-cnt">${rzH}</div>`:'<div class="tk-empty">אין סימונים ברמזור</div>'}</div>`;
+  const G=may&&lr?tutorGap(s.n):null;
+  const gapBox0=G&&(G.weak.length||G.bad)?`<div class="tk-box ${G.missing.length?'tk-warn':''}"><h3>🎯 תגבורים מול מקצועות חלשים</h3>
+    ${G.weak.length?G.weak.map(w=>`<div class="tk-f ${w.tut?'ok':'bad'}"><span>${E(w.s)} · ציון ${w.g}</span><b>${w.tut?'✓ '+E(w.tut):'⚠️ אין תגבור'}</b></div>`).join('')
+      :'<div class="tk-empty">אין ציונים מתחת ל-55, אבל רמת הסיכון '+E(G.lvl||'')+' — כדאי לבדוק נוכחות והתנהגות בשיעורים</div>'}
+    ${G.missing.length?`<div class="tk-note">📌 כדאי לפתוח בקשת תגבור במרכז הלמידה ב${G.missing.map(w=>E(w.s)).join(', ')}. ${canEdit()?`<a href="#" onclick="show('lc');return false">למרכז הלמידה ←</a>`:''}</div>`:''}</div>`:'';
+  const ptr=G&&G.missing.length?`<div class="tk-box tk-warn"><div class="tk-note">⚠️ חלש/ה ב${G.missing.map(w=>E(w.s)).join(', ')} ואין תגבור — <a href="#" onclick="tikTab('lc');return false">ללשונית מרכז למידה ←</a></div></div>`:'';
+  return ptr+`<div class="tk-box"><h3>🏫 בית ספר — סמרט סקול</h3>${lim}</div>`;
 }
 
+function gapHtml(s){ const lr=typeof limFind==='function'?limFind(s.n):null;
+  const may=isAdmin()||(typeof limCan==='function'&&(limCan(s.g==='אקדמיה'?'academy':s.g)||(sGrade(s)==='יב'&&limCan('yb'))));
+  if(!may) return ''; if(!lr) return '<div class="tk-box"><h3>🎯 תגבורים מול מקצועות חלשים</h3><div class="tk-empty">אין נתונים מסמרט סקול לחניך/ה</div></div>';
+  const G=tutorGap(s.n);
+  return `<div class="tk-box ${G.missing.length?'tk-warn':''}"><h3>🎯 תגבורים מול מקצועות חלשים</h3>
+    ${G.weak.length?G.weak.map(w=>`<div class="tk-f ${w.tut?'ok':'bad'}"><span>${E(w.s)} · ציון ${w.g}</span><b>${w.tut?'✓ '+E(w.tut):'⚠️ אין תגבור'}</b></div>`).join('')
+      :`<div class="tk-empty">אין ציונים מתחת ל-55${G.bad?' · רמת הסיכון '+E(G.lvl||'')+' — כדאי לבדוק נוכחות והתנהגות בשיעורים':''}</div>`}
+    ${G.missing.length?`<div class="tk-note">📌 כדאי לפתוח בקשת תגבור במרכז הלמידה ב${G.missing.map(w=>E(w.s)).join(', ')}. <a href="#" onclick="show('lc');return false">למרכז הלמידה ←</a></div>`:''}</div>`; }
+const LDAYS=['ראשון','שני','שלישי','רביעי','חמישי','שישי'];
+const RQS={pending:'ממתין לשיבוץ',assigned:'משובץ/ת',done:'התקיים',rejected:'נדחה',cancelled:'בוטל'};
+function lcTab(s){
+  const n=s.n, tch=id=>((LC.tch||[]).find(t=>t.id===id)||{}).name||'';
+  const reqs=(LC.req||[]).filter(r=>r&&r.sid===n).sort((a,b)=>(b.created||0)-(a.created||0));
+  const grps=(LC.grp||[]).filter(g=>g&&(g.sids||[]).includes(n));
+  const ses=Object.entries(LC.ses||{}).filter(([k,v])=>v&&(v.students||[]).includes(n)).map(([k,v])=>{ const [w,d,h,t]=k.split('|'); const dt=new Date(w+'T12:00:00'); dt.setDate(dt.getDate()+(+d||0));
+    return {iso:isNaN(dt)?'':dt.toISOString().slice(0,10),d:+d,h:+h,t,v}; }).sort((a,b)=>String(b.iso).localeCompare(String(a.iso)));
+  const today=todayIso(), up=ses.filter(x=>x.iso>=today).reverse(), past=ses.filter(x=>x.iso<today);
+  const att=x=>{ const a=(x.v.att||{})[n]; return a===true||a==='v'||a===1?'✓ הגיע/ה':a===false||a==='x'||a===0?'✕ לא הגיע/ה':''; };
+  const sesF=x=>`<div class="tk-f"><span>${LDAYS[x.d]||''} ${fmtD(x.iso)} · ${String(x.h).padStart(2,'0')}:00</span><b>${E(x.v.subject||'')}${x.v.level?' · '+E(x.v.level)+' יח"ל':''}</b><small>${E(tch(x.t))}${att(x)?' · '+att(x):''}</small></div>`;
+  return gapHtml(s)
+   +`<div class="tk-box"><h3>📅 תגבורים קרובים</h3>${up.length?up.slice(0,8).map(sesF).join(''):'<div class="tk-empty">אין תגבורים מתוכננים</div>'}</div>`
+   +`<div class="tk-box"><h3>👥 קבוצות קבועות</h3>${grps.length?grps.map(g=>`<div class="tk-f"><span>${LDAYS[g.d]||''} · ${String(g.h||'').padStart(2,'0')}:00</span><b>${E(g.subject||'')}${g.level?' · '+E(g.level)+' יח"ל':''}</b><small>${E(tch(g.tid))}</small></div>`).join(''):'<div class="tk-empty">לא משובץ/ת לקבוצה קבועה</div>'}</div>`
+   +`<div class="tk-box"><h3>🙋 בקשות תגבור</h3>${reqs.length?reqs.map(r=>`<div class="tk-f ${r.status==='pending'?'':'ok'}"><span>${r.created?fmtD(new Date(r.created).toISOString().slice(0,10)):''}${r.exam?' · מבחן '+fmtD(r.exam):''}</span><b>${E(r.subject||'')}</b><small>${E(RQS[r.status]||r.status||'')}${r.reason?' · '+E(r.reason):''}</small></div>`).join(''):'<div class="tk-empty">אין בקשות תגבור</div>'}</div>`
+   +`<div class="tk-box"><h3>🕘 תגבורים שהתקיימו</h3>${past.length?`<div class="tk-f"><span>סה"כ</span><b>${past.length}</b></div><div class="tk-f"><span>הגיע/ה</span><b>${past.filter(x=>/✓/.test(att(x))).length}</b></div>`+past.slice(0,6).map(sesF).join(''):'<div class="tk-empty">עוד לא היו תגבורים</div>'}</div>`
+   +`<div class="tk-note">${canEdit()?`<a href="#" onclick="show('lc');return false">פתיחת מרכז הלמידה ←</a>`:''}</div>`;
+}
+function ramzorTab(s){
+  const rz=(typeof RAMZOR_DATA_NEW!=='undefined'?RAMZOR_DATA_NEW:[]).find(x=>x.n===s.n);
+  const RC={green:'#059669',yellow:'#eab308',orange:'#ea580c',red:'#dc2626'}, RL={green:'🟢 תקין',yellow:'🟡 מעקב',orange:'🟠 מדאיג',red:'🔴 בסכנה'};
+  const M=rz&&rz.s?Object.entries(rz.s):[];
+  const cur=[...M].reverse().find(([m,v])=>v&&v!=='none');
+  return `<div class="tk-box"><h3>🚦 רמזור נשירה</h3>${cur?`<div class="tk-f" style="border-color:${RC[cur[1]]}"><span>המצב האחרון (${E(cur[0])})</span><b style="color:${RC[cur[1]]}">${RL[cur[1]]||cur[1]}</b></div>`:''}
+    ${M.length?M.map(([m,v])=>`<div class="tk-f"><span>${E(m)}</span><b style="color:${RC[v]||'#94a3b8'}">${v&&v!=='none'?RL[v]||v:'—'}</b>${(rz.nt||{})[m]?`<small>${E(rz.nt[m])}</small>`:''}</div>`).join(''):'<div class="tk-empty">אין סימונים ברמזור</div>'}</div>
+    <div class="tk-note">עריכה: ניהול קבוצה ← ${E(s.g||'')} ← רמזור נשירה.</div>`;
+}
 /* מערכת שעות: {ימים:[...], שעות:[[תא לכל יום]...]} או רשימת [יום, שעה, מקצוע, מורה] */
 function ttHtml(TT){ if(!TT) return '<div class="tk-empty">מערכת השעות תופיע אחרי העדכון השבועי הבא מסמרט סקול</div>';
   if(Array.isArray(TT)&&TT.length&&Array.isArray(TT[0])){ const ORD=['ראשון','שני','שלישי','רביעי','חמישי','שישי']; const days=[...new Set(TT.map(r=>r[0]))].sort((a,b)=>ORD.indexOf(a)-ORD.indexOf(b)), hrs=[...new Set(TT.map(r=>r[1]))].sort((a,b)=>(+a||0)-(+b||0));
@@ -403,8 +489,14 @@ const css=document.createElement('style'); css.textContent=`
 .tk-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:thin}
 .tk-tabs button{flex:none;border:1px solid #F3C2B0;background:#fff;border-radius:999px;padding:8px 14px;font:700 14px Heebo,sans-serif;color:#7A6A66;cursor:pointer;white-space:nowrap}
 .tk-tabs button.on{background:#FC5028;border-color:#FC5028;color:#fff}.tk-tabs button span{background:#FFF1EB;color:#8E033C;border-radius:999px;padding:0 7px;font-size:12px}
-.tk-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
-.tk-box{background:#fff;border:1px solid #F3C2B0;border-radius:14px;padding:12px 14px;margin-bottom:10px}.tk-box h3{margin:0 0 8px;font:800 16px Heebo,sans-serif;color:#8E033C}
+.tk-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+.tk-box{background:#fff;border:1px solid #F3C2B0;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;align-content:start}
+.tk-box>*:not(.tk-f){grid-column:1/-1}.tk-box h3{margin:0 0 2px;font:800 16px Heebo,sans-serif;color:#8E033C}
+.tk-f{background:#FBF6F3;border:1px solid #F6DDD3;border-radius:11px;padding:8px 11px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tk-f>span{font-size:12px;color:#7A6A66;font-weight:600}.tk-f>b{font:700 15px Heebo,sans-serif;color:#0f1e2e;overflow-wrap:anywhere}.tk-f>small{font-size:12px;color:#7A6A66}
+.tk-f a{color:#0369a1;text-decoration:none}.tk-f.ok{background:#ecfdf5;border-color:#bbf7d0}.tk-f.ok>b{color:#047857}.tk-f.bad{background:#fff1f1;border-color:#fecaca}.tk-f.bad>b{color:#b91c1c}
+.tk-warn{border:2px solid #fca5a5}.tk-mut{color:#a8a29e!important;font-weight:400}.tk-wide{grid-column:1/-1}
+.tk-chip{border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:999px;padding:7px 13px;font:700 13.5px Heebo,sans-serif;cursor:pointer}.tk-chip.on{background:#b91c1c;color:#fff}
 .tk-row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #FFF1EB;font-size:14px}.tk-row span{color:#7A6A66}.tk-row b{text-align:left;font-weight:600}
 .tk-row a{color:#0369a1;text-decoration:none}
 .tk-quick,.tk-acts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px;align-items:center}

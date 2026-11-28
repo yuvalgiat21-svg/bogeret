@@ -25,9 +25,10 @@ window.HOME=H;
 const allStu=()=>STUDENTS_DATA.map((s,i)=>({s,i})).concat((typeof ACAD_STUDENTS!=='undefined'?ACAD_STUDENTS:[]).map((s,k)=>({s,i:STUDENTS_DATA.length+k,acad:true})));
 function myGroupNames(u){ u=u||me(); if(!u) return [];
   const named=Object.keys(GRP_CLR).filter(g=>String(u.r||'').includes(g));
+  if(!named.length&&/חוף|צוק/.test(String(u.r||''))) return ['קהילת יב'];
   if(named.length) return named;
   if(u.scope==='ya') return ['שלדג','שחף','שיר'];
-  if(u.scope==='yb') return ['חוף','צוק'];
+  if(u.scope==='yb') return ['קהילת יב'];
   if(u.scope==='academy') return ['אקדמיה'];
   return Object.keys(GRP_CLR); }
 function myStudents(u){ u=u||me(); if(!u) return [];
@@ -118,6 +119,8 @@ function vControl(){
   if(newRed.length) its.push(item('err','🚦',`<b>${newRed.length} עברו לאדום</b> ברמזור הנשירה החודש: ${names(newRed.map(o=>o.x.s.n))}`,goOv('ramzor'),'לרמזור'));
   if(red.length) its.push(item(newRed.length?'warn':'err','🔴',`<b>${red.length} חניכים באדום</b> כרגע${red.length-newRed.length>0&&newRed.length?` (מתוכם ${red.length-newRed.length} כבר מהחודש הקודם)`:''}`,goOv('ramzor'),'לרמזור'));
   if(absHigh.length) its.push(item('err','🏫',`<b>${absHigh.length} חניכים עם 2+ היעדרויות מדאיגות</b> בשבוע האחרון: ${names(absHigh.map(([n,a])=>n+' ('+a.length+')'))}`,goAtt('main'),'לנוכחות'));
+  const gapsA=window.tikTutorGap?S.filter(x=>{ const g=tikTutorGap(x.s.n); return g&&g.missing.length; }):[];
+  if(gapsA.length) its.push(item('warn','📚',`<b>${gapsA.length} חניכים חלשים במקצוע בלי תגבור</b>: ${names(gapsA.map(x=>x.s.n))}`,"show('tik');if(window.TIK){TIK.stu=null;TIK.gap=true;}if(window.tikRender)tikRender()",'לחניכים'));
   if(urgent.length) its.push(item('err','🔥',`<b>${urgent.length} בקשות תגבור דחופות</b> — מבחן בעוד 4 ימים או פחות`,`show('lc')`,'למרכז הלמידה'));
   if(late.length) its.push(item('warn','⏰',`<b>${late.length} משימות באיחור</b> בקשר ומעקב: ${names(late.map(t=>t.t+' — '+(t.who||[]).map(w=>(USERS.find(u=>u.id===w)||{}).n||w).join(', ')),3)}`,goMsg('track'),'למעקב'));
   if(exOld.length) its.push(item('warn','🚪',`<b>${exOld.length} בקשות יציאה ממתינות מעל יומיים</b>`,goAtt('exits'),'ליציאות'));
@@ -179,6 +182,8 @@ function vMine(){
   if(T.length>5) its.push(item('info','➕',`עוד ${T.length-5} משימות פתוחות`,goMsg('mine'),'לכולן'));
   if(exPend.length) its.push(item('warn','🚪',`<b>${exPend.length} בקשות יציאה</b> ממתינות: ${names(exPend.map(e=>e.sid+' ('+(e.madOk?'חסר אישור הורים':e.parOk?'חסר אישור שלך':'חסר אישור שלך + הורים')+')'),3)}`,goAtt('exits'),'ליציאות'));
   if(red.length) its.push(item('err','🚦',`<b>${red.length} חניכים באדום/כתום</b>: ${names(red.map(o=>o.x.s.n))}`,'homeGoGroup()','לרמזור הקבוצה'));
+  const gaps=window.tikTutorGap?S.filter(x=>{ const g=tikTutorGap(x.s.n); return g&&g.missing.length; }):[];
+  if(gaps.length) its.push(item('warn','📚',`<b>${gaps.length} חניכים חלשים במקצוע בלי תגבור</b>: ${names(gaps.map(x=>x.s.n+' ('+tikTutorGap(x.s.n).missing.map(w=>w.s).join(', ')+')'))}`,"show('tik');if(window.TIK){TIK.stu=null;TIK.gap=true;}if(window.tikRender)tikRender()",'לחניכים'));
   if(absHigh.length) its.push(item('err','🏫',`<b>${absHigh.length} עם 2+ היעדרויות מדאיגות</b> השבוע: ${names(absHigh.map(x=>x.s.n+' ('+abs[x.s.n].length+')'))}`,goAtt('main'),'לנוכחות'));
   if(!its.length) its.push(item('ok','✅','אין כרגע משהו שמחכה לך. יום טוב!'));
 
