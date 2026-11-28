@@ -119,7 +119,7 @@ function vControl(){
   if(red.length) its.push(item(newRed.length?'warn':'err','🔴',`<b>${red.length} חניכים באדום</b> כרגע${red.length-newRed.length>0&&newRed.length?` (מתוכם ${red.length-newRed.length} כבר מהחודש הקודם)`:''}`,goOv('ramzor'),'לרמזור'));
   if(absHigh.length) its.push(item('err','🏫',`<b>${absHigh.length} חניכים עם 2+ היעדרויות מדאיגות</b> בשבוע האחרון: ${names(absHigh.map(([n,a])=>n+' ('+a.length+')'))}`,goAtt('main'),'לנוכחות'));
   if(urgent.length) its.push(item('err','🔥',`<b>${urgent.length} בקשות תגבור דחופות</b> — מבחן בעוד 4 ימים או פחות`,`show('lc')`,'למרכז הלמידה'));
-  if(late.length) its.push(item('warn','⏰',`<b>${late.length} משימות באיחור</b> ב-CRM: ${names(late.map(t=>t.t+' — '+(t.who||[]).map(w=>(USERS.find(u=>u.id===w)||{}).n||w).join(', ')),3)}`,goMsg('track'),'למעקב'));
+  if(late.length) its.push(item('warn','⏰',`<b>${late.length} משימות באיחור</b> בקשר ומעקב: ${names(late.map(t=>t.t+' — '+(t.who||[]).map(w=>(USERS.find(u=>u.id===w)||{}).n||w).join(', ')),3)}`,goMsg('track'),'למעקב'));
   if(exOld.length) its.push(item('warn','🚪',`<b>${exOld.length} בקשות יציאה ממתינות מעל יומיים</b>`,goAtt('exits'),'ליציאות'));
   if(exPar.length) its.push(item('info','👪',`<b>${exPar.length} יציאות שהמדריך/ה אישר/ה</b> וממתינות לאישור הורים`,goAtt('exits'),'ליציאות'));
   if(oldPosts.length) its.push(item('warn','📢',`<b>${oldPosts.length} הודעות</b> שלא כולם אישרו את קריאתן אחרי יום: ${names(oldPosts.map(o=>(o.p.title||o.p.body||'').slice(0,30)+' ('+o.miss.length+')'),3)}`,goMsg('posts'),'להודעות'));

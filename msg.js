@@ -13,7 +13,7 @@ const AREAS=['רווחה ורמזור','לימודים','נוכחות','משפח
 const PRI={low:{l:'רגיל',c:'#7A6A66'},high:{l:'חשוב',c:'#b45309'},urgent:{l:'דחוף',c:'#b91c1c'}};
 const STS={open:{l:'פתוחה',c:'#8496ab'},doing:{l:'בעבודה',c:'#c2410c'},done:{l:'הושלמה',c:'#047857'}};
 const AUD={all:'כל הצוות',ya:"צוות י\"א",yb:"צוות י\"ב",academy:'צוות האקדמיה',pick:'אנשים מסוימים'};
-const M={tasks:{},posts:{},phones:{},smsg:{},wa:null,sf:{},ok:false,err:'',view:'mine',f:{st:'active',who:'',area:'',q:''},open:null,form:null,started:false,notified:{}};
+const M={tasks:{},posts:{},phones:{},smsg:{},logs:{},stu:null,lf:null,sF:{g:'',q:'',w:'rot'},wa:null,sf:{},ok:false,err:'',view:'mine',f:{st:'active',who:'',area:'',q:''},open:null,form:null,started:false,notified:{}};
 window.MSG=M;
 const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -62,11 +62,11 @@ function restartListen(){ if(UNSUB){ try{ UNSUB(); }catch(e){} UNSUB=null; } M.s
 async function msgStart(){
   if(M.started||!me()) return; M.started=true;
   try{ const {dbm,rdb}=await db();
-    UNSUB=dbm.onValue(dbm.ref(rdb,MSG_PATH),snap=>{ const v=snap.val()||{}; const prev=M.ok; M.tasks=v.tasks||{}; M.posts=v.posts||{}; M.phones=v.phones||{}; M.smsg=v.smsg||{}; M.ok=true; M.err=''; RETRY=0;
+    UNSUB=dbm.onValue(dbm.ref(rdb,MSG_PATH),snap=>{ const v=snap.val()||{}; const prev=M.ok; M.tasks=v.tasks||{}; M.posts=v.posts||{}; M.phones=v.phones||{}; M.smsg=v.smsg||{}; M.logs=v.logs||{}; M.ok=true; M.err=''; RETRY=0;
       if(prev) notifyNew(); else markKnown(); badge(); if(active()) softRender(); },
       e=>{ console.warn('msg listen',e); DB=null; UNSUB=null; M.started=false;
         /* ההאזנה נותקה (בדרך כלל בגלל ניתוק רגעי של הכניסה) — מתחברים מחדש לבד */
-        if(++RETRY<=6) setTimeout(msgStart,2000*RETRY); else { M.err='החיבור לנתוני ה-CRM נותק. רעננו את הדף.'; if(active()) msgRender(); } });
+        if(++RETRY<=6) setTimeout(msgStart,2000*RETRY); else { M.err='החיבור לנתוני קשר ומעקב נותק. רעננו את הדף.'; if(active()) msgRender(); } });
   }catch(e){ DB=null; M.started=false; if(++RETRY<=6) setTimeout(msgStart,2000*RETRY); else { M.err='לא ניתן להתחבר לענן. נסו לרענן.'; if(active()) msgRender(); } }
 }
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&!M.started&&me()){ RETRY=0; msgStart(); } });
@@ -111,25 +111,31 @@ window.msgSend=function(){
 };
 window.msgTaskSt=function(id,st){ const t=M.tasks[id]; if(!t||!canEditSt(t)) return;
   const ch={st,upd:Date.now()}; if(st==='done'){ ch.doneAt=Date.now(); ch.doneBy=me().id; } else { ch.doneAt=null; ch.doneBy=null; }
+  if(st==='done'&&t.rep&&!t.repNext){ const nid=uid(), due=nextDue(t.due||todayIso(),t.rep);
+    const n={t:t.t,d:t.d||'',area:t.area||'',who:t.who||[],due,pri:t.pri||'low',stu:t.stu||'',rep:t.rep,st:'open',by:t.by,at:Date.now(),upd:Date.now()};
+    if(t.ck) n.ck=Object.fromEntries(Object.entries(t.ck).map(([k,c])=>[k,{x:c.x,ok:false}]));
+    put('tasks/'+nid,n); ch.repNext=nid; msgToast('🔁 נפתחה המשימה הבאה ל'+fmtDue(due)); }
   patch('tasks/'+id,ch); put('tasks/'+id+'/cm/'+uid(),{u:me().id,at:Date.now(),sys:1,x:'שינה/תה סטטוס ל"'+STS[st].l+'"'}); };
 window.msgTaskComment=function(id){ const i=document.getElementById('tc-'+id); const x=(i&&i.value||'').trim(); if(!x) return;
   put('tasks/'+id+'/cm/'+uid(),{u:me().id,at:Date.now(),x}); i.value=''; };
 window.msgTaskDel=function(id){ const t=M.tasks[id]; if(!t||!(isAdmin()||t.by===me().id)) return; if(confirm('למחוק את המשימה "'+t.t+'"?')){ M.open=null; del('tasks/'+id); } };
 const canEditSt=t=>isAdmin()||t.by===me().id||mineT(t);
 window.msgOpenTask=function(id){ M.open=id; const t=M.tasks[id]; if(t&&mineT(t)&&!(t.seen||{})[me().id]) patch('tasks/'+id+'/seen',{[me().id]:Date.now()}); msgRender(); };
-window.msgClose=function(){ M.open=null; M.form=null; M.wa=null; msgRender(); };
-window.msgNewTask=function(pre){ if(!canTask()) return; M.form=Object.assign({id:null,t:'',d:'',area:'',who:[],due:'',pri:'low',stu:''},pre||{}); msgRender(); };
+/* סגירה בשכבות: חלון שנפתח מתוך כרטיס החניך/ה חוזר אליו */
+window.msgClose=function(){ if(M.form) M.form=null; else if(M.lf) M.lf=null; else if(M.open) M.open=null; else if(M.wa) M.wa=null; else M.stu=null; msgRender(); };
+window.msgNewTask=function(pre){ if(!canTask()) return; M.form=Object.assign({id:null,t:'',d:'',area:'',who:[],due:'',pri:'low',stu:'',rep:''},pre||{}); msgRender(); };
 window.msgEditTask=function(id){ const t=M.tasks[id]; if(!t) return; M.open=null; M.form=Object.assign({},t,{id,who:[...(t.who||[])]}); msgRender(); };
 window.msgSaveTask=function(){
   const g=k=>document.getElementById('tf-'+k); const t=g('t').value.trim(); if(!t){ msgToast('כתבו שם למשימה'); return; }
   const who=[...document.querySelectorAll('.tf-who:checked')].map(x=>x.value); if(!who.length){ msgToast('בחרו לפחות אחראי/ת אחד/ת'); return; }
   const stu=g('stu').value.trim();
-  const o={t,d:g('d').value.trim(),area:g('area').value,who,due:g('due').value,pri:g('pri').value,stu:stu&&stuIdx(stu)>=0?stu:stu,upd:Date.now()};
+  const o={t,d:g('d').value.trim(),area:g('area').value,who,due:g('due').value,pri:g('pri').value,stu,rep:g('rep').value,upd:Date.now()};
+  if(o.rep&&!o.due) o.due=todayIso();
   if(M.form.id){ patch('tasks/'+M.form.id,o); put('tasks/'+M.form.id+'/cm/'+uid(),{u:me().id,at:Date.now(),sys:1,x:'עדכן/ה את פרטי המשימה'}); msgToast('✓ המשימה עודכנה'); }
   else { const id=uid(); put('tasks/'+id,Object.assign(o,{st:'open',by:me().id,at:Date.now()})); msgToast('✅ המשימה נשלחה ל'+who.map(uName).join(', ')); }
   M.form=null; msgRender();
 };
-window.msgView=function(v){ M.view=v; M.open=null; msgRender(); };
+window.msgView=function(v){ M.view=v; M.open=null; M.stu=null; msgRender(); };
 window.msgF=function(k,v){ M.f[k]=v; msgRender(); };
 window.msgNotifOn=async function(){ try{ const r=await Notification.requestPermission(); msgToast(r==='granted'?'🔔 התראות בדפדפן הופעלו':'ההתראות לא אושרו בדפדפן'); msgRender(); }catch(e){ msgToast('הדפדפן לא תומך בהתראות'); } };
 window.msgStu=function(name){ const i=stuIdx(name); if(i>=0&&window.showStudentDetails) showStudentDetails(i); };
@@ -144,7 +150,7 @@ function taskCard(t){
     <div class="m-task-h">${isNew?'<span class="m-new">חדש</span>':''}<b>${E(t.t)}</b></div>
     <div class="m-task-m">${t.area?chip('🏷️ '+E(t.area),'#6d28d9'):''}${t.pri!=='low'?chip((t.pri==='urgent'?'🔴 ':'🟠 ')+p.l,p.c):''}
       ${t.due?chip('📅 '+fmtDue(t.due),late?'#b91c1c':(t.st!=='done'&&dayDiff(t.due)<=1?'#c2410c':'#52637a')):''}
-      ${t.stu?chip('🧑‍🎓 '+E(t.stu),'#0e7490'):''}${cm?chip('💬 '+cm,'#52637a'):''}</div>
+      ${t.stu?chip('🧑‍🎓 '+E(t.stu),'#0e7490'):''}${cm?chip('💬 '+cm,'#52637a'):''}${t.rep?chip('🔁 '+REP[t.rep],'#0369a1'):''}${ckTxt(t)?chip('☑️ '+ckTxt(t),'#047857'):''}</div>
     <div class="m-task-f"><span class="m-avs">${(t.who||[]).map(w=>av(w,24)).join('')}</span><small>${E((t.who||[]).map(uName).join(', '))}</small>
       <span class="m-st" style="--c:${s.c}">${s.l}</span></div></div>`;
 }
@@ -182,7 +188,8 @@ function taskForm(){
     <label>פירוט<textarea id="tf-d" placeholder="הסבר, הקשר, מה נחשב 'בוצע'…">${E(f.d)}</textarea></label>
     <div class="m-g3"><label>תחום אחריות${sl('area',[['','— בחרו —']].concat(AREAS.map(a=>[a,a])),f.area)}</label>
       <label>תאריך יעד<input type="date" id="tf-due" value="${E(f.due)}"></label>
-      <label>דחיפות${sl('pri',Object.entries(PRI).map(([k,v])=>[k,v.l]),f.pri)}</label></div>
+      <label>דחיפות${sl('pri',Object.entries(PRI).map(([k,v])=>[k,v.l]),f.pri)}</label>
+      <label>🔁 חוזרת${sl('rep',Object.entries(REP).map(([k,v])=>[k,v]),f.rep||'')}</label></div>
     <label>קשור לחניך/ה (לא חובה)<input id="tf-stu" list="tf-stul" value="${E(f.stu)}" placeholder="התחילו להקליד שם…"><datalist id="tf-stul">${students().map(s=>`<option value="${E(s.n)}">`).join('')}</datalist></label>
     <div class="m-lbl">מי אחראי/ת? <small>(אפשר כמה)</small></div>
     <div class="m-pick">${staff().map(u=>`<label><input type="checkbox" class="tf-who" value="${u.id}" ${(f.who||[]).includes(u.id)?'checked':''}> ${E(u.n)} <small>${E(u.r)}</small></label>`).join('')}</div>
@@ -194,12 +201,13 @@ function taskModal(t){
     <div class="m-dlg-h"><b>${E(t.t)}</b><button class="m-x" onclick="msgClose()">✕</button></div>
     <div class="m-task-m" style="margin-bottom:10px">${chip(s.l,s.c)}${t.area?chip('🏷️ '+E(t.area),'#6d28d9'):''}${chip((PRI[t.pri]||PRI.low).l,(PRI[t.pri]||PRI.low).c)}
       ${t.due?chip('📅 '+fmtDue(t.due)+' ('+t.due.split('-').reverse().join('.')+')',isLate(t)?'#b91c1c':'#52637a'):''}
-      ${t.stu?`<span class="m-chip m-link" style="--c:#0e7490" onclick="msgStu('${E(t.stu).replace(/'/g,"\\'")}')">🧑‍🎓 ${E(t.stu)}</span>`:''}</div>
+      ${t.stu?`<span class="m-chip m-link" style="--c:#0e7490" onclick="msgOpenStu('${jq(t.stu)}')">🧑‍🎓 ${E(t.stu)}</span>`:''}${t.rep?chip('🔁 '+REP[t.rep],'#0369a1'):''}</div>
     ${t.d?`<div class="m-desc">${E(t.d).replace(/\n/g,'<br>')}</div>`:''}
     <div class="m-meta">נפתחה ע"י <b>${E(uName(t.by))}</b> · ${fmtAt(t.at)}<br>אחראים: <b>${E((t.who||[]).map(uName).join(', '))}</b>
       ${(t.who||[]).map(w=>(t.seen||{})[w]?`<small class="y"> · ${E(uName(w))} ראה/תה ${fmtAt(t.seen[w])}</small>`:`<small class="n"> · ${E(uName(w))} עוד לא פתח/ה</small>`).join('')}
       ${t.st==='done'&&t.doneAt?`<br>✓ הושלמה ע"י ${E(uName(t.doneBy))} · ${fmtAt(t.doneAt)}`:''}</div>
     ${ed?`<div class="m-sts">${Object.entries(STS).map(([k,v])=>`<button class="${t.st===k?'on':''}" style="--c:${v.c}" onclick="msgTaskSt('${t.id}','${k}')">${k==='done'?'✓ ':''}${v.l}</button>`).join('')}</div>`:''}
+    ${ckBox(t,ed)}
     <div class="m-lbl">עדכונים והערות</div>
     <div class="m-cms">${cms.map(c=>c.sys?`<div class="m-sys">${E(uName(c.u))} ${E(c.x)} · ${fmtAt(c.at)}</div>`:`<div class="m-rep">${av(c.u,22)}<div><b>${E(uName(c.u))}</b> <small>${fmtAt(c.at)}</small><div>${E(c.x).replace(/\n/g,'<br>')}</div></div></div>`).join('')||'<div class="m-sys">אין עדיין עדכונים</div>'}</div>
     <div class="m-repbox"><input id="tc-${t.id}" placeholder="כתבו עדכון…" onkeydown="if(event.key==='Enter')msgTaskComment('${t.id}')"><button onclick="msgTaskComment('${t.id}')">הוספה</button></div>
@@ -216,7 +224,9 @@ function vMine(){
   return `<div class="m-hello">שלום ${E((me().n||'').split(' ')[0])} 👋 ${!P.length&&!T.length?'אין לך כרגע משהו פתוח. יום טוב!':`יש לך <b>${P.length}</b> הודעות שמחכות לאישור קריאה ו-<b>${T.length}</b> משימות פתוחות${late?` (<b style="color:#b91c1c">${late} באיחור</b>)`:''}.`}</div>
     ${P.length?`<h3 class="m-h">📢 הודעות שמחכות לאישור שלך</h3>${P.map(postCard).join('')}`:''}
     <h3 class="m-h">✅ המשימות שלי ${canTask()?`<button class="m-btn sm" onclick="msgNewTask()">➕ משימה חדשה</button>`:''}</h3>
-    <div class="m-grid">${T.map(taskCard).join('')||'<div class="m-empty">אין משימות פתוחות 🎉</div>'}</div>
+    ${T.length?[['⏰ באיחור',t=>isLate(t)],['📌 להיום',t=>t.due&&dayDiff(t.due)===0],['📅 השבוע',t=>t.due&&dayDiff(t.due)>0&&dayDiff(t.due)<=7],['🗂️ בהמשך / בלי תאריך',t=>!t.due||dayDiff(t.due)>7]].map(([l,fn])=>{ const L=T.filter(fn); return L.length?`<div class="m-qh">${l} <b>${L.length}</b></div><div class="m-grid">${L.map(taskCard).join('')}</div>`:''; }).join(''):'<div class="m-empty">אין משימות פתוחות 🎉</div>'}
+    ${(()=>{ const al=openAlerts().filter(a=>myStudents().some(s=>s.n===a.stu)), cm=contactMap(), rot=myStudents().filter(s=>!cm[s.n]||daysAgo(cm[s.n].t)>=ROT).length;
+      return (al.length||rot)?`<h3 class="m-h">🧑‍🎓 החניכים שלי</h3><div class="m-tiles">${al.length?`<div class="m-tile m-click" style="--c:#b91c1c" onclick="msgView('students');msgSF('w','alert')"><b>${al.length}</b><small>התרעות דאגה פתוחות</small></div>`:''}${rot?`<div class="m-tile m-click" style="--c:#c2410c" onclick="msgView('students');msgSF('w','rot')"><b>${rot}</b><small>בלי קשר מעל ${ROT} יום</small></div>`:''}</div>`:''; })()}
     ${G.length?`<h3 class="m-h">📤 משימות שנתתי לאחרים ועוד פתוחות</h3><div class="m-grid">${G.map(taskCard).join('')}</div>`:''}`;
 }
 function vTasks(){
@@ -242,7 +252,7 @@ function vTrack(){
   const T=list(M.tasks), P=list(M.posts), wk=Date.now()-7*864e5;
   const rows=staff().map(u=>{ const mt=T.filter(t=>(t.who||[]).includes(u.id));
     const pend=P.filter(p=>p.ack!==false&&p.by!==u.id&&inAud(p,u)&&!(p.acks||{})[u.id]);
-    return {u,open:mt.filter(t=>t.st!=='done').length,late:mt.filter(isLate).length,done:mt.filter(t=>t.st==='done'&&t.doneAt>wk).length,pend:pend.length}; });
+    return {u,open:mt.filter(t=>t.st!=='done').length,late:mt.filter(isLate).length,done:mt.filter(t=>t.st==='done'&&t.doneAt>wk).length,pend:pend.length,lg:list(M.logs).filter(l=>l.by===u.id&&l.k!=='note'&&l.at>wk).length}; });
   const late=sortTasks(T.filter(isLate));
   const byArea=AREAS.map(a=>({a,n:T.filter(t=>t.area===a&&t.st!=='done').length})).filter(x=>x.n);
   const tot={open:T.filter(t=>t.st!=='done').length,late:late.length,done:T.filter(t=>t.st==='done'&&t.doneAt>wk).length};
@@ -250,8 +260,8 @@ function vTrack(){
   const tile=(n,l,c)=>`<div class="m-tile" style="--c:${c}"><b>${n}</b><small>${l}</small></div>`;
   return `<div class="m-tiles">${tile(tot.open,'משימות פתוחות','#c2410c')}${tile(tot.late,'באיחור','#b91c1c')}${tile(tot.done,'הושלמו השבוע','#047857')}${tile(ackRate+'%','אישורי קריאה','#8E033C')}</div>
     <h3 class="m-h">👥 לפי איש צוות</h3>
-    <div class="m-tblw"><table class="m-tbl"><thead><tr><th>איש/ת צוות</th><th>פתוחות</th><th>באיחור</th><th>הושלמו השבוע</th><th>הודעות שלא אושרו</th></tr></thead><tbody>
-      ${rows.map(r=>`<tr><td>${av(r.u.id,24)} ${E(r.u.n)} <small>${E(r.u.r)}</small></td><td><a href="#" onclick="M_go('${r.u.id}');return false">${r.open}</a></td><td class="${r.late?'bad':''}">${r.late}</td><td>${r.done}</td><td class="${r.pend?'warn':''}">${r.pend}</td></tr>`).join('')}</tbody></table></div>
+    <div class="m-tblw"><table class="m-tbl"><thead><tr><th>איש/ת צוות</th><th>פתוחות</th><th>באיחור</th><th>הושלמו השבוע</th><th>הודעות שלא אושרו</th><th>מגעים עם חניכים השבוע</th></tr></thead><tbody>
+      ${rows.map(r=>`<tr><td>${av(r.u.id,24)} ${E(r.u.n)} <small>${E(r.u.r)}</small></td><td><a href="#" onclick="M_go('${r.u.id}');return false">${r.open}</a></td><td class="${r.late?'bad':''}">${r.late}</td><td>${r.done}</td><td class="${r.pend?'warn':''}">${r.pend}</td><td>${r.lg}</td></tr>`).join('')}</tbody></table></div>
     ${byArea.length?`<h3 class="m-h">🏷️ משימות פתוחות לפי תחום</h3><div class="m-areas">${byArea.map(x=>`<span>${E(x.a)} <b>${x.n}</b></span>`).join('')}</div>`:''}
     <h3 class="m-h">⏰ משימות באיחור</h3><div class="m-grid">${late.map(taskCard).join('')||'<div class="m-empty">אין משימות באיחור 👏</div>'}</div>`;
 }
@@ -262,12 +272,13 @@ window.msgRender=function(){
   badge();
   if(!M.ok){ el.innerHTML=M.err?`<div class="m-err">${E(M.err)}</div>`:'<div class="m-empty">טוען…</div>'; msgStart(); return; }
   const nP=list(M.posts).filter(needAck).length, nT=list(M.tasks).filter(t=>mineT(t)&&t.st!=='done').length;
-  const tabs=[['mine','📥 שלי',nP+nT],['tasks','✅ משימות',0],['posts','📢 הודעות',nP]].concat(canTask()?[['stu','🎓 הודעות לחניכים',0]]:[]).concat(isAdmin()?[['track','📊 מעקב',0]]:[]);
+  const nA=openAlerts().filter(a=>myStudents().some(s=>s.n===a.stu)).length;
+  const tabs=[['mine','📥 היום שלי',nP+nT],['tasks','✅ משימות',0],['students','🧑‍🎓 חניכים',nA],['posts','📢 הודעות',nP]].concat(canTask()?[['stu','🎓 הודעות לחניכים',0]]:[]).concat(isAdmin()?[['track','📊 מעקב',0]]:[]);
   const nb=window.Notification&&Notification.permission==='default'?'<button class="m-btn2 sm" onclick="msgNotifOn()">🔔 הפעלת התראות בדפדפן</button>':'';
-  const body=M.view==='tasks'?vTasks():M.view==='posts'?vPosts():M.view==='stu'&&canTask()?vStu():M.view==='track'&&isAdmin()?vTrack():vMine();
+  const body=M.view==='tasks'?vTasks():M.view==='students'?vStudents():M.view==='posts'?vPosts():M.view==='stu'&&canTask()?vStu():M.view==='track'&&isAdmin()?vTrack():vMine();
   const t=M.open&&M.tasks[M.open]?Object.assign({id:M.open},M.tasks[M.open]):null;
   el.innerHTML=`<div class="m-tabs">${tabs.map(([k,l,n])=>`<button class="${M.view===k?'on':''}" onclick="msgView('${k}')">${l}${n?` <span class="m-n">${n}</span>`:''}</button>`).join('')}<span style="flex:1"></span><button class="m-btn2 sm" onclick="msgMyPhone()" title="כדי שאפשר יהיה לשלוח לך הודעות מהפורטל בוואטסאפ">📱 ${M.phones[me().id]?'המספר שלי לוואטסאפ':'הוספת המספר שלי לוואטסאפ'}</button>${nb}</div>
-    ${body}${M.form?taskForm():t?taskModal(t):M.wa?waModal():''}`;
+    ${body}${M.form?taskForm():M.lf?logForm():t?taskModal(t):M.wa?waModal():M.stu?stuModal():''}`;
   if(t&&mineT(t)&&!(t.seen||{})[me().id]) patch('tasks/'+t.id+'/seen',{[me().id]:Date.now()});
 };
 
@@ -367,12 +378,131 @@ window.msgStuDel=async function(id){ const m=M.smsg[id]; if(!m||!confirm('למח
   if(Object.keys(up).length) await run((dbm,rdb)=>dbm.update(dbm.ref(rdb,'portal/bogeret/secure/stu'),up));
   del('smsg/'+id); };
 
+/* ═══════════ יכולות CRM (בקשת יובל 28.11.2026) — מה שעובד במערכות המובילות, מותאם לבוגרת ═══════════
+   • כרטיס 360° לחניך/ה (כמו HubSpot): ציר זמן אחד של כל המגעים, המשימות וההתרעות
+   • תיעוד מגע מהיר + "צעד הבא" שהופך למשימה עם תאריך (כמו Pipedrive)
+   • "חניכים שנשכחו": מי שלא היה איתו/ה קשר מעל 14 יום מסומן (כמו "עסקאות מרקיבות" ב-Pipedrive)
+   • התרעות דאגה פתוחות עד שמסמנים "טופל" (כמו Early Alerts ב-Salesforce Education)
+   • משימות חוזרות ורשימת תיוג בתוך משימה (כמו monday / Asana), ותור "היום שלי"
+   נשמר ב: msg/logs/<id> = {stu, k, x, on, by, at, res?, resBy?}  (k: סוג המגע; alert = התרעה פתוחה עד res) */
+const ROT=14;
+const REP={'':'לא חוזרת',w:'כל שבוע','2w':'כל שבועיים',m:'כל חודש'};
+const KINDS={stu:{l:'שיחה עם החניך/ה',i:'🗣️'},par:{l:'שיחה עם הורים',i:'📞'},meet:{l:'פגישה',i:'🤝'},home:{l:'ביקור בית',i:'🏠'},msg:{l:'הודעה / וואטסאפ',i:'💬'},note:{l:'הערה בלבד',i:'📝'},alert:{l:'דאגה / התרעה',i:'⚠️'}};
+const jq=s=>E(String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
+const isoOf=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+function nextDue(iso,r){ const d=new Date(iso+'T12:00:00'), t=todayIso();
+  const step=()=>{ if(r==='m') d.setMonth(d.getMonth()+1); else d.setDate(d.getDate()+(r==='2w'?14:7)); };
+  step(); while(isoOf(d)<t) step(); return isoOf(d); }
+const ckTxt=t=>{ const v=Object.values(t.ck||{}).filter(c=>c&&c.x); return v.length?v.filter(c=>c.ok).length+'/'+v.length:''; };
+function ckBox(t,ed){ const L=Object.entries(t.ck||{}).filter(([k,c])=>c&&c.x);
+  if(!L.length&&!ed) return '';
+  return `<div class="m-lbl">☑️ רשימת תיוג ${ckTxt(t)?'<small>('+ckTxt(t)+')</small>':''}</div><div class="m-ck">
+    ${L.map(([k,c])=>`<label class="${c.ok?'ok':''}"><input type="checkbox" ${c.ok?'checked':''} ${ed?'':'disabled'} onchange="msgCk('${t.id}','${k}',this.checked)"> <span>${E(c.x)}</span>${ed?`<button class="m-x" title="הסרה" onclick="event.preventDefault();msgCkDel('${t.id}','${k}')">✕</button>`:''}</label>`).join('')}
+    ${ed?`<div class="m-repbox"><input id="ck-${t.id}" placeholder="הוספת שלב…" onkeydown="if(event.key==='Enter')msgCkAdd('${t.id}')"><button onclick="msgCkAdd('${t.id}')">הוספה</button></div>`:''}</div>`; }
+window.msgCk=function(tid,k,v){ patch('tasks/'+tid+'/ck/'+k,{ok:!!v,by:me().id}); };
+window.msgCkDel=function(tid,k){ del('tasks/'+tid+'/ck/'+k); };
+window.msgCkAdd=function(tid){ const i=document.getElementById('ck-'+tid); const x=(i&&i.value||'').trim(); if(!x) return; put('tasks/'+tid+'/ck/'+uid(),{x,ok:false}); i.value=''; };
+
+/* ---- חניכים: קשר אחרון, התרעות ---- */
+const myStudents=()=>{ const gs=stuGroups(); return students().filter(s=>gs.includes(s.g)); };
+const logTs=l=>l.on?new Date(l.on+'T12:00:00').getTime():l.at;
+function contactMap(){ const m={}; list(M.logs).forEach(l=>{ if(l.k==='note'||!l.stu) return; const t=logTs(l); if(!m[l.stu]||m[l.stu].t<t) m[l.stu]={t,l}; }); return m; }
+const daysAgo=ts=>Math.max(0,Math.round((new Date(todayIso()+'T12:00:00')-new Date(isoOf(new Date(ts))+'T12:00:00'))/864e5));
+const openAlerts=()=>list(M.logs).filter(l=>l.k==='alert'&&!l.res);
+const agoTxt=n=>n===0?'היום':n===1?'אתמול':`לפני ${n} ימים`;
+function vStudents(){
+  const f=M.sF, q=f.q.trim(), cm=contactMap(), al=openAlerts(), wk=Date.now()-7*864e5, gs=stuGroups();
+  const all=myStudents().map(s=>{ const c=cm[s.n], d=c?daysAgo(c.t):null;
+    return {s,c,d,rot:d==null||d>=ROT,al:al.filter(a=>a.stu===s.n),tk:list(M.tasks).filter(t=>t.stu===s.n&&t.st!=='done').length}; });
+  let A=all.filter(r=>(!f.g||r.s.g===f.g)&&(!q||r.s.n.includes(q)));
+  if(f.w==='rot') A=A.filter(r=>r.rot); else if(f.w==='alert') A=A.filter(r=>r.al.length);
+  A.sort((a,b)=>(b.al.length-a.al.length)||((b.d==null?1e4:b.d)-(a.d==null?1e4:a.d))||a.s.n.localeCompare(b.s.n,'he'));
+  const tile=(n,l,c,w)=>`<div class="m-tile m-click" style="--c:${c}" onclick="msgSF('w','${w}')"><b>${n}</b><small>${l}</small></div>`;
+  const nWeek=list(M.logs).filter(l=>l.k!=='note'&&l.at>wk&&myStudents().some(s=>s.n===l.stu)).length;
+  return `<div class="m-tiles">${tile(all.filter(r=>r.al.length).length,'עם התרעת דאגה פתוחה','#b91c1c','alert')}${tile(all.filter(r=>r.rot).length,`בלי קשר מעל ${ROT} יום`,'#c2410c','rot')}${tile(nWeek,'מגעים שתועדו השבוע','#047857','all')}${tile(all.length,'חניכים','#8E033C','all')}</div>
+    <div class="m-bar" style="margin-top:12px">
+      ${[['rot',`🕰️ בלי קשר ${ROT}+ יום`],['alert','⚠️ עם התרעה'],['all','כולם']].map(([k,l])=>`<button class="m-f${f.w===k?' on':''}" onclick="msgSF('w','${k}')">${l}</button>`).join('')}
+      ${gs.length>1?`<select onchange="msgSF('g',this.value)"><option value="">כל הקבוצות</option>${gs.map(g=>`<option ${f.g===g?'selected':''}>${E(g)}</option>`).join('')}</select>`:''}
+      <input class="m-q" placeholder="🔍 שם חניך/ה" value="${E(f.q)}" onchange="msgSF('q',this.value)">
+      ${canTask()?'<button class="m-btn" onclick="msgLog()">➕ תיעוד מגע</button>':''}</div>
+    <div class="m-tblw"><table class="m-tbl"><thead><tr><th>חניך/ה</th><th>קבוצה</th><th>מגע אחרון</th><th>משימות פתוחות</th><th></th></tr></thead><tbody>
+    ${A.map(r=>`<tr class="${r.al.length?'m-ral':r.rot?'m-rrot':''}"><td><a href="#" onclick="msgOpenStu('${jq(r.s.n)}');return false"><b>${E(r.s.n)}</b></a>${r.al.length?' <span class="m-urg">⚠️ התרעה</span>':''}</td><td>${E(r.s.g)}</td>
+      <td>${r.c?`${KINDS[r.c.l.k]?KINDS[r.c.l.k].i:''} ${agoTxt(r.d)} <small>· ${E(uName(r.c.l.by))}</small>`:'<span class="m-sub">עוד לא תועד קשר</span>'}</td>
+      <td>${r.tk||''}</td><td>${canTask()?`<button class="m-btn2 sm" onclick="msgLog('${jq(r.s.n)}')">➕ תיעוד</button>`:''}</td></tr>`).join('')||`<tr><td colspan="5" class="m-empty">${f.w==='rot'?'כל החניכים בקשר שוטף 👏':'אין חניכים להצגה'}</td></tr>`}
+    </tbody></table></div>
+    <div class="m-sub" style="margin-top:8px">חניך/ה מסומנים "בלי קשר" אם לא תועדה שיחה/פגישה/הודעה איתם או עם ההורים ב-${ROT} הימים האחרונים. הערה בלבד לא נחשבת קשר.</div>`;
+}
+window.msgSF=function(k,v){ M.sF[k]=v; msgRender(); };
+window.msgOpenStu=function(name){ const sm=document.getElementById('student-modal'); if(sm) sm.style.display='none';
+  M.open=null; M.form=null; M.lf=null; M.wa=null; M.stu=name; if(!active()) show('msg'); else msgRender(); };
+window.msgLog=function(name){ if(!canTask()) return; const sm=document.getElementById('student-modal'); if(sm) sm.style.display='none';
+  M.lf={stu:name||M.stu||'',k:'stu',on:todayIso(),x:'',nx:'',nd:'',nw:me().id}; if(!active()) show('msg'); else msgRender(); };
+window.msgLogK=function(k){ logRead(); M.lf.k=k; msgRender(); };
+function logRead(){ const g=k=>document.getElementById('lf-'+k), f=M.lf; ['stu','on','x','nx','nd','nw'].forEach(k=>{ if(g(k)) f[k]=g(k).value; }); return f; }
+window.msgSaveLog=function(){
+  const f=logRead(), stu=f.stu.trim(), x=f.x.trim();
+  if(stuIdx(stu)<0){ msgToast('בחרו חניך/ה מהרשימה'); return; }
+  if(!x){ msgToast('כתבו בקצרה מה היה'); return; }
+  const id=uid(); put('logs/'+id,{stu,k:f.k,x,on:f.on||todayIso(),by:me().id,at:Date.now()});
+  const nx=f.nx.trim();
+  if(nx){ put('tasks/'+uid(),{t:nx,d:'בעקבות '+(KINDS[f.k]||KINDS.note).l+': '+x.slice(0,200),area:f.k==='par'?'משפחות':f.k==='alert'?'רווחה ורמזור':'',who:[f.nw||me().id],due:f.nd||'',pri:f.k==='alert'?'high':'low',stu,st:'open',by:me().id,at:Date.now(),upd:Date.now(),from:id}); }
+  M.lf=null; msgToast(nx?'✅ המגע תועד ונפתחה משימה לצעד הבא':'✅ המגע תועד'); msgRender();
+};
+window.msgAlertRes=function(id){ if(!canTask()) return; patch('logs/'+id,{res:Date.now(),resBy:me().id}); msgToast('✓ ההתרעה סומנה כטופלה'); };
+window.msgLogDel=function(id){ const l=M.logs[id]; if(!l||!(isAdmin()||l.by===me().id)) return; if(confirm('למחוק את התיעוד?')) del('logs/'+id); };
+function logForm(){
+  const f=M.lf, L=myStudents().length?myStudents():students();
+  return `<div class="m-modal" onclick="if(event.target===this)msgClose()"><div class="m-dlg">
+    <div class="m-dlg-h"><b>📝 תיעוד מגע עם חניך/ה</b><button class="m-x" onclick="msgClose()">✕</button></div>
+    <label>חניך/ה<input id="lf-stu" list="lf-stul" value="${E(f.stu)}" placeholder="התחילו להקליד שם…"><datalist id="lf-stul">${L.map(s=>`<option value="${E(s.n)}">${E(s.g)}</option>`).join('')}</datalist></label>
+    <div class="m-lbl">סוג המגע</div><div class="m-pick">${Object.entries(KINDS).map(([k,v])=>`<label><input type="radio" name="lf-k" ${f.k===k?'checked':''} onchange="msgLogK('${k}')"> ${v.i} ${v.l}</label>`).join('')}</div>
+    ${f.k==='alert'?'<div class="m-sub" style="color:#b91c1c">⚠️ התרעה נשארת פתוחה ומסומנת אצל כל הצוות עד שמישהו לוחץ "טופל".</div>':''}
+    <div class="m-g3"><label>מתי<input type="date" id="lf-on" value="${E(f.on)}"></label></div>
+    <label>מה היה? <textarea id="lf-x" placeholder="בקצרה: על מה דיברנו, מה עלה, איך החניך/ה">${E(f.x)}</textarea></label>
+    <div class="m-next"><div class="m-lbl">➡️ צעד הבא <small>(לא חובה — הופך למשימה עם תאריך)</small></div>
+      <input id="lf-nx" value="${E(f.nx)}" placeholder="למשל: לחזור להורים ביום ראשון / לבדוק עם המורה למתמטיקה">
+      <div class="m-g3"><label>עד מתי<input type="date" id="lf-nd" value="${E(f.nd)}"></label>
+        <label>מי אחראי/ת<select id="lf-nw">${staff().map(u=>`<option value="${u.id}" ${f.nw===u.id?'selected':''}>${E(u.n)}</option>`).join('')}</select></label></div></div>
+    <div class="m-dlg-f"><button class="m-btn" onclick="msgSaveLog()">שמירה</button><button class="m-btn2" onclick="msgClose()">ביטול</button></div></div></div>`;
+}
+function stuModal(){
+  const n=M.stu, s=students().find(x=>x.n===n)||{n,g:''}, cm=contactMap()[n], d=cm?daysAgo(cm.t):null;
+  const logs=list(M.logs).filter(l=>l.stu===n), al=logs.filter(l=>l.k==='alert'&&!l.res);
+  const tks=list(M.tasks).filter(t=>t.stu===n), open=sortTasks(tks.filter(t=>t.st!=='done'));
+  const ev=[];
+  logs.forEach(l=>{ const k=KINDS[l.k]||KINDS.note; ev.push({ts:logTs(l),h:`<div class="m-ev${l.k==='alert'?' al':''}"><span class="m-evi">${k.i}</span><div style="flex:1;min-width:0"><b>${k.l}</b> <small>· ${E(uName(l.by))} · ${fmtAt(logTs(l)).replace(/ \d\d:\d\d$/,'')}</small>
+      ${l.k==='alert'?(l.res?`<span class="m-acked"> · ✓ טופל (${E(uName(l.resBy))})</span>`:' <span class="m-urg">פתוחה</span>'):''}<div>${E(l.x).replace(/\n/g,'<br>')}</div></div>${(isAdmin()||l.by===me().id)?`<button class="m-x" title="מחיקה" onclick="msgLogDel('${l.id}')">🗑️</button>`:''}</div>`}); });
+  tks.forEach(t=>{ ev.push({ts:t.at,h:`<div class="m-ev tk" onclick="msgOpenTask('${t.id}')"><span class="m-evi">✅</span><div><b>משימה נפתחה:</b> ${E(t.t)} <small>· ${E(uName(t.by))} ← ${E((t.who||[]).map(uName).join(', '))} · ${fmtAt(t.at).replace(/ \d\d:\d\d$/,'')}</small></div></div>`});
+    if(t.st==='done'&&t.doneAt) ev.push({ts:t.doneAt,h:`<div class="m-ev tk" onclick="msgOpenTask('${t.id}')"><span class="m-evi">✔️</span><div><b>משימה הושלמה:</b> ${E(t.t)} <small>· ${E(uName(t.doneBy))} · ${fmtAt(t.doneAt).replace(/ \d\d:\d\d$/,'')}</small></div></div>`}); });
+  ev.sort((a,b)=>b.ts-a.ts);
+  return `<div class="m-modal" onclick="if(event.target===this)msgClose()"><div class="m-dlg">
+    <div class="m-dlg-h"><b>🧑‍🎓 ${E(n)} <small class="m-sub">${E(s.g||'')}${s.cls?' · '+E(s.cls):''}</small></b><button class="m-x" onclick="msgClose()">✕</button></div>
+    <div class="m-tiles m-tiles-s"><div class="m-tile" style="--c:${d==null||d>=ROT?'#c2410c':'#047857'}"><b>${d==null?'—':d}</b><small>${d==null?'עוד לא תועד קשר':'ימים מהמגע האחרון'}</small></div>
+      <div class="m-tile" style="--c:#8E033C"><b>${open.length}</b><small>משימות פתוחות</small></div>
+      <div class="m-tile" style="--c:#b91c1c"><b>${al.length}</b><small>התרעות פתוחות</small></div></div>
+    <div class="m-dlg-f" style="flex-wrap:wrap">${canTask()?`<button class="m-btn" onclick="msgLog('${jq(n)}')">📝 תיעוד מגע</button><button class="m-btn2" onclick="msgNewTask({stu:'${jq(n)}'})">✅ משימה חדשה</button>`:''}
+      ${stuIdx(n)>=0?`<button class="m-btn2" onclick="msgStu('${jq(n)}')">🪪 כרטיס חניך/ה</button>`:''}</div>
+    ${al.length?`<div class="m-lbl" style="color:#b91c1c">⚠️ התרעות דאגה פתוחות</div>${al.map(a=>`<div class="m-alert"><div style="flex:1">${E(a.x)} <small class="m-sub">· ${E(uName(a.by))} · ${fmtAt(logTs(a)).replace(/ \d\d:\d\d$/,'')}</small></div>${canTask()?`<button class="m-btn2 sm" onclick="msgAlertRes('${a.id}')">✓ טופל</button>`:''}</div>`).join('')}`:''}
+    ${open.length?`<div class="m-lbl">✅ משימות פתוחות</div>${open.map(taskCard).join('')}`:''}
+    <div class="m-lbl">🕓 ציר זמן</div><div class="m-tl">${ev.map(e=>e.h).join('')||'<div class="m-sys">עוד אין תיעוד. לחצו "תיעוד מגע" כדי להתחיל.</div>'}</div></div></div>`;
+}
+/* תוספת לכרטיס החניך/ה הרגיל בפורטל: מגע אחרון + כפתורים */
+const prevSSD=window.showStudentDetails;
+if(prevSSD) window.showStudentDetails=function(idx){ prevSSD(idx);
+  try{ const s=(idx<STUDENTS_DATA.length)?STUDENTS_DATA[idx]:(typeof ACAD_STUDENTS!=='undefined'?ACAD_STUDENTS[idx-STUDENTS_DATA.length]:null);
+    const b=document.getElementById('student-modal-body'); if(!s||!b||!me()||me().lcOnly||!M.ok) return;
+    const c=contactMap()[s.n], d=c?daysAgo(c.t):null, al=openAlerts().filter(a=>a.stu===s.n).length, tk=list(M.tasks).filter(t=>t.stu===s.n&&t.st!=='done').length;
+    const box=document.createElement('div'); box.className='m-ssd';
+    box.innerHTML=`<div><b>📇 קשר ומעקב</b> · ${c?`מגע אחרון ${agoTxt(d)} (${E(KINDS[c.l.k]?KINDS[c.l.k].l:'')}, ${E(uName(c.l.by))})`:'עוד לא תועד קשר'}${tk?` · ${tk} משימות פתוחות`:''}${al?` · <b style="color:#b91c1c">⚠️ ${al} התרעות</b>`:''}</div>
+      <div class="m-ssd-b"><button onclick="msgOpenStu('${jq(s.n)}')">🕓 ציר זמן מלא</button>${canTask()?`<button onclick="msgLog('${jq(s.n)}')">📝 תיעוד מגע</button>`:''}</div>`;
+    b.appendChild(box); }catch(e){ console.warn(e); } };
+
 /* ---------- חיבור לפורטל ---------- */
 window.msgMount=function(){
   if(!me()||me().lcOnly){ const b=document.getElementById('tab-msg'); if(b) b.remove(); return; }
   if(!document.getElementById('sec-msg')){
     const s=document.createElement('div'); s.className='sec'; s.id='sec-msg';
-    s.innerHTML=`<div class="info-box"><div class="icon">💬</div><div><b>CRM — מסרים ומשימות לצוות בוגרת</b><br>משימות עם אחראי ותאריך יעד, הודעות לצוות עם אישור קריאה. הכל נשמר בענן ומתעדכן אצל כולם מיד.</div></div><div id="msgBody"></div>`;
+    s.innerHTML=`<div class="info-box"><div class="icon">💬</div><div><b>קשר ומעקב — הצוות והחניכים במקום אחד</b><br>משימות עם אחראי ותאריך יעד, הודעות לצוות עם אישור קריאה, ותיעוד הקשר עם כל חניך/ה (ציר זמן, התרעות דאגה, ומי לא דיברו איתו מזמן). הכל נשמר בענן ומתעדכן אצל כולם מיד.</div></div><div id="msgBody"></div>`;
     document.getElementById('mainContent').appendChild(s);
   }
   msgStart();
@@ -462,6 +592,20 @@ const css=document.createElement('style'); css.textContent=`
 .m-tbl th{background:#8E033C;color:#fff;padding:8px;font:700 13px Heebo,sans-serif;text-align:right}.m-tbl td{padding:7px 8px;border-bottom:1px solid #FFF1EB}.m-tbl td small{color:#8496ab}
 .m-tbl td.bad{color:#b91c1c;font-weight:800}.m-tbl td.warn{color:#b45309;font-weight:800}
 .m-areas{display:flex;flex-wrap:wrap;gap:6px}.m-areas span{background:#fff;border:1px solid #F3C2B0;border-radius:999px;padding:4px 12px;font-size:13px}
+.m-click{cursor:pointer}.m-click:hover{box-shadow:0 4px 14px rgba(142,3,60,.12)}
+.m-qh{font:800 14px Heebo,sans-serif;color:#52637a;margin:12px 2px 6px}.m-qh b{background:#FFF1EB;border-radius:999px;padding:0 8px;color:#8E033C}
+.m-tbl tr.m-rrot td:first-child{border-right:4px solid #c2410c}.m-tbl tr.m-ral td:first-child{border-right:4px solid #b91c1c}.m-tbl tr.m-ral{background:#fff7f7}
+.m-tbl a{color:#0f1e2e;text-decoration:none}.m-tbl a:hover{text-decoration:underline}
+.m-tiles-s .m-tile{padding:8px}.m-tiles-s .m-tile b{font-size:22px}
+.m-tl{display:flex;flex-direction:column;gap:6px;border-right:3px solid #F3C2B0;padding-right:10px;max-height:46vh;overflow:auto}
+.m-ev{display:flex;gap:8px;align-items:flex-start;background:#FBF6F3;border-radius:10px;padding:8px 10px;font-size:13.5px;line-height:1.5}.m-ev small{color:#8496ab}
+.m-ev.al{background:#fff1f1;border:1px solid #fecaca}.m-ev.tk{background:#fff;border:1px dashed #F3C2B0;cursor:pointer}.m-evi{font-size:17px;flex:none}
+.m-alert{display:flex;gap:8px;align-items:center;background:#fff1f1;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;font-size:13.5px}
+.m-next{background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:7px}
+.m-ck{display:flex;flex-direction:column;gap:4px}.m-ck>label{display:flex;gap:7px;align-items:center;font-size:14px;padding:4px 6px;border-radius:8px}.m-ck>label:hover{background:#FBF6F3}
+.m-ck>label span{flex:1}.m-ck>label.ok span{text-decoration:line-through;color:#8496ab}.m-ck input[type=checkbox]{width:auto!important}
+.m-ssd{margin-top:12px;background:#FFF1EB;border:1px solid #F3C2B0;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.6}
+.m-ssd-b{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}.m-ssd-b button{border:1px solid #F3C2B0;background:#fff;color:#8E033C;border-radius:9px;padding:6px 12px;font:700 13px Heebo,sans-serif;cursor:pointer}
 `;
 document.head.appendChild(css);
 })();
