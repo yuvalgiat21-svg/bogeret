@@ -351,7 +351,9 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 /* לינקים שימושיים — סרגל צדי קבוע (במחשב) / כפתור צף שפותח מגירה (בטלפון) */
 .app-row{display:flex;align-items:flex-start}
 .app-row>.main{flex:1;min-width:0}
-#lnkSide{display:none;width:210px;flex-shrink:0;position:sticky;top:12px;margin:20px 0 0 16px;background:#fff;border:1px solid #F3C2B0;border-radius:16px;padding:10px;overflow:hidden;box-sizing:border-box}
+#lnkSide{display:none;width:210px;flex-shrink:0;position:sticky;top:12px;margin:20px 0 0 16px;background:#fff;border:1px solid #F3C2B0;border-radius:16px;padding:10px;overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#F3C2B0 transparent;box-sizing:border-box}
+/* כשאין מספיק גובה (מסך נמוך / הרבה פריטים): קודם מצמצמים — בלי שורות התיאור ועם ריווח קטן; ואם עדיין לא נכנס — גלילה בתוך הסרגל */
+#lnkSide.tight .lnk-a{padding:4px 8px}#lnkSide.tight .lnk-a small{display:none}#lnkSide.tight .lnk-h{margin-bottom:4px}#lnkSide.tight .lnk-a .i{font-size:17px}
 #lnkSide.on{display:flex;flex-direction:column}
 #lnkSide .lnk-a{padding:6px 8px}
 #lnkSide .lnk-a small{white-space:normal;overflow-wrap:anywhere}
@@ -4560,7 +4562,8 @@ window.lnkSideRender=function(){ const a=document.getElementById('lnkSide'), f=d
 /* הסרגל הצדי נמתח עד תחתית המסך, בלי גלילה */
 window.lnkFit=lnkFit;
 function lnkFit(){ const a=document.getElementById('lnkSide'); if(!a||!a.classList.contains('on')) return;
-  const top=Math.max(12,a.getBoundingClientRect().top); a.style.height=Math.max(300,window.innerHeight-top-14)+'px'; }
+  const top=Math.max(12,a.getBoundingClientRect().top); a.style.height=Math.max(300,window.innerHeight-top-14)+'px';
+  a.classList.remove('tight'); if(a.scrollHeight>a.clientHeight+2) a.classList.add('tight'); }
 window.addEventListener('resize',()=>lnkFit()); window.addEventListener('scroll',()=>lnkFit(),{passive:true});
 window.lnkDrawer=function(o){ document.getElementById('lnkDrawer').classList.toggle('open',!!o); };
 function viewLinks(){
