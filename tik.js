@@ -536,7 +536,7 @@ let GR_T=null;
 function grpRefresh(){ clearTimeout(GR_T); GR_T=setTimeout(()=>{ document.querySelectorAll('[data-grpx]').forEach(el=>{ try{ el.innerHTML=grpHtml2(el.dataset.grpx,el.dataset.key); }catch(e){ console.warn('grpx',e); } }); },40); }
 window.grpRefresh=grpRefresh;
 document.addEventListener('click',e=>{ if(e.target.closest('.subnav,.nav-grid,[data-k]')) setTimeout(grpRefresh,30); });
-function grpHtml2(kind,key){ return kind==='cal'?grpCal(key):kind==='school'?grpSchool(key):kind==='lc'?grpLc(key):''; }
+function grpHtml2(kind,key){ return kind==='lcall'?lcAll():kind==='cal'?grpCal(key):kind==='school'?grpSchool(key):kind==='lc'?grpLc(key):''; }
 
 /* 📅 יומן קבוצה */
 function grpCal(key){
@@ -644,13 +644,61 @@ function grpLc(key){
     ${canEdit()?`<div class="tk-note"><a href="#" onclick="show('lc');return false">פתיחת מרכז הלמידה ←</a></div>`:''}`;
 }
 
+/* ═══ מרכז למידה (רכז) — תובנות ופערים לימודיים של כל השכבה (בקשת יובל 28.11.2026) ═══
+   מצליב את נתוני סמרט סקול (ציונים, חיסורים, רמת סיכון) עם מרכז הלמידה (בקשות, תגבורים, קבוצות קבועות). */
+const LCA={lay:'',grp:''};
+window.lcaSet=function(k,v){ LCA[k]=v; grpRefresh(); };
+function lcAll(){
+  if(!isAdmin()) return '';
+  if(!(window.LIMUDI&&LIMUDI.students)) return '<div class="tk-empty">עוד לא נטענו נתונים מסמרט סקול</div>';
+  const today=todayIso(), wkEnd=(()=>{ const d=new Date(); d.setDate(d.getDate()+7); return isoD(d); })();
+  const grpName=s=>s.g||'';
+  const all=students().filter(s=>(!LCA.lay||(LCA.lay==='אקדמיה'?s.g==='אקדמיה':sGrade(s)===LCA.lay&&s.g!=='אקדמיה'))&&(!LCA.grp||s.g===LCA.grp))
+    .map(s=>({s,r:typeof limFind==='function'?limFind(s.n):null,g:tutorGap(s.n)})).filter(x=>x.r);
+  const NM=new Set(all.map(x=>x.s.n));
+  const lv=k=>all.filter(x=>x.r['רמה']===k);
+  const gaps=all.filter(x=>x.g&&x.g.missing.length);
+  const reqs=(LC.req||[]).filter(r=>r&&NM.has(r.sid)&&r.status==='pending');
+  const oldReq=reqs.filter(r=>Date.now()-(r.created||0)>3*864e5);
+  const ses=Object.entries(LC.ses||{}).map(([k,v])=>{ if(!v) return null; const [w,d]=k.split('|'); const dt=new Date(w+'T12:00:00'); dt.setDate(dt.getDate()+(+d||0)); return {iso:isoD(dt),v}; }).filter(Boolean);
+  const weekSes=ses.filter(x=>x.iso>=today&&x.iso<=wkEnd&&(x.v.students||[]).some(n=>NM.has(n)));
+  /* ביקוש לפי מקצוע: כמה חלשים, כמה מהם עם תגבור */
+  const subj={}; all.forEach(x=>(x.g?x.g.weak:[]).forEach(w=>{ const o=subj[w.s]=subj[w.s]||{weak:[],cov:0}; o.weak.push(x.s.n); if(w.tut) o.cov++; }));
+  const subjL=Object.entries(subj).sort((a,b)=>(b[1].weak.length-b[1].cov)-(a[1].weak.length-a[1].cov)||b[1].weak.length-a[1].weak.length);
+  const absBy={}; all.forEach(({s,r})=>(r['מקצועות']||[]).forEach(x=>{ if(+x[3]>=8&&+x[4]/+x[3]>=0.4)(absBy[x[0]]=absBy[x[0]]||[]).push(s.n); }));
+  const zero=all.filter(x=>+x.r['ציוני_אפס']>0), absHi=all.filter(x=>+x.r['אחוז_חיסור']>=20);
+  /* לפי קבוצה */
+  const groups=[...new Set(all.map(x=>grpName(x.s)))].sort();
+  const byG=groups.map(g=>{ const L=all.filter(x=>grpName(x.s)===g); return {g,n:L.length,red:L.filter(x=>x.r['רמה']==='אדום').length,orange:L.filter(x=>x.r['רמה']==='כתום').length,gap:L.filter(x=>x.g&&x.g.missing.length).length,req:(LC.req||[]).filter(r=>r&&r.status==='pending'&&L.some(x=>x.s.n===r.sid)).length}; });
+  const lnk=n=>`<a href="#" onclick="tikOpen('${jq(n)}','lc');return false">${E(n)}</a>`;
+  const tile=(n,l,c)=>`<div class="tk-tile" style="--c:${c}"><b>${n}</b><small>${l}</small></div>`;
+  const allGroups=[...new Set(students().map(s=>s.g).filter(Boolean))].sort();
+  return `<div class="info-box"><div class="icon">📊</div><div><b>תובנות ופערים לימודיים — מבט שכבתי</b><br>הצלבה של סמרט סקול (ציונים, חיסורים, רמת סיכון${LIMUDI.date?', עודכן '+E(LIMUDI.date):''}) עם מרכז הלמידה (בקשות, תגבורים וקבוצות קבועות). לחיצה על שם פותחת את התיק בלשונית מרכז למידה.</div></div>
+    <div class="tk-sub2">${[['','כל השכבה'],['יא',"יא'"],['יב',"יב'"],['אקדמיה','אקדמיה']].map(([k,l])=>`<button class="${LCA.lay===k&&!LCA.grp?'on':''}" onclick="LCA_GRP('')||lcaSet('lay','${k}')">${l}</button>`).join('')}
+      <select class="tk-sel" onchange="lcaSet('grp',this.value)"><option value="">כל הקבוצות</option>${allGroups.map(g=>`<option ${LCA.grp===g?'selected':''}>${E(g)}</option>`).join('')}</select></div>
+    <div class="tk-tiles">${tile(all.length,'חניכים עם נתונים','#8E033C')}${tile(lv('אדום').length,'באדום','#dc2626')}${tile(lv('כתום').length,'בכתום','#ea580c')}${tile(gaps.length,'חלשים בלי תגבור','#b91c1c')}${tile(reqs.length,'בקשות ממתינות','#b45309')}${tile(weekSes.length,'תגבורים השבוע','#0369a1')}</div>
+    <h3 class="tk-h3">📌 פערים — חלשים במקצוע ואין להם תגבור (${gaps.length})</h3>
+    ${gaps.length?`<div class="tk-tblw"><table class="tk-tbl"><tr><th>חניך/ה</th><th>קבוצה</th><th>רמה</th><th>מקצועות בלי תגבור</th></tr>${gaps.sort((a,b)=>b.g.missing.length-a.g.missing.length).map(x=>`<tr><td>${lnk(x.s.n)}</td><td>${E(grpName(x.s))}</td><td>${E(x.r['רמה']||'')}</td><td>${x.g.missing.map(w=>`<span class="tk-pill" style="--c:#b91c1c">${E(w.s)} ${w.g}</span>`).join(' ')}</td></tr>`).join('')}</table></div>`:'<div class="tk-ins ok">לכל החלשים יש תגבור 👏</div>'}
+    <h3 class="tk-h3">📚 ביקוש לפי מקצוע</h3>
+    ${subjL.length?`<div class="tk-tblw"><table class="tk-tbl"><tr><th>מקצוע</th><th>מתחת ל-55</th><th>עם תגבור</th><th>בלי תגבור</th><th>המלצה</th></tr>${subjL.map(([k,o])=>{ const miss=o.weak.length-o.cov;
+      return `<tr><td><b>${E(k)}</b></td><td>${o.weak.length}</td><td>${o.cov}</td><td style="${miss?'color:#b91c1c;font-weight:800':''}">${miss}</td><td>${miss>=3?'💡 לפתוח קבוצת תגבור קבועה':miss?'לפתוח בקשות אישיות':'✓'}</td></tr>`; }).join('')}</table></div>`:'<div class="tk-empty">אין ציונים מתחת ל-55</div>'}
+    <h3 class="tk-h3">👥 לפי קבוצה</h3>
+    <div class="tk-tblw"><table class="tk-tbl"><tr><th>קבוצה</th><th>חניכים</th><th>באדום</th><th>בכתום</th><th>חלשים בלי תגבור</th><th>בקשות ממתינות</th></tr>${byG.map(o=>`<tr><td><a href="#" onclick="lcaSet('grp','${jq(o.g)}');return false"><b>${E(o.g)}</b></a></td><td>${o.n}</td><td>${o.red||''}</td><td>${o.orange||''}</td><td style="${o.gap?'color:#b91c1c;font-weight:800':''}">${o.gap||''}</td><td>${o.req||''}</td></tr>`).join('')}</table></div>
+    <h3 class="tk-h3">⚠️ עוד נושאים לטיפול</h3>
+    ${oldReq.length?`<div class="tk-ins bad"><b>⏳ בקשות תגבור שממתינות מעל 3 ימים</b> <span class="tk-pill" style="--c:#8E033C">${oldReq.length}</span><div class="tk-ins-n">${oldReq.map(r=>lnk(r.sid)+' ('+E(r.subject||'')+')').join(' · ')}</div></div>`:''}
+    ${zero.length?`<div class="tk-ins"><b>0️⃣ עבודות שלא הוגשו (ציון 0)</b> <span class="tk-pill" style="--c:#8E033C">${zero.length}</span><div class="tk-ins-n">${zero.map(x=>lnk(x.s.n)).join(' · ')}</div><div class="tk-note">💡 אפשר לשבץ שעת השלמת עבודות במרכז הלמידה</div></div>`:''}
+    ${absHi.length?`<div class="tk-ins"><b>🏫 חיסורים מעל 20%</b> <span class="tk-pill" style="--c:#8E033C">${absHi.length}</span><div class="tk-ins-n">${absHi.map(x=>lnk(x.s.n)).join(' · ')}</div></div>`:''}
+    ${Object.keys(absBy).length?`<div class="tk-ins"><b>מקצועות עם היעדרות גבוהה (40%+)</b><div class="tk-cnt" style="margin-top:6px">${Object.entries(absBy).sort((a,b)=>b[1].length-a[1].length).slice(0,8).map(([k,a])=>`<span>${E(k)} <b>${a.length}</b></span>`).join('')}</div></div>`:''}`;
+}
+window.LCA_GRP=function(){ LCA.grp=''; return false; };
+
 /* ═══════════ חיבור לפורטל ═══════════ */
 function render(){ const el=document.getElementById('tikBody'); if(!el||!me()) return; el.innerHTML=T.stu?fileView():listView(); }
 window.tikRender=render;
 window.tikMount=function(){ if(!me()||me().lcOnly) return;
   if(!document.getElementById('sec-tik')){ const s=document.createElement('div'); s.className='sec'; s.id='sec-tik'; s.innerHTML='<div id="tikBody"></div>'; document.getElementById('mainContent').appendChild(s); }
   start(); };
-const prevShow=window.show; window.show=function(id){ prevShow&&prevShow(id); if(id==='tik') render(); };
+const prevShow=window.show; window.show=function(id){ prevShow&&prevShow(id); if(id==='tik') render(); if(id==='lc'||id==='groups') grpRefresh(); };
 /* לחיצה על שם חניך/ה בכל מקום בפורטל פותחת את התיק האישי */
 window.showStudentDetails=function(idx){ const s=students()[idx]; if(s) tikOpen(s.n); };
 
@@ -698,6 +746,7 @@ const css=document.createElement('style'); css.textContent=`
 .tk-wr{position:relative}.tk-who{display:inline-block;font:700 13px Heebo,sans-serif;color:#0e7490;text-decoration:none;margin:2px 4px 3px}
 .tk-leg{background:#FBF6F3}
 .tk-sub2{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 12px}.tk-sub2 button{border:1px solid #F3C2B0;background:#fff;border-radius:10px;padding:6px 11px;font:700 13px Heebo,sans-serif;color:#7A6A66;cursor:pointer}
+.tk-sel{border:1px solid #F3C2B0;border-radius:10px;padding:6px 10px;font:600 13px Assistant,Heebo,sans-serif;background:#fff}
 .tk-sub2 button.on{background:#8E033C;border-color:#8E033C;color:#fff}
 .tk-ins{background:#fff;border:1px solid #F3C2B0;border-radius:12px;padding:9px 12px;margin-bottom:8px;font-size:14px;line-height:1.55}.tk-ins.bad{background:#fff7f7;border-color:#fecaca}.tk-ins.ok{background:#ecfdf5;border-color:#bbf7d0}
 .tk-ins a,.tk-tbl a{color:#0369a1;text-decoration:none}.tk-ins-n{margin-top:4px}

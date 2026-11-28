@@ -6295,7 +6295,13 @@ function lcMount(){
   if(!lcRole()){ const b=document.getElementById('tab-lc'); if(b) b.remove(); return; }
   if(document.getElementById('sec-lc')) return;
   const s=document.createElement('div'); s.className='sec'; s.id='sec-lc';
-  s.innerHTML='<iframe id="lcFrame" title="מרכז למידה" style="width:100%;height:calc(100vh - 150px);min-height:620px;border:0;border-radius:14px;background:#FBF6F3;display:block;"></iframe>';
+  const fr='<iframe id="lcFrame" title="מרכז למידה" style="width:100%;height:calc(100vh - 150px);min-height:620px;border:0;border-radius:14px;background:#FBF6F3;display:block;"></iframe>';
+  if(ME&&ME.mode==='admin'){
+    /* לרכז: תובנות ופערים לימודיים של כל השכבה (סמרט סקול מול מרכז הלמידה), ואז מרכז הלמידה עצמו (בקשת יובל 28.11.2026) */
+    s.appendChild(mkNav('lcx',[{k:'ins',label:'📊 תובנות ופערים לימודיים'},{k:'center',label:'📖 מרכז הלמידה'}],pickIn(s,'lcx')));
+    const a=mkSub('lcx-ins',true); a.innerHTML='<div data-grpx="lcall" data-key="all"><div style="color:var(--text3);padding:14px">טוען…</div></div>';
+    const b=mkSub('lcx-center'); b.innerHTML=fr; s.appendChild(a); s.appendChild(b);
+  } else s.innerHTML=fr;
   document.getElementById('mainContent').appendChild(s);
 }
 
@@ -8149,7 +8155,7 @@ window.syncRamzorFromSheet = async function() {
 };
 </script>
 <script src="msg.js?v=7"></script>
-<script src="tik.js?v=11"></script>
+<script src="tik.js?v=12"></script>
 <script src="home.js?v=4"></script>
 <script src="chk.js?v=1"></script>
 <script src="fam.js?v=3"></script>
