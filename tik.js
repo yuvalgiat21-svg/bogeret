@@ -221,8 +221,8 @@ function studyTab(s){
 
 /* מערכת שעות: {ימים:[...], שעות:[[תא לכל יום]...]} או רשימת [יום, שעה, מקצוע, מורה] */
 function ttHtml(TT){ if(!TT) return '<div class="tk-empty">מערכת השעות תופיע אחרי העדכון השבועי הבא מסמרט סקול</div>';
-  if(Array.isArray(TT)&&TT.length&&Array.isArray(TT[0])){ const days=[...new Set(TT.map(r=>r[0]))], hrs=[...new Set(TT.map(r=>r[1]))].sort((a,b)=>(+a||0)-(+b||0));
-    return `<div class="tk-tblw"><table class="tk-tbl tk-tt"><tr><th>שעה</th>${days.map(d=>`<th>${E(d)}</th>`).join('')}</tr>${hrs.map(h=>`<tr><td><b>${E(h)}</b></td>${days.map(d=>{ const c=TT.filter(r=>r[0]===d&&r[1]===h); return `<td>${c.map(r=>`${E(r[2])}${r[3]?`<small> · ${E(r[3])}</small>`:''}`).join('<br>')}</td>`; }).join('')}</tr>`).join('')}</table></div>`; }
+  if(Array.isArray(TT)&&TT.length&&Array.isArray(TT[0])){ const ORD=['ראשון','שני','שלישי','רביעי','חמישי','שישי']; const days=[...new Set(TT.map(r=>r[0]))].sort((a,b)=>ORD.indexOf(a)-ORD.indexOf(b)), hrs=[...new Set(TT.map(r=>r[1]))].sort((a,b)=>(+a||0)-(+b||0));
+    return `<div class="tk-tblw"><table class="tk-tbl tk-tt"><tr><th>שעה</th>${days.map(d=>`<th>${E(d)}</th>`).join('')}</tr>${hrs.map(h=>`<tr><td><b>${E(h)}</b></td>${days.map(d=>{ const c=TT.filter(r=>r[0]===d&&r[1]===h); return `<td>${c.map(r=>`<b>${E(r[2])}</b>${r[3]?`<br><small>${E(r[3])}</small>`:''}${r[4]?`<br><small>חדר ${E(r[4])}</small>`:''}`).join('<hr>')}</td>`; }).join('')}</tr>`).join('')}</table></div>`; }
   return '<div class="tk-empty">מערכת השעות לא בפורמט מוכר</div>'; }
 /* ═══════════ עורך רשומה (כולל הקלטה ותמלול) ═══════════ */
 window.tikNew=function(t,stu,g){ if(!canEdit()) return; T.ed={id:null,t,stu:stu||'',g:g||(stuBy(stu)||{}).g||'',d:todayIso(),f:{},cat:'',sev:'1',tr:''}; edRender(); };
@@ -426,7 +426,7 @@ const css=document.createElement('style'); css.textContent=`
 .tk-wr{position:relative}.tk-who{display:inline-block;font:700 13px Heebo,sans-serif;color:#0e7490;text-decoration:none;margin:2px 4px 3px}
 .tk-leg{background:#FBF6F3}
 .tk-lvl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}.tk-lvl small{color:#8496ab}
-.tk-tt td,.tk-tt th{text-align:center;font-size:13px;min-width:70px}.tk-tt td small{color:#7A6A66}
+.tk-tt td,.tk-tt th{text-align:center;font-size:12.5px;min-width:86px;vertical-align:top;line-height:1.35}.tk-tt td b{font-weight:700}.tk-tt hr{border:0;border-top:1px dashed #F3C2B0;margin:4px 0}.tk-tt td small{color:#7A6A66}
 .tk-fmtd{background:#fff;border:1px solid #F3C2B0;border-radius:12px;padding:7px 12px;margin-bottom:10px}.tk-fmtd summary{cursor:pointer;font:700 14px Heebo,sans-serif;color:#8E033C}
 .tk-fmtr{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-top:1px solid #FFF1EB}.tk-fmtr>b{font:700 13.5px Heebo,sans-serif;min-width:120px}
 .tik-modal{position:fixed;inset:0;background:rgba(15,30,46,.45);z-index:9100;display:flex;align-items:flex-start;justify-content:center;padding:30px 10px;overflow:auto}
