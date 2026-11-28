@@ -1627,6 +1627,7 @@ const NEW_TABS = [
   {id:'home',     icon:'🎛️', label:'חדר בקרה',       tier:'main', admin:true},
   {id:'mine',     icon:'🏠', label:'הקבוצה שלי',     tier:'main', staff:true},
   {id:'overview', icon:'📊', label:'סקירה',          tier:'main'},
+  {id:'tik',      icon:'🧑‍🎓', label:'חניכים',         tier:'main'},
   {id:'msg',      icon:'💬', label:'קשר ומעקב',      tier:'main'},
   {id:'groups',   icon:'👥', label:'ניהול קבוצה',    tier:'main'},
   {id:'attendance',icon:'✅', label:'נוכחות',         tier:'main'},
@@ -1643,7 +1644,7 @@ const NEW_TABS = [
   {id:'users',    icon:'🔐', label:'משתמשים',        tier:'more', admin:true},
 ];
 /* סדר הסרגל הקודם (כפי שהיה באוויר לפני השינוי) */
-const CLASSIC_ORDER = ['overview','msg','calendar','attendance','parents','team','groups','pedagogy','lc','companion','eduplan','evacplan','prof','graduates','users'];
+const CLASSIC_ORDER = ['overview','tik','msg','calendar','attendance','parents','team','groups','pedagogy','lc','companion','eduplan','evacplan','prof','graduates','users'];
 const NAV_MODE_KEY='bogeret_nav_mode', NAV_MODE_PATH='portal/bogeret/secure/settings/nav_mode';
 let NAV_MODE=(()=>{ try{ return localStorage.getItem(NAV_MODE_KEY)==='classic'?'classic':'new'; }catch(e){ return 'new'; } })();
 
@@ -1964,7 +1965,7 @@ function viewRamzor(names, title){
 
 /* ═══════════ שימור ידע — פר קבוצה ═══════════ */
 const KN_TYPES=[['meetings','📋','סיכומי פגישות'],['contracts','📜','חוזי התנהגות'],
-  ['weekly','📅','סיכומי שבועי'],['personal_talks','💬','שיחות אישיות'],['events','📊','מונה אירועים']];
+  ['weekly','📅','סיכומי שבועי'],['personal_talks','💬','שיחות'],['events','📊','מונה אירועים']];
 function knGet(scope,type){ try{return JSON.parse(localStorage.getItem('kn_'+scope+'_'+type)||'[]');}catch(e){return [];} }
 function knSet(scope,type,v){ try{localStorage.setItem('kn_'+scope+'_'+type,JSON.stringify(v));}catch(e){} }
 window.knAdd=function(scope,type){
@@ -1992,26 +1993,24 @@ window.knRender=function(scope,type){
 };
 function viewKnowledge(scope,title){
   return info('📋',`סיכומי פגישות — ${title}`,
-    'הרשומות נשמרות בנפרד לכל קבוצה, בדפדפן הזה. בחר קטגוריה ולחץ "הוסף".')
+    'ריכוז קבוצתי. שיחות, אירועים וחוזים משויכים לחניך/ה ונשמרים גם בתיק האישי שלו/ה (לשונית חניכים). לכל סוג: פורמט מוכן, פורמט משלכם, מסמך להדפסה, והקלטה עם תמלול.')
    + `<div class="subnav" id="kn${scope}Subnav">${KN_TYPES.map(([k,ic,lb],i)=>
         `<button class="${i===0?'active':''}" data-k="${k}">${ic} ${lb}</button>`).join('')}</div>
       <div id="knwrap-${scope}">${KN_TYPES.map(([k,ic,lb],i)=>
         `<div class="subsec${i===0?' active':''}" id="kn-${scope}-${k}">
-          <div class="panel"><div class="panel-h"><h2>${ic} ${lb}</h2>
-            <button class="btn" onclick="knAdd('${scope}','${k}')">➕ הוסף</button></div>
-            <div class="panel-b" id="knb-${scope}-${k}"></div></div>
+          <div class="panel"><div class="panel-h"><h2>${ic} ${lb}</h2></div>
+            <div class="panel-b" data-tikgrp="${scope}" data-tikt="${k}"><div style="color:var(--text2);padding:14px">טוען…</div></div></div>
         </div>`).join('')}</div>`;
 }
-function knWire(scope){
-  const nav=document.getElementById('kn'+scope+'Subnav'); if(!nav) return;
-  const wrap=document.getElementById('knwrap-'+scope);
-  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{
-    wrap.querySelectorAll(':scope > .subsec').forEach(s=>s.classList.remove('active'));
-    document.getElementById('kn-'+scope+'-'+b.dataset.k).classList.add('active');
-    nav.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  });
-  KN_TYPES.forEach(([k])=>knRender(scope,k));
-}
+/* הלשוניות הפנימיות נבנות לפני שהן על המסך, לכן הלחיצה נתפסת ברמת הדף (תיקון 28.11.2026: הלחיצות לא הגיבו) */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.subnav[id^="kn"][id$="Subnav"] button[data-k]'); if(!b) return;
+  const nav=b.parentElement, scope=nav.id.slice(2,-6), wrap=document.getElementById('knwrap-'+scope); if(!wrap) return;
+  wrap.querySelectorAll(':scope > .subsec').forEach(s=>s.classList.remove('active'));
+  const t=document.getElementById('kn-'+scope+'-'+b.dataset.k); if(t) t.classList.add('active');
+  nav.querySelectorAll('button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+});
+function knWire(scope){ setTimeout(()=>{ if(window.tikGrpHtml&&window.TIK&&TIK.ok) document.querySelectorAll(`[data-tikgrp="${scope}"]`).forEach(el=>el.innerHTML=tikGrpHtml(scope,el.dataset.tikt)); },0); }
 
 /* ═══════════ שימור ידע — תיקיות נושאים וקבצים ═══════════ */
 const KB_ROOT='portal/bogeret/kb';
@@ -5488,7 +5487,8 @@ function reorganize(){
 
   /* ---------- 1. סקירה ---------- */
   const ov=mkSec('overview');
-  const ovItems=[{k:'general',label:'📊 נתונים כלליים'},{k:'alphon',label:'📋 אלפון חניכים'},
+  /* האלפון עבר ללשונית הראשית "חניכים" (תיק אישי לכל חניך/ה) */
+  const ovItems=[{k:'general',label:'📊 נתונים כלליים'},
     {k:'goals',label:'🎯 מטרות ויעדים'},{k:'ramzor',label:'🚦 רמזור נשירה'},
     {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},{k:'rooms',label:'🏠 שיבוץ חדרים'}];
   ov.appendChild(mkNav('ov',ovItems,pickIn(ov,'ov')));
@@ -6226,6 +6226,7 @@ function initApp() {
   reorganize();
   lcMount();
   if (window.msgMount) msgMount();
+  if (window.tikMount) tikMount();
   if (window.renderGrads) renderGrads('');
   if (window.homeMount) homeMount();
   navRender();
@@ -6251,8 +6252,8 @@ function lcMount(){
 /* ── סרגל לשוניות עם לשוניות אב ותפריט נפתח ── */
 /* סרגל לפי תפקיד: מה בשורה הראשית ומה תחת "עוד" */
 const NAV_LAYOUT={
-  admin:['home','overview','msg','groups','attendance','parents','lc','eduplan','companion','calendar'],
-  staff:['mine','groups','msg','calendar','attendance','parents']
+  admin:['home','overview','tik','msg','groups','attendance','parents','lc','eduplan','companion','calendar'],
+  staff:['mine','tik','groups','msg','calendar','attendance','parents']
 };
 const navRole=()=>ME&&ME.mode==='admin'?'admin':'staff';
 function navVisible(){
@@ -8097,6 +8098,7 @@ window.syncRamzorFromSheet = async function() {
 };
 </script>
 <script src="msg.js?v=7"></script>
+<script src="tik.js?v=1"></script>
 <script src="home.js?v=2"></script>
 <script src="chk.js?v=1"></script>
 <script src="fam.js?v=2"></script>
