@@ -13,7 +13,7 @@ const ROOT='portal/bogeret/secure';
 const TYPES={week:['📰','סיכום שבוע'],trip:['🚌','אישור הורים לטיול / פעילות'],survey:['📋','סקר להורים']};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const kOf=n=>sha256hex('stu:'+n).slice(0,12);
-const toast=m=>window.msgToast?msgToast(m):alert(m);
+const toast=m=>{ let t=document.getElementById('famToast'); if(!t){ t=document.createElement('div'); t.id='famToast'; t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#8E033C;color:#fff;padding:10px 18px;border-radius:999px;font:700 14px Heebo,sans-serif;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);transition:opacity .3s'; document.body.appendChild(t); } t.textContent=m; t.style.opacity='1'; clearTimeout(t._h); t._h=setTimeout(()=>{t.style.opacity='0'},2600); };
 const dt=t=>t?new Date(t).toLocaleDateString('he-IL',{day:'numeric',month:'numeric'})+' '+new Date(t).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}):'';
 const fmtD=s=>s?s.split('-').reverse().slice(0,2).map(Number).join('.'):'';
 const rnd=n=>{const A='abcdefghijkmnpqrstuvwxyz23456789',a=new Uint32Array(n);crypto.getRandomValues(a);return [...a].map(x=>A[x%A.length]).join('')};

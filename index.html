@@ -354,7 +354,7 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 #lnkSide{display:none;width:210px;flex-shrink:0;position:sticky;top:12px;margin:20px 0 0 16px;background:#fff;border:1px solid #F3C2B0;border-radius:16px;padding:10px;overflow:hidden;box-sizing:border-box}
 #lnkSide.on{display:flex;flex-direction:column}
 #lnkSide .lnk-a{padding:6px 8px}
-#lnkSide .lnk-a small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+#lnkSide .lnk-a small{white-space:normal;overflow-wrap:anywhere}
 .lnk-tool{background:#FFF1EB;border:1px solid #F3C2B0;margin-bottom:4px}.lnk-tool:hover{background:#ffe3d8}
 .lnk-h{font:800 14px Heebo,sans-serif;color:#8E033C;margin:0 4px 8px;display:flex;align-items:center;gap:6px}
 .lnk-a{display:flex;align-items:center;gap:9px;padding:8px;border-radius:11px;text-decoration:none;color:inherit;font-size:13.5px;line-height:1.25}
@@ -4473,6 +4473,7 @@ const LINKS=[
 /* סרגל צדי — נבנה אחרי הכניסה מאותה רשימת LINKS */
 const TOOLS=[
   {ic:'🏘️',t:'שריון מתחמים',d:'לוח המתחמים — מחובר לגיליון של פז',go:"show('rooms')"},
+  {ic:'📚',t:'מאגר נושאים',d:'חומרים מוכנים לפעולות מהדרייב',go:"show('edutopics');renderEduTopics()"},
   {ic:'📌',t:'גאנט שנתי',d:'כל אירועי השנה על ציר הזמן',go:"calTool('gantt')"},
   {ic:'🗓️',t:'לוח שבתות ואירועים',d:'שבתות, חופשות ואירועי תשפ"ז',go:"calTool('events')"},
 ];
@@ -5711,8 +5712,7 @@ function reorganize(){
   main.appendChild(cp);
   setTimeout(()=>{ try{ cmpRender(); }catch(e){ console.warn('cmp',e); } },0);
   const ep=mkSec('eduplan');
-  ep.appendChild(mkNav('ep',[{k:'plan',label:'📊 תכנון מול ביצוע'},{k:'topics',label:'📚 מאגר נושאים'}], k=>{ pickIn(ep,'ep')(k); if(k==='topics') renderEduTopics(); }));
-  const epPlan=mkSub('ep-plan',true), epTopics=mkSub('ep-topics');
+  const epPlan=mkSub('ep-plan',true), epTopics=mkSec('edutopics');
   epTopics.innerHTML=info('📚','מאגר נושאים לפעולות','חומרים מוכנים מהדרייב לפי נושא: חגים ומועדים, אישים, מיניות בריאה, מורשת קרב, השכלה פיננסית ועוד. בוחרים נושא, מחפשים ופותחים.')
     +`<div class="panel"><div class="panel-b" id="eduTopicsBody">טוען…</div></div>`;
   const epTop=document.createElement('div');
@@ -5723,8 +5723,8 @@ function reorganize(){
        <div class="panel-b" id="eduMainBody"></div></div>`;
   epPlan.appendChild(epTop);
   while(old.edu.firstChild) epPlan.appendChild(old.edu.firstChild);
-  ep.appendChild(epPlan); ep.appendChild(epTopics);
-  main.appendChild(ep);
+  ep.appendChild(epPlan);
+  main.appendChild(ep); main.appendChild(epTopics);
 
   /* ---------- נוכחות — לשונית ראשית ---------- */
   const at=mkSec('attendance');
@@ -8029,7 +8029,7 @@ window.syncRamzorFromSheet = async function() {
 <script src="msg.js?v=5"></script>
 <script src="home.js?v=1"></script>
 <script src="chk.js?v=1"></script>
-<script src="fam.js?v=1"></script>
+<script src="fam.js?v=2"></script>
 <script src="rooms.js?v=1"></script>
 <script src="push.js?v=2"></script>
 </body>
