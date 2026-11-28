@@ -76,9 +76,9 @@ let DB=null; async function db(){ if(!DB) DB=await secureDb(); return DB; }
 async function run(op){ for(let i=0;i<2;i++){ try{ const {dbm,rdb}=await db(); await op(dbm,rdb); return true; }catch(e){ console.warn('tik',e); DB=null; if(i===0){ await new Promise(r=>setTimeout(r,1000)); continue; } toast('⚠️ השמירה נכשלה — בדקו חיבור ונסו שוב'); return false; } } }
 const put=(p,v)=>run((dbm,rdb)=>dbm.set(dbm.ref(rdb,ROOT+'/'+p),v));
 /* ═══ מרכז הלמידה: תגבורים (בקשות + קבוצות קבועות) — לסנכרון מול המצב הלימודי ═══ */
-const LC={req:[],grp:[],tch:[],ses:{},ok:false};
-function lcListen(dbm,rdb){ ['requests','fixedGroups','teachers','sessions'].forEach(k=>{ try{ dbm.onValue(dbm.ref(rdb,'portal/bogeret/secure/lc/'+k),sn=>{ let v=[]; try{ v=JSON.parse(sn.val()||'[]')||[]; }catch(e){}
-  if(k==='requests') LC.req=Array.isArray(v)?v:[]; else if(k==='fixedGroups') LC.grp=v; else if(k==='teachers') LC.tch=v; else LC.ses=v||{}; LC.ok=true; refresh();
+const LC={req:[],grp:[],tch:[],ses:{},exits:[],ok:false};
+function lcListen(dbm,rdb){ ['requests','fixedGroups','teachers','sessions','exits'].forEach(k=>{ try{ dbm.onValue(dbm.ref(rdb,'portal/bogeret/secure/lc/'+k),sn=>{ let v=[]; try{ v=JSON.parse(sn.val()||'[]')||[]; }catch(e){}
+  if(k==='requests') LC.req=Array.isArray(v)?v:[]; else if(k==='fixedGroups') LC.grp=v; else if(k==='teachers') LC.tch=v; else if(k==='exits') LC.exits=Array.isArray(v)?v:[]; else LC.ses=v||{}; LC.ok=true; refresh();
   /* מסך הבית מציג התראת "חלשים בלי תגבור" — מרעננים אותו כשהנתונים מגיעים */
   clearTimeout(LC.t); LC.t=setTimeout(()=>{ if(document.querySelector('#sec-home.active,#sec-mine.active')&&window.homeRender) homeRender(); },400); },()=>{}); }catch(e){} }); }
 const nrm=x=>String(x||'').replace(/["'״׳`]/g,'').replace(/[יו]/g,'').replace(/\s+/g,'').replace(/\d.*$/,'');
@@ -108,7 +108,7 @@ async function migrate(dbm,rdb){ if(MIGR||!isAdmin()) return; MIGR=true;
     try{ await dbm.set(dbm.ref(rdb,CONF+'/'+r.g+'/'+r.id),{f:r.f||{},tr:r.tr||'',bm:'',at:r.at||Date.now()});
       await dbm.update(dbm.ref(rdb,ROOT+'/r/'+r.id),{f:null,tr:null,conf:1}); }catch(e){ console.warn('tik migrate',e); } } }
 function start(){ if(T.started||!me()) return; T.started=true;
-  db().then(({dbm,rdb})=>{ confListen(dbm,rdb); lcListen(dbm,rdb); return dbm.onValue(dbm.ref(rdb,ROOT),snap=>{ const v=snap.val()||{}; T.r=v.r||{}; T.fmt=v.fmt||{}; T.ok=true; mineFetch(dbm,rdb); migrate(dbm,rdb); refresh(); },
+  db().then(({dbm,rdb})=>{ confListen(dbm,rdb); lcListen(dbm,rdb); return dbm.onValue(dbm.ref(rdb,ROOT),snap=>{ const v=snap.val()||{}; T.r=v.r||{}; T.fmt=v.fmt||{}; T.cal=v.cal||{}; T.ok=true; mineFetch(dbm,rdb); migrate(dbm,rdb); refresh(); },
     e=>{ console.warn('tik listen',e); T.started=false; DB=null; setTimeout(start,3000); }); }).catch(()=>{ T.started=false; DB=null; setTimeout(start,3000); }); }
 function refresh(){ const ae=document.activeElement; if(T.ed||T.rec) return; if(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&ae.closest('#sec-tik,.tik-modal')) return;
   if(active()) render(); document.querySelectorAll('[data-tikgrp]').forEach(el=>{ el.innerHTML=grpHtml(el.dataset.tikgrp,el.dataset.tikt); }); }
@@ -140,7 +140,7 @@ window.tikG=function(v){ T.g=v; render(); };
 window.tikGap=function(){ T.gap=!T.gap; render(); };
 
 /* ═══════════ התיק האישי ═══════════ */
-const TABS=[['info','📇 פרטים'],['diary','🕓 יומן אישי'],['talks','💬 שיחות ותיעוד'],['events','📊 מונה אירועים'],['contracts','📜 חוזים'],['clubs','🎨 חוגים ותוכנית מלווה'],['home','🏡 ביקורי בית ודמי כיס'],['health','🏥 בריאות ותזונה'],['study','🏫 בית ספר'],['lc','📖 מרכז למידה'],['ramzor','🚦 רמזור נשירה']];
+const TABS=[['info','📇 פרטים'],['diary','📅 יומן אישי'],['talks','💬 שיחות ותיעוד'],['events','📊 מונה אירועים'],['clubs','🎨 חוגים ומלווה'],['home','🏡 ביקורים ודמי כיס'],['health','🏥 בריאות'],['study','🏫 בית ספר'],['lc','📖 מרכז למידה'],['ramzor','🚦 רמזור']];
 window.tikOpen=function(n,tab){ if(!stuBy(n)) return; const sm=document.getElementById('student-modal'); if(sm) sm.style.display='none';
   T.stu=n; T.tab=tab||'info'; if(!active()) show('tik'); else render(); window.scrollTo({top:0}); };
 window.tikBack=function(){ T.stu=null; render(); };
@@ -149,7 +149,7 @@ function fileView(){
   const s=stuBy(T.stu); if(!s){ T.stu=null; return listView(); }
   const R=ofStu(s.n), clr=GC(s.g);
   const ML=Object.values((window.MSG&&MSG.logs)||{}).filter(l=>l&&l.stu===s.n).length;
-  const cnt={talks:R.filter(r=>TYPES[r.t].priv).length+ML,events:R.filter(r=>r.t==='events').length,contracts:R.filter(r=>r.t==='contracts').length};
+  const cnt={talks:R.filter(r=>TYPES[r.t].priv||r.t==='contracts').length+ML,events:R.filter(r=>r.t==='events').length,contracts:R.filter(r=>r.t==='contracts').length};
   let body='';
   if(T.tab==='info') body=infoTab(s); else if(T.tab==='diary') body=diaryTab(s); else if(T.tab==='talks') body=talksTab(s);
   else if(T.tab==='events') body=eventsTab(s); else if(T.tab==='contracts') body=recTab(s,['contracts']); else if(T.tab==='clubs') body=clubsTab(s); else if(T.tab==='home') body=homeTab(s); else if(T.tab==='health') body=healthTab(s); else if(T.tab==='lc') body=lcTab(s); else if(T.tab==='ramzor') body=ramzorTab(s); else body=studyTab(s);
@@ -170,7 +170,57 @@ function quick(s){ if(!canEdit()) return '';
 const MK={stu:'🗣️ שיחה עם החניך/ה',par:'📞 שיחה עם הורים',meet:'🤝 פגישה',home:'🏠 ביקור בית',msg:'💬 הודעה',note:'📝 הערה',alert:'⚠️ דאגה / התרעה'};
 function logLine(l){ const d=l.on||new Date(l.at).toISOString().slice(0,10);
   return {ts:d,h:`<div class="tk-ev${l.k==='alert'&&!l.res?' al':''}"><div class="tk-evh"><b>${MK[l.k]||'📝 תיעוד'}</b><span class="tk-pill" style="--c:#0e7490">תיעוד מגע קצר</span><small>${fmtD(d)} · ${E(uName(l.by))}${l.k==='alert'?(l.res?' · ✓ טופל':' · פתוחה'):''}</small></div><div>${E(l.x).replace(/\n/g,'<br>')}</div></div>`}; }
-function diaryTab(s){
+/* ═══ יומן אישי (גנרי) — חודש / רשימה. מקורות: אירועים אישיים, שיחות ותיעודים, משימות, תגבורים, קבוצות קבועות, יציאות, ביקורי בית.
+   (בהמשך: סנכרון ליומן גוגל של החניך/ה) ═══ */
+const CAL={m:null,sel:null,view:'month'};
+const isoD=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const HEB_M=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const CK={me:{c:'#8E033C',l:'אירוע אישי'},talk:{c:'#7c3aed',l:'שיחה / תיעוד'},task:{c:'#c2410c',l:'משימה'},lc:{c:'#0369a1',l:'תגבור'},exit:{c:'#047857',l:'יציאה'},visit:{c:'#b45309',l:'ביקור בית'}};
+function calItems(s,from,to){ const n=s.n, out=[], inR=d=>d&&d>=from&&d<=to;
+  Object.entries(T.cal||{}).forEach(([id,e])=>{ if(e&&e.stu===n&&inR(e.d)) out.push({d:e.d,tm:e.tm||'',t:e.t,k:'me',id,by:e.by}); });
+  recs().filter(r=>r.stu===n&&inR(r.d)).forEach(r=>out.push({d:r.d,tm:'',t:TYPES[r.t].i+' '+TYPES[r.t].l+(r.cat?' · '+r.cat:''),k:'talk',rid:r.id}));
+  const M=window.MSG||{};
+  Object.values(M.logs||{}).forEach(l=>{ if(l&&l.stu===n){ const d=l.on||isoD(new Date(l.at)); if(inR(d)) out.push({d,tm:'',t:(MK[l.k]||'📝 תיעוד'),k:'talk'}); } });
+  Object.entries(M.tasks||{}).forEach(([id,t])=>{ if(t&&t.stu===n&&inR(t.due)) out.push({d:t.due,tm:'',t:'✅ '+t.t+(t.st==='done'?' (הושלמה)':''),k:'task'}); });
+  Object.entries(LC.ses||{}).forEach(([k,v])=>{ if(!v||!(v.students||[]).includes(n)) return; const [w,d,h]=k.split('|'); const dt=new Date(w+'T12:00:00'); dt.setDate(dt.getDate()+(+d||0)); const di=isoD(dt);
+    if(inR(di)) out.push({d:di,tm:String(h).padStart(2,'0')+':00',t:'📖 תגבור '+(v.subject||''),k:'lc'}); });
+  (LC.grp||[]).filter(g=>g&&(g.sids||[]).includes(n)).forEach(g=>{ const dt=new Date(from+'T12:00:00'), end=new Date(to+'T12:00:00');
+    while(dt<=end){ if(dt.getDay()===(+g.d||0)) out.push({d:isoD(dt),tm:String(g.h||'').padStart(2,'0')+':00',t:'👥 קבוצה קבועה: '+(g.subject||''),k:'lc'}); dt.setDate(dt.getDate()+1); } });
+  (LC.exits||[]).filter(e=>e&&e.sid===n).forEach(e=>{ const a=e.date, b=e.rdate||e.retDate||e.date; if(!a) return;
+    const dt=new Date(a+'T12:00:00'), end=new Date(b+'T12:00:00'); while(dt<=end){ const di=isoD(dt); if(inR(di)) out.push({d:di,tm:di===a&&e.from!=null?String(e.from).padStart(2,'0')+':00':'',t:'🚪 '+(di===a?'יציאה':'מחוץ לכפר')+(e.reason?' · '+e.reason:'')+(e.status==='approved'?' ✓':e.status==='rejected'?' ✕':' ⏳'),k:'exit'}); dt.setDate(dt.getDate()+1); } });
+  const V=typeof visLoad==='function'?visLoad():{}; Object.entries(V).forEach(([k,e])=>{ if(k.startsWith(n+'|')&&e&&inR(e.date)) out.push({d:e.date,tm:'',t:'🏡 ביקור בית · '+k.slice(n.length+1)+(e.status?' ('+e.status+')':''),k:'visit'}); });
+  return out.sort((a,b)=>a.d.localeCompare(b.d)||String(a.tm).localeCompare(String(b.tm)));
+}
+window.tikCal=function(k,v){ if(k==='m'){ const d=new Date((CAL.m||todayIso().slice(0,7))+'-01T12:00:00'); d.setMonth(d.getMonth()+v); CAL.m=isoD(d).slice(0,7); CAL.sel=null; }
+  else if(k==='today'){ CAL.m=todayIso().slice(0,7); CAL.sel=todayIso(); } else if(k==='sel') CAL.sel=v; else if(k==='view') CAL.view=v; render(); };
+window.tikCalAdd=function(n){ if(!canEdit()) return; const d=prompt('תאריך (למשל 2026-12-03):',CAL.sel||todayIso()); if(!d) return; if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){ toast('התאריך צריך להיות בצורה 2026-12-03'); return; }
+  const t=prompt('מה האירוע?'); if(!t) return; const tm=prompt('שעה (לא חובה, למשל 16:30):','')||'';
+  put('cal/'+uid(),{stu:n,d,t:t.slice(0,140),tm:tm.slice(0,5),by:me().id,at:Date.now()}); CAL.sel=d; CAL.m=d.slice(0,7); toast('📅 נוסף ליומן'); };
+window.tikCalDel=function(id){ const e=(T.cal||{})[id]; if(!e||!(isAdmin()||e.by===me().id)) return; if(confirm('למחוק את האירוע מהיומן?')) put('cal/'+id,null); };
+function calHtml(s){
+  const m=CAL.m||todayIso().slice(0,7), first=new Date(m+'-01T12:00:00'), y=first.getFullYear(), mo=first.getMonth();
+  const start=new Date(first); start.setDate(1-first.getDay()); const last=new Date(y,mo+1,0,12), end=new Date(last); end.setDate(last.getDate()+(6-last.getDay()));
+  const items=calItems(s,isoD(start),isoD(end)), by={}; items.forEach(x=>{ (by[x.d]=by[x.d]||[]).push(x); });
+  const today=todayIso(), sel=CAL.sel;
+  const legend=`<div class="tk-cal-lg">${Object.values(CK).map(k=>`<span><i style="background:${k.c}"></i>${k.l}</span>`).join('')}</div>`;
+  const head=`<div class="tk-cal-h"><button onclick="tikCal('m',1)" title="החודש הבא">‹</button><b>${HEB_M[mo]} ${y}</b><button onclick="tikCal('m',-1)" title="החודש הקודם">›</button>
+    <button class="tk-btn2 sm" onclick="tikCal('today')">היום</button><span style="flex:1"></span>
+    <button class="tk-btn2 sm ${CAL.view==='month'?'on':''}" onclick="tikCal('view','month')">חודש</button><button class="tk-btn2 sm ${CAL.view==='list'?'on':''}" onclick="tikCal('view','list')">רשימה</button>
+    ${canEdit()?`<button class="tk-btn sm" onclick="tikCalAdd('${jq(s.n)}')">➕ אירוע</button>`:''}</div>`;
+  const row=x=>`<div class="tk-cal-it" style="--c:${CK[x.k].c}">${x.tm?`<b>${E(x.tm)}</b> `:''}${E(x.t)}${x.id&&(isAdmin()||x.by===me().id)?` <a href="#" onclick="tikCalDel('${x.id}');return false" title="מחיקה">✕</a>`:''}${x.rid&&canSee(Object.assign({id:x.rid},T.r[x.rid]))?` <a href="#" onclick="tikView('${x.rid}');return false">פתיחה</a>`:''}</div>`;
+  if(CAL.view==='list'){ const mi=items.filter(x=>x.d.slice(0,7)===m);
+    return head+legend+(mi.length?Object.entries(mi.reduce((a,x)=>{ (a[x.d]=a[x.d]||[]).push(x); return a; },{})).map(([d,L])=>`<div class="tk-cal-day${d===today?' now':''}"><div class="tk-cal-dh">${LDAYS[new Date(d+'T12:00:00').getDay()]||'שבת'} ${fmtD(d)}</div>${L.map(row).join('')}</div>`).join(''):'<div class="tk-empty">אין אירועים בחודש הזה</div>'); }
+  let cells=''; const dt=new Date(start);
+  while(dt<=end){ const d=isoD(dt), L=by[d]||[], out=dt.getMonth()!==mo;
+    cells+=`<div class="tk-cal-c${out?' out':''}${d===today?' now':''}${d===sel?' sel':''}" onclick="tikCal('sel','${d}')"><span class="tk-cal-n">${dt.getDate()}</span>
+      ${L.slice(0,3).map(x=>`<div class="tk-cal-e" style="--c:${CK[x.k].c}">${E(x.t.replace(/^\S+\s/,''))}</div>`).join('')}${L.length>3?`<div class="tk-cal-more">+${L.length-3}</div>`:''}
+      <div class="tk-cal-dots">${L.slice(0,4).map(x=>`<i style="background:${CK[x.k].c}"></i>`).join('')}</div></div>`; dt.setDate(dt.getDate()+1); }
+  const selL=sel?(by[sel]||calItems(s,sel,sel)):[];
+  return head+legend+`<div class="tk-cal"><div class="tk-cal-wd">${['א','ב','ג','ד','ה','ו','ש'].map(x=>`<span>${x}</span>`).join('')}</div><div class="tk-cal-g">${cells}</div></div>`
+    +(sel?`<div class="tk-cal-day"><div class="tk-cal-dh">${LDAYS[new Date(sel+'T12:00:00').getDay()]||'שבת'} ${fmtD(sel)}</div>${selL.length?selL.map(row).join(''):'<div class="tk-empty">אין אירועים ביום הזה</div>'}</div>`:'<div class="tk-note">לחיצה על יום מציגה את כל האירועים שלו.</div>');
+}
+function diaryTab(s){ return calHtml(s)+'<h3 class="tk-h3">🕓 כל מה שתועד, לפי תאריך</h3>'+diaryList(s); }
+function diaryList(s){
   const ev=[];
   recs().filter(r=>r.stu===s.n).forEach(r=>{ const t=TYPES[r.t]; ev.push({ts:r.d||'',h:recLine(r)}); });
   const M=window.MSG||{};
@@ -190,11 +240,11 @@ function recTab(s,types){
     ${L.map(recLine).join('')||'<div class="tk-empty">אין עדיין רשומות</div>'}`;
 }
 function talksTab(s){
-  const ev=sortD(recs().filter(r=>r.stu===s.n&&TYPES[r.t].priv)).map(r=>({ts:r.d||'',h:recLine(r)}));
+  const ev=sortD(recs().filter(r=>r.stu===s.n&&(TYPES[r.t].priv||r.t==='contracts'))).map(r=>({ts:r.d||'',h:recLine(r)}));
   Object.values((window.MSG&&MSG.logs)||{}).forEach(l=>{ if(l&&l.stu===s.n) ev.push(logLine(l)); });
   ev.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
   return quick(s)+fmtPanel(['personal','discipline','parents','events','contracts'])
-    +`<div class="tk-note">אירועים וחוזים נשמרים גם בלשוניות "מונה אירועים" ו"חוזים".</div>${ev.map(e=>e.h).join('')||'<div class="tk-empty">אין עדיין שיחות או תיעודים</div>'}`;
+    +`<div class="tk-note">אירועים נשמרים גם בלשונית "מונה אירועים".</div>${ev.map(e=>e.h).join('')||'<div class="tk-empty">אין עדיין שיחות או תיעודים</div>'}`;
 }
 function evCounts(L){ const c={}; L.forEach(r=>{ const k=r.cat||'אחר'; c[k]=(c[k]||0)+1; }); return Object.entries(c).sort((a,b)=>b[1]-a[1]); }
 function eventsTab(s){
@@ -486,8 +536,9 @@ const css=document.createElement('style'); css.textContent=`
 .tk-head{background:linear-gradient(115deg,color-mix(in srgb,var(--g) 14%,#fff),#fff);border:1px solid #F3C2B0;border-right:6px solid var(--g);border-radius:16px;padding:12px 16px;margin-bottom:10px}
 .tk-back{border:none;background:none;color:#8E033C;font:700 14px Heebo,sans-serif;cursor:pointer;padding:0;margin-bottom:6px}
 .tk-hm{display:flex;align-items:center;gap:14px}.tk-hm h2{margin:0;font:800 24px Heebo,sans-serif;color:#0f1e2e}.tk-sub{color:#7A6A66;font-size:14px}
-.tk-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:thin}
-.tk-tabs button{flex:none;border:1px solid #F3C2B0;background:#fff;border-radius:999px;padding:8px 14px;font:700 14px Heebo,sans-serif;color:#7A6A66;cursor:pointer;white-space:nowrap}
+.tk-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.tk-tabs button{flex:0 1 auto;border:1px solid #F3C2B0;background:#fff;border-radius:999px;padding:6px 11px;font:700 13px Heebo,sans-serif;color:#7A6A66;cursor:pointer;white-space:nowrap}
+@media (max-width:640px){.tk-tabs{gap:4px}.tk-tabs button{padding:5px 9px;font-size:12px}}
 .tk-tabs button.on{background:#FC5028;border-color:#FC5028;color:#fff}.tk-tabs button span{background:#FFF1EB;color:#8E033C;border-radius:999px;padding:0 7px;font-size:12px}
 .tk-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
 .tk-box{background:#fff;border:1px solid #F3C2B0;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;align-content:start}
@@ -495,7 +546,7 @@ const css=document.createElement('style'); css.textContent=`
 .tk-f{background:#FBF6F3;border:1px solid #F6DDD3;border-radius:11px;padding:8px 11px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .tk-f>span{font-size:12px;color:#7A6A66;font-weight:600}.tk-f>b{font:700 15px Heebo,sans-serif;color:#0f1e2e;overflow-wrap:anywhere}.tk-f>small{font-size:12px;color:#7A6A66}
 .tk-f a{color:#0369a1;text-decoration:none}.tk-f.ok{background:#ecfdf5;border-color:#bbf7d0}.tk-f.ok>b{color:#047857}.tk-f.bad{background:#fff1f1;border-color:#fecaca}.tk-f.bad>b{color:#b91c1c}
-.tk-warn{border:2px solid #fca5a5}.tk-mut{color:#a8a29e!important;font-weight:400}.tk-wide{grid-column:1/-1}
+.tk-warn{border-color:#F3C2B0}.tk-mut{color:#a8a29e!important;font-weight:400}.tk-wide{grid-column:1/-1}
 .tk-chip{border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:999px;padding:7px 13px;font:700 13.5px Heebo,sans-serif;cursor:pointer}.tk-chip.on{background:#b91c1c;color:#fff}
 .tk-row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #FFF1EB;font-size:14px}.tk-row span{color:#7A6A66}.tk-row b{text-align:left;font-weight:600}
 .tk-row a{color:#0369a1;text-decoration:none}
@@ -517,6 +568,22 @@ const css=document.createElement('style'); css.textContent=`
 .tk-tblw{overflow-x:auto}.tk-tbl{width:100%;border-collapse:collapse;font-size:14px}.tk-tbl th{background:#8E033C;color:#fff;padding:7px;text-align:right;font:700 13px Heebo,sans-serif}.tk-tbl td{padding:6px 8px;border-bottom:1px solid #FFF1EB}.tk-tbl a{color:#0f1e2e}
 .tk-wr{position:relative}.tk-who{display:inline-block;font:700 13px Heebo,sans-serif;color:#0e7490;text-decoration:none;margin:2px 4px 3px}
 .tk-leg{background:#FBF6F3}
+.tk-h3{font:800 16px Heebo,sans-serif;color:#8E033C;margin:16px 0 8px}
+.tk-cal-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}.tk-cal-h>b{font:800 18px Heebo,sans-serif;color:#0f1e2e;min-width:120px;text-align:center}
+.tk-cal-h>button:not(.tk-btn2):not(.tk-btn){border:1px solid #F3C2B0;background:#fff;border-radius:9px;width:32px;height:32px;font-size:18px;cursor:pointer;color:#8E033C}
+.tk-btn2.on{background:#8E033C;color:#fff;border-color:#8E033C}.tk-btn.sm{padding:6px 12px;font-size:13px}
+.tk-cal-lg{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:#7A6A66;margin-bottom:8px}.tk-cal-lg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:4px}
+.tk-cal{background:#fff;border:1px solid #F3C2B0;border-radius:14px;overflow:hidden;margin-bottom:10px}
+.tk-cal-wd,.tk-cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}.tk-cal-wd span{text-align:center;font:700 12.5px Heebo,sans-serif;color:#7A6A66;padding:6px 0;background:#FBF6F3}
+.tk-cal-c{min-height:84px;border-top:1px solid #F6E3DC;border-left:1px solid #F6E3DC;padding:3px 4px;cursor:pointer;overflow:hidden}.tk-cal-c:hover{background:#FFF8F5}
+.tk-cal-c.out{background:#FCFAF9;color:#b8aaa5}.tk-cal-c.now .tk-cal-n{background:#FC5028;color:#fff}.tk-cal-c.sel{box-shadow:inset 0 0 0 2px #8E033C}
+.tk-cal-n{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;border-radius:50%;font:700 12.5px Heebo,sans-serif}
+.tk-cal-e{font-size:11px;line-height:1.3;border-right:3px solid var(--c);background:color-mix(in srgb,var(--c) 9%,#fff);border-radius:4px;padding:1px 4px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk-cal-more{font-size:10.5px;color:#7A6A66}.tk-cal-dots{display:none;gap:2px;margin-top:2px;flex-wrap:wrap}.tk-cal-dots i{width:7px;height:7px;border-radius:50%}
+.tk-cal-day{background:#fff;border:1px solid #F3C2B0;border-radius:12px;padding:8px 12px;margin-bottom:8px}.tk-cal-day.now{border-color:#FC5028}
+.tk-cal-dh{font:800 14px Heebo,sans-serif;color:#8E033C;margin-bottom:4px}
+.tk-cal-it{border-right:4px solid var(--c);padding:4px 8px;margin:3px 0;font-size:14px;background:color-mix(in srgb,var(--c) 6%,#fff);border-radius:6px}.tk-cal-it a{color:#0369a1;font-size:12.5px;text-decoration:none;margin-right:6px}
+@media (max-width:640px){.tk-cal-c{min-height:46px}.tk-cal-e,.tk-cal-more{display:none}.tk-cal-dots{display:flex}}
 .tk-lvl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}.tk-lvl small{color:#8496ab}
 .tk-tt td,.tk-tt th{text-align:center;font-size:12.5px;min-width:86px;vertical-align:top;line-height:1.35}.tk-tt td b{font-weight:700}.tk-tt hr{border:0;border-top:1px dashed #F3C2B0;margin:4px 0}.tk-tt td small{color:#7A6A66}
 .tk-fmtd{background:#fff;border:1px solid #F3C2B0;border-radius:12px;padding:7px 12px;margin-bottom:10px}.tk-fmtd summary{cursor:pointer;font:700 14px Heebo,sans-serif;color:#8E033C}
