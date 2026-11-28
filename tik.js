@@ -6,7 +6,7 @@
    • לכל סוג רשומה יש פורמט מובנה: הורדת פורמט ריק, מסמך מוכן (הדפסה / PDF / Word),
      ופורמט משלי — קובץ Word עם תגיות כמו {שם_החניך} שהפורטל ממלא.
    • הקלטה ותמלול חינמי (כרום / אנדרואיד) + כפתור העתקה ל-Claude לסיכום (השם מוחלף ב"החניך/ה").
-   • שיחות אישיות / משמעת / הורים: התוכן גלוי רק למי שכתב, למדריך/ה של הקבוצה, לרכז ולעו"ס.
+   • שיחות אישיות / משמעת / הורים הן חסויות: התוכן גלוי רק למי שכתב, למדריך/ה של הקבוצה, לרכז ולעו"ס.
      (ההגבלה היא בתצוגה של הפורטל.)
    נשמר באזור המוגן: portal/bogeret/secure/tik/r/<id> = {t, stu, g, d, by, at, f:{שדות}, tr?}
                      portal/bogeret/secure/tik/fmt/<id> = {t, name, by, at, b64}  (פורמט Word משלי)
@@ -130,8 +130,8 @@ function diaryTab(s){
 }
 function recLine(r){ const t=TYPES[r.t], see=canSee(r);
   const sev=r.t==='events'&&EV_SEV[r.sev]?`<span class="tk-pill" style="--c:${EV_SEV[r.sev].c}">${EV_SEV[r.sev].l}</span>`:'';
-  const first=see?Object.entries(r.f||{}).filter(([k,v])=>v).slice(0,2).map(([k,v])=>`<div><small>${E(k)}:</small> ${E(String(v).slice(0,220))}${String(v).length>220?'…':''}</div>`).join(''):'<div class="tk-lock">🔒 התוכן גלוי רק למדריך/ה של הקבוצה, לרכז ולעו"ס</div>';
-  return `<div class="tk-ev" ${see?`onclick="tikView('${r.id}')"`:''}><div class="tk-evh"><b>${t.i} ${t.l}${r.cat?' · '+E(r.cat):''}</b>${sev}<small>${fmtD(r.d)} · ${E(uName(r.by))}${r.tr?' · 🎙️':''}</small></div>${first}</div>`; }
+  const first=see?Object.entries(r.f||{}).filter(([k,v])=>v).slice(0,2).map(([k,v])=>`<div><small>${E(k)}:</small> ${E(String(v).slice(0,220))}${String(v).length>220?'…':''}</div>`).join(''):'<div class="tk-lock">🔒 חסוי — התוכן גלוי רק למדריך/ה של הקבוצה, לעו"ס ולרכז</div>';
+  return `<div class="tk-ev" ${see?`onclick="tikView('${r.id}')"`:''}><div class="tk-evh"><b>${t.i} ${t.l}${r.cat?' · '+E(r.cat):''}</b>${t.priv?'<span class="tk-pill" style="--c:#7A6A66">🔒 חסוי</span>':''}${sev}<small>${fmtD(r.d)} · ${E(uName(r.by))}${r.tr?' · 🎙️':''}</small></div>${first}</div>`; }
 function recTab(s,types){
   const L=sortD(recs().filter(r=>r.stu===s.n&&types.includes(r.t)));
   return `<div class="tk-acts">${canEdit()?types.map(t=>`<button class="tk-btn" onclick="tikNew('${t}','${jq(s.n)}')">➕ ${TYPES[t].l}</button>`).join(''):''}</div>${fmtPanel(types)}
@@ -170,7 +170,7 @@ function edRender(){
   let m=document.getElementById('tikEd'); const e=T.ed; if(!e){ if(m) m.remove(); return; }
   if(!m){ m=document.createElement('div'); m.id='tikEd'; m.className='tik-modal'; document.body.appendChild(m); }
   const t=TYPES[e.t], sr=window.SpeechRecognition||window.webkitSpeechRecognition;
-  m.innerHTML=`<div class="tk-dlg"><div class="tk-dlh"><b>${t.i} ${e.id?'עריכת ':''}${t.l}</b><button onclick="tikEdClose()">✕</button></div>
+  m.innerHTML=`<div class="tk-dlg"><div class="tk-dlh"><b>${t.i} ${e.id?'עריכת ':''}${t.l}${t.priv?' <span class="tk-pill" style="--c:#7A6A66" title="גלוי רק למי שכתב, למדריך/ה של הקבוצה, לעו&quot;ס ולרכז">🔒 חסוי</span>':''}</b><button onclick="tikEdClose()">✕</button></div>
     <div class="tk-g2">${t.stu?`<label>חניך/ה<input id="te-stu" list="te-stul" value="${E(e.stu)}" placeholder="חובה — התחילו להקליד שם"><datalist id="te-stul">${students().map(s=>`<option value="${E(s.n)}">${E(s.g)}</option>`).join('')}</datalist></label>`
       :`<label>חניך/ה (לא חובה)<input id="te-stu" list="te-stul" value="${E(e.stu)}"><datalist id="te-stul">${students().map(s=>`<option value="${E(s.n)}">${E(s.g)}</option>`).join('')}</datalist></label>`}
       <label>תאריך<input type="date" id="te-d" value="${E(e.d)}"></label>
