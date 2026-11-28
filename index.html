@@ -722,6 +722,7 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 .edt-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 10px;} .edt-head h3{margin:0;font:800 18px Heebo,sans-serif;color:#8E033C;}
 .edt-q{flex:1;min-width:180px;border:1px solid #F3C2B0;border-radius:999px;padding:6px 12px;font:14px Assistant,sans-serif;}
 .edt-adm{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;padding:8px 12px;background:#FFF1EB;border:1px dashed #F3C2B0;border-radius:12px;font:700 14px Heebo,sans-serif}
+.edt-sub{margin:8px 12px 2px;padding:3px 10px;border-right:3px solid #FC5028;font:700 13px Heebo,sans-serif;color:#8E033C;background:#FFF8F4;border-radius:6px}.edt-sub small{color:#7A6A66;font-weight:400}
 .edt-row{display:flex;align-items:center;gap:4px}.edt-row .lb-row{flex:1;min-width:0}
 .edt-acts{display:flex;gap:2px;flex-shrink:0}.edt-acts button{border:1px solid #F3C2B0;background:#fff;border-radius:8px;padding:3px 6px;cursor:pointer;font-size:14px}.edt-acts button:hover{background:#FFF1EB;border-color:#FC5028}
 .edt-g{border:1px solid #f6dcd2;border-radius:10px;margin-bottom:6px;background:#fff;} .edt-g summary{cursor:pointer;padding:8px 12px;font:700 14px Heebo,sans-serif;} .edt-g summary small{color:#7A6A66;font-weight:400;}
@@ -4313,7 +4314,7 @@ const edtAdmin=()=>typeof ME!=='undefined'&&ME&&ME.mode==='admin';
 function edtView(){ /* הקטלוג אחרי העריכות */
   const T=EDT.topics.map(t=>({...t,files:[]})), byT={}; T.forEach((t,i)=>byT[t.t]=i); const bin=[];
   EDT.topics.forEach((t,i)=>t.files.forEach(f0=>{ const o=(EDT_OV||{})[f0.id]||{};
-    const f={...f0,t:o.t||f0.t,f:o.g!=null?o.g:f0.f,orig:f0.t,of:f0.f||'',ti:i};
+    const f={...f0,t:o.t||f0.t,f:o.g!=null?o.g:f0.f,s:o.g!=null?'':(f0.s||''),orig:f0.t,of:f0.f||'',ti:i};
     if(o.d){ bin.push(f); return; }
     const k=o.k!=null&&byT[o.k]!=null?byT[o.k]:i; T[k].files.push(f); }));
   return {T,bin};
@@ -4334,6 +4335,10 @@ window.edtAct=function(act,id){ const {T,bin}=edtView(); const f=T.flatMap(t=>t.
     edtSave(id,{k:i===f.ti?null:EDT.topics[i].t, g:gg===f.of?null:gg}); }
   else if(act==='reset'){ if(confirm('להחזיר את הקובץ למצבו המקורי (שם ומיקום)?')) edtSave(id,{t:null,k:null,g:null}); }
 };
+function edtSubs(L,row){ /* תת-תיקיות בתוך כותרת: קודם הקבצים הכלליים, אחר כך כותרת קטנה לכל תת-תיקייה */
+  const by={}; L.forEach(f=>{ (by[f.s||'']=by[f.s||'']||[]).push(f); });
+  return Object.keys(by).sort((a,b)=>a===''?-1:b===''?1:a.localeCompare(b,'he')).map(k=>(k?`<div class="edt-sub">${lbEsc(k)} <small>(${by[k].length})</small></div>`:'')
+    +by[k].sort((a,b)=>a.t.localeCompare(b.t,'he',{numeric:true})).map(f=>row(f,false)).join('')).join(''); }
 window.renderEduTopics=async function(){
   const el=document.getElementById('eduTopicsBody'); if(!el) return;
   if(!EDT){ try{ EDT=await (await fetch('edu_topics.json',{cache:'no-cache'})).json(); }catch(e){ el.textContent='טעינת המאגר נכשלה'; return; } }
@@ -4349,12 +4354,12 @@ window.renderEduTopics=async function(){
   let list='';
   if(ed&&EDT_ST.bin){ list=`<div class="edt-head"><h3>🗑️ קבצים שהוסרו מהמאגר</h3><button class="btn" id="edtBinX">חזרה</button></div>${bin.map(f=>row(f,true)).join('')||'<div class="ad-mut">אין קבצים שהוסרו</div>'}`; }
   else if(EDT_ST.k!=null){ const t=T[EDT_ST.k], q=EDT_ST.q.trim();
-    const fl=t.files.filter(f=>!q||f.t.includes(q)||(f.f||'').includes(q)); const by={};
+    const fl=t.files.filter(f=>!q||f.t.includes(q)||(f.f||'').includes(q)||(f.s||'').includes(q)); const by={};
     fl.forEach(f=>{ (by[f.f||'כללי']=by[f.f||'כללי']||[]).push(f); });
     list=`<div class="edt-head"><h3>${t.ic} ${E(t.t)}</h3><input class="edt-q" placeholder="🔍 חיפוש בנושא" value="${E(EDT_ST.q)}">
       ${t.folder?`<a class="btn" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${E(t.folder)}">📂 התיקייה בדרייב</a>`:''}</div>
       ${Object.keys(by).sort((a,b)=>a==='כללי'?-1:b==='כללי'?1:a.localeCompare(b,'he')).map(g=>`<details class="edt-g" ${q||ed||Object.keys(by).length<=3?'open':''}><summary>${E(g)} <small>(${by[g].length})</small></summary>
-        ${by[g].map(f=>row(f,false)).join('')}</details>`).join('')||'<div class="ad-mut">לא נמצאו קבצים</div>'}`;
+        ${edtSubs(by[g],row)}</details>`).join('')||'<div class="ad-mut">לא נמצאו קבצים</div>'}`;
   }
   el.innerHTML=tools+cards+list+`<div style="font-size:12px;color:var(--text3);margin-top:10px">הקבצים נמצאים בדרייב של יובל (תיקיית "מבואות ים ← תוכנית חינוכית"). מי שאין לו גישה לתיקייה יתבקש לבקש הרשאה.</div>`;
   el.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.t; EDT_ST.k=EDT_ST.k===i&&!EDT_ST.bin?null:i; EDT_ST.q=''; EDT_ST.bin=false; renderEduTopics(); });
