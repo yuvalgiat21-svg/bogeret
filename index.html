@@ -4551,7 +4551,7 @@ window.guidesOpen=function(){ let m=document.getElementById('guidesDlg');
 let _pcRz=null; window.addEventListener('resize',()=>{ clearTimeout(_pcRz); _pcRz=setTimeout(()=>{ const b=document.getElementById('cal-board'); if(b&&b.classList.contains('active')&&b.offsetParent&&window.pcalRender) pcalRender(); },250); });
 window.calTool=function(k){ show('calendar'); document.querySelectorAll('#sec-calendar .subsec').forEach(x=>x.classList.remove('active')); const e=document.getElementById('cal-'+k); if(e) e.classList.add('active'); if(k==='board'&&window.pcalRender) pcalRender(); };
 function lnkHtml(){ return `<div class="lnk-h">🧰 כלים</div>`+TOOLS.map(x=>`<a class="lnk-a lnk-tool" href="#" onclick="lnkDrawer(false);${x.go};return false;"><span class="i">${x.ic}</span><span><b>${x.t}</b><small>${x.d}</small></span></a>`).join('')+`
-  <div class="lnk-h" style="margin-top:12px">🔗 לינקים שימושיים</div>`+LINKS.filter(x=>x.u).map(x=>`<a class="lnk-a" href="${x.u}" target="_blank" rel="noopener"><span class="i">${lnkIco(x)}</span><span><b>${x.t}</b><small>${x.d}</small></span></a>`).join(''); }
+  <div class="lnk-h" style="margin-top:12px">🔗 לינקים שימושיים</div>`+LINKS.filter(x=>x.u).map(x=>`<a class="lnk-a lnk-tool" href="${x.u}" target="_blank" rel="noopener"><span class="i">${lnkIco(x)}</span><span><b>${x.t}</b><small>${x.d}</small></span></a>`).join(''); }
 /* האייקון המקורי של כל אתר (favicon); אם לא נטען — האימוג'י */
 const LNK_FAV={'docs.google.com':'https://ssl.gstatic.com/docs/spreadsheets/favicon3.ico'};
 function lnkIco(x){ let h=''; try{ h=new URL(x.u).hostname; }catch(e){ return x.ic; }
