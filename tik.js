@@ -7,7 +7,9 @@
      ופורמט משלי — קובץ Word עם תגיות כמו {שם_החניך} שהפורטל ממלא.
    • הקלטה ותמלול חינמי (כרום / אנדרואיד) + כפתור העתקה ל-Claude לסיכום (השם מוחלף ב"החניך/ה").
    • שיחות אישיות / משמעת / הורים הן חסויות: התוכן גלוי רק למי שכתב, למדריך/ה של הקבוצה, לרכז ולעו"ס.
-     (ההגבלה היא בתצוגה של הפורטל.)
+     התוכן החסוי (השדות והתמלול) נשמר בנפרד: bogeret_conf/<קבוצה>/<id> = {f, tr, bm:מייל הכותב}
+     וחוקי Firebase מתירים לקרוא אותו רק לרכז, למדריך/ה של הקבוצה, לעו"ס של השכבה ולמי שכתב.
+     ב-tik/r נשאר רק שהתקיימה שיחה (סוג, תאריך, כותב) עם conf:1.
    נשמר באזור המוגן: portal/bogeret/secure/tik/r/<id> = {t, stu, g, d, by, at, f:{שדות}, tr?}
                      portal/bogeret/secure/tik/fmt/<id> = {t, name, by, at, b64}  (פורמט Word משלי)
    ═══════════════════════════════════════════════════════════════════════ */
@@ -24,7 +26,8 @@ const TYPES={
 };
 const EV_CAT=['איחור','היעדרות / יציאה בלי אישור','אלימות פיזית','אלימות מילולית','ונדליזם','עישון / אלכוהול','הפרעה בכיתה','טלפון ומסכים','סדר וניקיון בחדר','אחר'];
 const EV_SEV={1:{l:'קל',c:'#b45309'},2:{l:'בינוני',c:'#c2410c'},3:{l:'חמור',c:'#b91c1c'}};
-const T={r:{},fmt:{},ok:false,started:false,stu:null,tab:'info',q:'',g:'',ed:null,rec:null};
+const CONF='bogeret_conf';
+const T={r:{},fmt:{},c:{},mine:{},ok:false,started:false,stu:null,tab:'info',q:'',g:'',ed:null,rec:null};
 window.TIK=T;
 const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const jq=s=>E(String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
@@ -52,22 +55,40 @@ const sGrade=s=>String(s&&s.l||'').replace(/['׳"]/g,'');
 const isSocial=u=>/עו"ס|עו״ס|עובד[ת]? סוציאלי/.test(String(u&&u.r||''));
 /* מדריך/ה = בעל/ת הרשאת עריכה שאחראי/ת על הקבוצה (שינשינים לא רואים תוכן רגיש); עו"ס — רק בשכבה שלה */
 const layerOk=(u,s)=>u.scope==='all'||!u.scope||(u.scope==='ya'&&sGrade(s)==='יא')||(u.scope==='yb'&&sGrade(s)==='יב')||(u.scope==='academy'&&s.g==='אקדמיה');
+const GROUPS=['שלדג','שחף','שיר','חוף','צוק','אקדמיה'];
 function guideOf(u,s){ if(!u||!s||u.mode!=='edit') return false; const r=String(u.r||'');
-  if(s.g&&r.includes(s.g)) return true;
+  if(s.g&&r.includes(s.g)) return true; if(GROUPS.some(g=>r.includes(g))) return false;
   if(u.scope==='academy') return s.g==='אקדמיה';
   if(u.scope==='yb') return sGrade(s)==='יב';
   if(u.scope==='ya') return sGrade(s)==='יא'&&!/שלדג|שחף|שיר/.test(r);
   return false; }
 function canSee(r){ const t=TYPES[r.t]; if(!t||!t.priv) return true; const u=me(); if(!u) return false;
-  const st=stuBy(r.stu); return isAdmin()||r.by===u.id||(isSocial(u)&&(!st||layerOk(u,st)))||guideOf(u,st); }
+  const st=stuBy(r.stu); return (isAdmin()||r.by===u.id||(isSocial(u)&&(!st||(layerOk(u,st)&&st.g!=='אקדמיה')))||guideOf(u,st))&&(!r.conf||!!cont(r)); }
+/* התוכן של רשומה חסויה מגיע מהאזור הנפרד (רק אם Firebase התיר לקרוא אותו) */
+function cont(r){ if(!r.conf) return {f:r.f||{},tr:r.tr||''}; return (T.c[r.g]||{})[r.id]||T.mine[r.id]||null; }
+const rf=r=>(cont(r)||{}).f||{}, rtr=r=>(cont(r)||{}).tr||'';
+const myEmail=()=>{ try{ const u=(typeof FBAUTH!=='undefined'&&FBAUTH&&FBAUTH.a&&FBAUTH.a.currentUser)||(typeof FBUSER!=='undefined'&&FBUSER); return String(u&&u.email||'').trim().toLowerCase(); }catch(e){ return ''; } };
 
 /* ---- ענן ---- */
 let DB=null; async function db(){ if(!DB) DB=await secureDb(); return DB; }
 async function run(op){ for(let i=0;i<2;i++){ try{ const {dbm,rdb}=await db(); await op(dbm,rdb); return true; }catch(e){ console.warn('tik',e); DB=null; if(i===0){ await new Promise(r=>setTimeout(r,1000)); continue; } toast('⚠️ השמירה נכשלה — בדקו חיבור ונסו שוב'); return false; } } }
 const put=(p,v)=>run((dbm,rdb)=>dbm.set(dbm.ref(rdb,ROOT+'/'+p),v));
+const CONF_ON={};
+function confListen(dbm,rdb){ GROUPS.forEach(g=>{ if(CONF_ON[g]) return; CONF_ON[g]=1;
+  try{ dbm.onValue(dbm.ref(rdb,CONF+'/'+g),snap=>{ T.c[g]=snap.val()||{}; refresh(); },()=>{ /* אין הרשאה לקבוצה הזו — זה תקין */ }); }catch(e){} }); }
+/* רשומות חסויות שכתבתי בקבוצה שאין לי גישה אליה — נקראות אחת אחת */
+const MINE_TRY={};
+function mineFetch(dbm,rdb){ const u=me(); if(!u) return; recs().forEach(r=>{ if(!r.conf||r.by!==u.id||MINE_TRY[r.id]||(T.c[r.g]||{})[r.id]) return; MINE_TRY[r.id]=1;
+  dbm.get(dbm.ref(rdb,CONF+'/'+r.g+'/'+r.id)).then(s=>{ const v=s.val(); if(v){ T.mine[r.id]=v; refresh(); } }).catch(()=>{}); }); }
+/* העברה חד-פעמית (רכז): רשומות חסויות ישנות שהתוכן שלהן עוד בתיק הכללי עוברות לאזור הנפרד */
+let MIGR=false;
+async function migrate(dbm,rdb){ if(MIGR||!isAdmin()) return; MIGR=true;
+  for(const r of recs()){ if(!TYPES[r.t].priv||r.conf||!r.g) continue;
+    try{ await dbm.set(dbm.ref(rdb,CONF+'/'+r.g+'/'+r.id),{f:r.f||{},tr:r.tr||'',bm:'',at:r.at||Date.now()});
+      await dbm.update(dbm.ref(rdb,ROOT+'/r/'+r.id),{f:null,tr:null,conf:1}); }catch(e){ console.warn('tik migrate',e); } } }
 function start(){ if(T.started||!me()) return; T.started=true;
-  db().then(({dbm,rdb})=>dbm.onValue(dbm.ref(rdb,ROOT),snap=>{ const v=snap.val()||{}; T.r=v.r||{}; T.fmt=v.fmt||{}; T.ok=true; refresh(); },
-    e=>{ console.warn('tik listen',e); T.started=false; DB=null; setTimeout(start,3000); })).catch(()=>{ T.started=false; DB=null; setTimeout(start,3000); }); }
+  db().then(({dbm,rdb})=>{ confListen(dbm,rdb); return dbm.onValue(dbm.ref(rdb,ROOT),snap=>{ const v=snap.val()||{}; T.r=v.r||{}; T.fmt=v.fmt||{}; T.ok=true; mineFetch(dbm,rdb); migrate(dbm,rdb); refresh(); },
+    e=>{ console.warn('tik listen',e); T.started=false; DB=null; setTimeout(start,3000); }); }).catch(()=>{ T.started=false; DB=null; setTimeout(start,3000); }); }
 function refresh(){ const ae=document.activeElement; if(T.ed||T.rec) return; if(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&ae.closest('#sec-tik,.tik-modal')) return;
   if(active()) render(); document.querySelectorAll('[data-tikgrp]').forEach(el=>{ el.innerHTML=grpHtml(el.dataset.tikgrp,el.dataset.tikt); }); }
 const active=()=>{ const s=document.getElementById('sec-tik'); return s&&s.classList.contains('active'); };
@@ -90,7 +111,7 @@ window.tikQ=function(v){ T.q=v; const el=document.getElementById('tikBody'); con
 window.tikG=function(v){ T.g=v; render(); };
 
 /* ═══════════ התיק האישי ═══════════ */
-const TABS=[['info','📇 פרטים'],['diary','🕓 יומן אישי'],['talks','💬 שיחות'],['events','📊 מונה אירועים'],['contracts','📜 חוזים'],['health','🏥 בריאות ותזונה'],['study','📚 לימודי ורמזור']];
+const TABS=[['info','📇 פרטים'],['diary','🕓 יומן אישי'],['talks','💬 שיחות ותיעוד'],['events','📊 מונה אירועים'],['contracts','📜 חוזים'],['clubs','🎨 חוגים ותוכנית מלווה'],['health','🏥 בריאות ותזונה'],['study','📚 לימודים (סמרט סקול)']];
 window.tikOpen=function(n,tab){ if(!stuBy(n)) return; const sm=document.getElementById('student-modal'); if(sm) sm.style.display='none';
   T.stu=n; T.tab=tab||'info'; if(!active()) show('tik'); else render(); window.scrollTo({top:0}); };
 window.tikBack=function(){ T.stu=null; render(); };
@@ -98,10 +119,11 @@ window.tikTab=function(k){ T.tab=k; render(); };
 function fileView(){
   const s=stuBy(T.stu); if(!s){ T.stu=null; return listView(); }
   const R=ofStu(s.n), clr=GC(s.g);
-  const cnt={talks:R.filter(r=>TYPES[r.t].priv).length,events:R.filter(r=>r.t==='events').length,contracts:R.filter(r=>r.t==='contracts').length};
+  const ML=Object.values((window.MSG&&MSG.logs)||{}).filter(l=>l&&l.stu===s.n).length;
+  const cnt={talks:R.filter(r=>TYPES[r.t].priv).length+ML,events:R.filter(r=>r.t==='events').length,contracts:R.filter(r=>r.t==='contracts').length};
   let body='';
-  if(T.tab==='info') body=infoTab(s); else if(T.tab==='diary') body=diaryTab(s); else if(T.tab==='talks') body=recTab(s,['personal','discipline','parents']);
-  else if(T.tab==='events') body=eventsTab(s); else if(T.tab==='contracts') body=recTab(s,['contracts']); else if(T.tab==='health') body=healthTab(s); else body=studyTab(s);
+  if(T.tab==='info') body=infoTab(s); else if(T.tab==='diary') body=diaryTab(s); else if(T.tab==='talks') body=talksTab(s);
+  else if(T.tab==='events') body=eventsTab(s); else if(T.tab==='contracts') body=recTab(s,['contracts']); else if(T.tab==='clubs') body=clubsTab(s); else if(T.tab==='health') body=healthTab(s); else body=studyTab(s);
   return `<div class="tk-head" style="--g:${clr}"><button class="tk-back" onclick="tikBack()">→ כל החניכים</button>
     <div class="tk-hm">${typeof avatar==='function'?avatar(s,64,clr):''}<div><h2>${E(s.n)}</h2><div class="tk-sub">${E(s.g||'')}${s.cls?' · '+E(s.cls):''}${s.r?' · חדר '+E(s.r):''}</div></div></div></div>
     <div class="tk-tabs">${TABS.map(([k,l])=>`<button class="${T.tab===k?'on':''}" onclick="tikTab('${k}')">${l}${cnt[k]?` <span>${cnt[k]}</span>`:''}</button>`).join('')}</div>
@@ -111,31 +133,39 @@ const row=(l,v)=>v?`<div class="tk-row"><span>${l}</span><b>${v}</b></div>`:'';
 const tel=p=>p?`<a href="tel:${E(String(p).replace(/[^\d+]/g,''))}">${E(p)}</a>`:'';
 function infoTab(s){
   return `<div class="tk-cols"><div class="tk-box"><h3>פרטים</h3>${row('קבוצה',E(s.g))}${row('כיתה',E(s.cls))}${row('חדר',E(s.r))}${row('📱 נייד',tel(s.ph))}${row('תאריך לידה',E(s.bd))}${row('כתובת',E([s.addr,s.city].filter(Boolean).join(', ')))}</div>
-    <div class="tk-box"><h3>👨‍👩‍👦 הורים</h3>${row('אבא',E(s.fa)+(s.fp?' · '+tel(s.fp):''))}${row('אמא',E(s.mo)+(s.mp?' · '+tel(s.mp):''))}${s.ps?`<div class="tk-note">${E(s.ps)}</div>`:''}${!s.fa&&!s.mo?'<div class="tk-empty">אין פרטי הורים</div>':''}</div></div>
-    ${quick(s)}`;
+    <div class="tk-box"><h3>👨‍👩‍👦 הורים</h3>${row('אבא',E(s.fa)+(s.fp?' · '+tel(s.fp):''))}${row('אמא',E(s.mo)+(s.mp?' · '+tel(s.mp):''))}${s.ps?`<div class="tk-note">${E(s.ps)}</div>`:''}${!s.fa&&!s.mo?'<div class="tk-empty">אין פרטי הורים</div>':''}</div></div>`;
 }
 function quick(s){ if(!canEdit()) return '';
   return `<div class="tk-quick">${['personal','discipline','parents','events','contracts'].map(t=>`<button onclick="tikNew('${t}','${jq(s.n)}')">➕ ${TYPES[t].i} ${TYPES[t].l}</button>`).join('')}
-    ${window.msgLog?`<button onclick="msgLog('${jq(s.n)}')">📝 תיעוד מגע קצר</button>`:''}</div>`; }
+    ${window.msgLog?`<button onclick="msgLog('${jq(s.n)}')">➕ 📝 תיעוד מגע קצר</button>`:''}</div>`; }
+const MK={stu:'🗣️ שיחה עם החניך/ה',par:'📞 שיחה עם הורים',meet:'🤝 פגישה',home:'🏠 ביקור בית',msg:'💬 הודעה',note:'📝 הערה',alert:'⚠️ דאגה / התרעה'};
+function logLine(l){ const d=l.on||new Date(l.at).toISOString().slice(0,10);
+  return {ts:d,h:`<div class="tk-ev${l.k==='alert'&&!l.res?' al':''}"><div class="tk-evh"><b>${MK[l.k]||'📝 תיעוד'}</b><span class="tk-pill" style="--c:#0e7490">תיעוד מגע קצר</span><small>${fmtD(d)} · ${E(uName(l.by))}${l.k==='alert'?(l.res?' · ✓ טופל':' · פתוחה'):''}</small></div><div>${E(l.x).replace(/\n/g,'<br>')}</div></div>`}; }
 function diaryTab(s){
   const ev=[];
   recs().filter(r=>r.stu===s.n).forEach(r=>{ const t=TYPES[r.t]; ev.push({ts:r.d||'',h:recLine(r)}); });
-  const M=window.MSG||{}; const K={stu:'🗣️ שיחה עם החניך/ה',par:'📞 שיחה עם הורים',meet:'🤝 פגישה',home:'🏠 ביקור בית',msg:'💬 הודעה',note:'📝 הערה',alert:'⚠️ דאגה / התרעה'};
-  Object.entries(M.logs||{}).forEach(([id,l])=>{ if(!l||l.stu!==s.n) return; const d=l.on||new Date(l.at).toISOString().slice(0,10);
-    ev.push({ts:d,h:`<div class="tk-ev${l.k==='alert'&&!l.res?' al':''}"><div class="tk-evh"><b>${K[l.k]||'📝 תיעוד'}</b><small>${fmtD(d)} · ${E(uName(l.by))}${l.k==='alert'?(l.res?' · ✓ טופל':' · פתוחה'):''}</small></div><div>${E(l.x).replace(/\n/g,'<br>')}</div></div>`}); });
+  const M=window.MSG||{};
+  Object.values(M.logs||{}).forEach(l=>{ if(l&&l.stu===s.n) ev.push(logLine(l)); });
   Object.entries(M.tasks||{}).forEach(([id,t])=>{ if(!t||t.stu!==s.n) return; const d=new Date(t.at).toISOString().slice(0,10);
     ev.push({ts:d,h:`<div class="tk-ev tk-evt" onclick="show('msg');msgOpenTask&&msgOpenTask('${id}')"><div class="tk-evh"><b>✅ משימה: ${E(t.t)}</b><small>${fmtD(d)} · ${E((t.who||[]).map(uName).join(', '))} · ${t.st==='done'?'הושלמה':'פתוחה'}</small></div></div>`}); });
   ev.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
-  return quick(s)+`<div class="tk-tl">${ev.map(e=>e.h).join('')||'<div class="tk-empty">עוד אין שום תיעוד על החניך/ה</div>'}</div>`;
+  return `<div class="tk-tl">${ev.map(e=>e.h).join('')||'<div class="tk-empty">עוד אין שום תיעוד על החניך/ה</div>'}</div>`;
 }
 function recLine(r){ const t=TYPES[r.t], see=canSee(r);
   const sev=r.t==='events'&&EV_SEV[r.sev]?`<span class="tk-pill" style="--c:${EV_SEV[r.sev].c}">${EV_SEV[r.sev].l}</span>`:'';
-  const first=see?Object.entries(r.f||{}).filter(([k,v])=>v).slice(0,2).map(([k,v])=>`<div><small>${E(k)}:</small> ${E(String(v).slice(0,220))}${String(v).length>220?'…':''}</div>`).join(''):'<div class="tk-lock">🔒 חסוי — התוכן גלוי רק למדריך/ה של הקבוצה, לעו"ס ולרכז</div>';
-  return `<div class="tk-ev" ${see?`onclick="tikView('${r.id}')"`:''}><div class="tk-evh"><b>${t.i} ${t.l}${r.cat?' · '+E(r.cat):''}</b>${t.priv?'<span class="tk-pill" style="--c:#7A6A66">🔒 חסוי</span>':''}${sev}<small>${fmtD(r.d)} · ${E(uName(r.by))}${r.tr?' · 🎙️':''}</small></div>${first}</div>`; }
+  const first=see?Object.entries(rf(r)).filter(([k,v])=>v).slice(0,2).map(([k,v])=>`<div><small>${E(k)}:</small> ${E(String(v).slice(0,220))}${String(v).length>220?'…':''}</div>`).join(''):'<div class="tk-lock">🔒 חסוי — התוכן גלוי רק למדריך/ה של הקבוצה, לעו"ס של השכבה ולרכז</div>';
+  return `<div class="tk-ev" ${see?`onclick="tikView('${r.id}')"`:''}><div class="tk-evh"><b>${t.i} ${t.l}${r.cat?' · '+E(r.cat):''}</b>${t.priv?'<span class="tk-pill" style="--c:#7A6A66">🔒 חסוי</span>':''}${sev}<small>${fmtD(r.d)} · ${E(uName(r.by))}${see&&rtr(r)?' · 🎙️':''}</small></div>${first}</div>`; }
 function recTab(s,types){
   const L=sortD(recs().filter(r=>r.stu===s.n&&types.includes(r.t)));
   return `<div class="tk-acts">${canEdit()?types.map(t=>`<button class="tk-btn" onclick="tikNew('${t}','${jq(s.n)}')">➕ ${TYPES[t].l}</button>`).join(''):''}</div>${fmtPanel(types)}
     ${L.map(recLine).join('')||'<div class="tk-empty">אין עדיין רשומות</div>'}`;
+}
+function talksTab(s){
+  const ev=sortD(recs().filter(r=>r.stu===s.n&&TYPES[r.t].priv)).map(r=>({ts:r.d||'',h:recLine(r)}));
+  Object.values((window.MSG&&MSG.logs)||{}).forEach(l=>{ if(l&&l.stu===s.n) ev.push(logLine(l)); });
+  ev.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
+  return quick(s)+fmtPanel(['personal','discipline','parents','events','contracts'])
+    +`<div class="tk-note">אירועים וחוזים נשמרים גם בלשוניות "מונה אירועים" ו"חוזים".</div>${ev.map(e=>e.h).join('')||'<div class="tk-empty">אין עדיין שיחות או תיעודים</div>'}`;
 }
 function evCounts(L){ const c={}; L.forEach(r=>{ const k=r.cat||'אחר'; c[k]=(c[k]||0)+1; }); return Object.entries(c).sort((a,b)=>b[1]-a[1]); }
 function eventsTab(s){
@@ -144,6 +174,17 @@ function eventsTab(s){
     <div class="tk-tiles"><div class="tk-tile"><b>${L.length}</b><small>אירועים בסך הכל</small></div>${[3,2,1].map(v=>`<div class="tk-tile" style="--c:${EV_SEV[v].c}"><b>${L.filter(r=>+r.sev===v).length}</b><small>${EV_SEV[v].l}</small></div>`).join('')}</div>
     ${C.length?`<div class="tk-cnt">${C.map(([k,n])=>`<span>${E(k)} <b>${n}</b></span>`).join('')}</div>`:''}
     ${L.map(recLine).join('')||'<div class="tk-empty">אין אירועים 👏</div>'}`;
+}
+function clubsTab(s){
+  const h=typeof hugLoad==='function'?(hugLoad()[s.n]||{}):{}, hd=typeof cmpHug==='function'?(cmpHug(s.n)||{}):{};
+  const p1=h.p1||hd.p1||'', p2=h.p2||hd.p2||'', mev=h.mev||hd.mechina||'';
+  const B=typeof cmpBodiesOf==='function'?cmpBodiesOf(s.n):[];
+  const aft=typeof aftLoad==='function'?((aftLoad()[s.n]||{}).d||[]):[];
+  return `<div class="tk-cols"><div class="tk-box"><h3>🎨 חוגי פנאי</h3>${row('חוג ראשון',E(p1))}${row('חוג שני',E(p2))}${!p1&&!p2?'<div class="tk-empty">לא משובץ/ת לחוג פנאי</div>':''}</div>
+    <div class="tk-box"><h3>🤝 מעורבות חברתית</h3>${mev?`<div class="tk-row"><span>איפה</span><b>${E(mev)}</b></div>`:'<div class="tk-empty">לא רשום/ה</div>'}</div></div>
+    <div class="tk-box"><h3>🧭 תוכנית מלווה — גופי מנהיגות</h3>${B.length?`<div class="tk-cnt">${B.map(b=>`<span style="border-color:${b.clr};color:${b.clr}">${b.icon} ${E(b.label)}</span>`).join('')}</div>`:'<div class="tk-empty">לא חבר/ה באף גוף</div>'}</div>
+    ${aft.length?`<div class="tk-box"><h3>📖 לימודי אחר הצהריים</h3><div class="tk-cnt">${aft.map(d=>`<span>${E(typeof d==='number'&&typeof DAYS5!=='undefined'?DAYS5[d]:d)}</span>`).join('')}</div></div>`:''}
+    <div class="tk-note">עריכה: ניהול קבוצה ← חוגים / לימודי אחה"צ, ותוכנית מלווה. המידע מתעדכן כאן אוטומטית.</div>`;
 }
 function healthTab(s){
   const m=typeof medLoad==='function'?(medLoad()[s.n]||{}):{}, d=typeof dietLoad==='function'?(dietLoad()[s.n]||{}):{};
@@ -155,14 +196,38 @@ function studyTab(s){
   const lr=typeof limFind==='function'?limFind(s.n):null, rz=(typeof RAMZOR_DATA_NEW!=='undefined'?RAMZOR_DATA_NEW:[]).find(x=>x.n===s.n);
   const RC={green:'#059669',yellow:'#eab308',orange:'#ea580c',red:'#dc2626'}, RL={green:'תקין',yellow:'מעקב',orange:'מדאיג',red:'בסכנה'};
   const rzH=rz&&rz.s?Object.entries(rz.s).filter(([m,v])=>v&&v!=='none').map(([m,v])=>`<span class="tk-pill" style="--c:${RC[v]||'#94a3b8'}" title="${E((rz.nt||{})[m]||'')}">${E(m)}: ${RL[v]||v}</span>`).join(''):'';
-  const lim=lr&&(typeof limCan!=='function'||isAdmin())?Object.entries(lr).filter(([k,v])=>k!=='שם'&&v!==''&&v!=null).map(([k,v])=>row(E(k.replace(/_/g,' ')),E(v))).join(''):'';
-  return `<div class="tk-box"><h3>🚦 רמזור נשירה</h3>${rzH?`<div class="tk-cnt">${rzH}</div>`:'<div class="tk-empty">אין סימונים ברמזור</div>'}</div>
-    <div class="tk-box"><h3>📚 מצב לימודי (סמרט סקול)</h3>${lim||'<div class="tk-empty">אין נתונים לימודיים להצגה</div>'}</div>`;
+  const may=isAdmin()||(typeof limCan==='function'&&limCan(s.g==='אקדמיה'?'academy':s.g))||(typeof limCan==='function'&&sGrade(s)==='יב'&&limCan('yb'));
+  const LV={'אדום':'#dc2626','כתום':'#ea580c','צהוב':'#eab308','ירוק':'#059669'};
+  const L=window.LIMUDI;
+  let lim='';
+  if(!may) lim='<div class="tk-empty">🔒 המצב הלימודי גלוי לרכז ולמדריך/ה של הקבוצה</div>';
+  else if(!lr) lim=`<div class="tk-empty">${L&&L.students?'החניך/ה לא נמצא/ה בנתונים מסמרט סקול':'עוד לא נטענו נתונים מסמרט סקול'}</div>`;
+  else{
+    const sum=[['כיתה',lr['כיתה']],['מגמה',lr['מגמה']],['ממוצע',lr['ממוצע']],['חיסורים',lr['חיסורים']!=null?`${lr['חיסורים']} (${lr['אחוז_חיסור']}%)`:''],['הפרעות',lr['הפרעות']],['סלולרי',lr['סלולרי']],
+      ['יח"ל מתמטיקה',lr['יחל_מתמטיקה']],['יח"ל אנגלית',lr['יחל_אנגלית']],['ציונים מתחת ל-55',lr['ציונים_נמוכים']],['היעדרות גבוהה במקצוע',lr['היעדרות_במקצוע']],['בגרויות מתחת ל-55',lr['בגרות_מתחת_55']],['הערת מעקב אחרונה',lr['הערת_מעקב_אחרונה']]];
+    const SJ=Array.isArray(lr['מקצועות'])?lr['מקצועות']:null, BG=Array.isArray(lr['בגרויות'])?lr['בגרויות']:null, TT=lr['מערכת'];
+    lim=`<div class="tk-lvl"><span class="tk-pill" style="--c:${LV[lr['רמה']]||'#94a3b8'}">רמת סיכון: ${E(lr['רמה']||'')}${lr['ניקוד_סיכון']!=null?' ('+E(lr['ניקוד_סיכון'])+')':''}</span>${L&&L.date?`<small>עודכן ${E(L.date)}${L.period?' · '+E(L.period):''}</small>`:''}</div>
+      ${sum.filter(([k,v])=>v!==''&&v!=null).map(([k,v])=>row(k,E(v))).join('')}
+      <h3 style="margin-top:14px">📘 כל המקצועות</h3>${SJ&&SJ.length?`<div class="tk-tblw"><table class="tk-tbl"><tr><th>מקצוע</th><th>יח"ל</th><th>ציון</th><th>שיעורים</th><th>חיסורים</th></tr>
+        ${SJ.map(x=>{ const g=x[2]===''||x[2]==null?'':Math.round(+x[2]), ab=+x[4]||0, n=+x[3]||0, hi=n>=8&&ab/n>=0.4;
+          return `<tr><td>${E(x[0])}</td><td>${E(x[1]||'')}</td><td style="${g!==''&&g<55?'color:#b91c1c;font-weight:800':''}">${g}</td><td>${n||''}</td><td style="${hi?'color:#b91c1c;font-weight:800':''}">${ab||''}${n&&ab?` (${Math.round(ab/n*100)}%)`:''}</td></tr>`; }).join('')}</table></div>`
+        :'<div class="tk-empty">הפירוט לפי מקצוע יופיע אחרי העדכון השבועי הבא מסמרט סקול</div>'}
+      ${BG&&BG.length?`<h3 style="margin-top:14px">🎓 ציוני בגרות</h3><div class="tk-cnt">${BG.map(b=>`<span style="${+b[1]<55?'color:#b91c1c;border-color:#fecaca':''}">${E(b[0])}: <b>${E(b[1])}</b></span>`).join('')}</div>`:''}
+      <h3 style="margin-top:14px">🗓️ מערכת שעות</h3>${ttHtml(TT)}`;
+  }
+  return `<div class="tk-box"><h3>📚 מצב לימודי — סמרט סקול</h3>${lim}</div>
+    <div class="tk-box"><h3>🚦 רמזור נשירה</h3>${rzH?`<div class="tk-cnt">${rzH}</div>`:'<div class="tk-empty">אין סימונים ברמזור</div>'}</div>`;
 }
 
+/* מערכת שעות: {ימים:[...], שעות:[[תא לכל יום]...]} או רשימת [יום, שעה, מקצוע, מורה] */
+function ttHtml(TT){ if(!TT) return '<div class="tk-empty">מערכת השעות תופיע אחרי העדכון השבועי הבא מסמרט סקול</div>';
+  if(Array.isArray(TT)&&TT.length&&Array.isArray(TT[0])){ const days=[...new Set(TT.map(r=>r[0]))], hrs=[...new Set(TT.map(r=>r[1]))].sort((a,b)=>(+a||0)-(+b||0));
+    return `<div class="tk-tblw"><table class="tk-tbl tk-tt"><tr><th>שעה</th>${days.map(d=>`<th>${E(d)}</th>`).join('')}</tr>${hrs.map(h=>`<tr><td><b>${E(h)}</b></td>${days.map(d=>{ const c=TT.filter(r=>r[0]===d&&r[1]===h); return `<td>${c.map(r=>`${E(r[2])}${r[3]?`<small> · ${E(r[3])}</small>`:''}`).join('<br>')}</td>`; }).join('')}</tr>`).join('')}</table></div>`; }
+  return '<div class="tk-empty">מערכת השעות לא בפורמט מוכר</div>'; }
 /* ═══════════ עורך רשומה (כולל הקלטה ותמלול) ═══════════ */
 window.tikNew=function(t,stu,g){ if(!canEdit()) return; T.ed={id:null,t,stu:stu||'',g:g||(stuBy(stu)||{}).g||'',d:todayIso(),f:{},cat:'',sev:'1',tr:''}; edRender(); };
-window.tikEdit=function(id){ const r=T.r[id]; if(!r) return; T.ed=Object.assign({id},JSON.parse(JSON.stringify(r)),{f:Object.assign({},r.f||{}),tr:r.tr||''}); T.ed.sev=String(r.sev||1); edRender(); };
+window.tikEdit=function(id){ const r0=T.r[id]; if(!r0) return; const r=Object.assign({id},r0); if(r.conf&&!cont(r)){ toast('🔒 אין הרשאה לתוכן החסוי'); return; }
+  T.ed=Object.assign({id},JSON.parse(JSON.stringify(r0)),{f:Object.assign({},rf(r)),tr:rtr(r)}); T.ed.sev=String(r.sev||1); edRender(); };
 function edRead(){ const e=T.ed, g=k=>document.getElementById('te-'+k); if(!e) return;
   ['stu','d','cat','sev','tr'].forEach(k=>{ if(g(k)) e[k]=g(k).value; });
   TYPES[e.t].f.forEach((k,i)=>{ const el=g('f'+i); if(el) e.f[k]=el.value; }); }
@@ -196,11 +261,16 @@ window.tikSave=function(){ edRead(); const e=T.ed, t=TYPES[e.t];
   if(T.rec) tikRecStop();
   const s=stuBy(e.stu), o={t:e.t,stu:e.stu||'',g:s?s.g:(e.g||''),d:e.d||todayIso(),f:e.f,upd:Date.now()};
   if(e.tr.trim()) o.tr=e.tr.trim(); if(t.ev){ o.cat=e.cat||'אחר'; o.sev=+e.sev||1; }
-  if(e.id){ const old=T.r[e.id]||{}; o.by=old.by||me().id; o.at=old.at||Date.now(); put('r/'+e.id,o); }
-  else { o.by=me().id; o.at=Date.now(); const id=uid(); put('r/'+id,o); if(e.legacy) knLegacyDone(e.legacy); }
+  const id=e.id||uid(), old=e.id?(T.r[e.id]||{}):null; o.by=old?old.by||me().id:me().id; o.at=old?old.at||Date.now():Date.now();
+  if(t.priv&&o.g){ const c={f:o.f,tr:o.tr||'',bm:(old&&old.conf&&cont(Object.assign({id},old))||{}).bm||myEmail(),at:o.at};
+    if(old&&old.conf&&old.g&&old.g!==o.g) run((dbm,rdb)=>dbm.remove(dbm.ref(rdb,CONF+'/'+old.g+'/'+id)));
+    run((dbm,rdb)=>dbm.set(dbm.ref(rdb,CONF+'/'+o.g+'/'+id),c)).then(ok=>{ if(!ok) return; T.mine[id]=c; delete o.f; delete o.tr; o.conf=1; put('r/'+id,o); });
+  } else put('r/'+id,o);
+  if(!e.id&&e.legacy) knLegacyDone(e.legacy);
   T.ed=null; edRender(); toast(`✅ נשמר${o.stu?' בתיק של '+o.stu:''}`); refresh(); };
-window.tikDel=function(id){ if(!confirm('למחוק את הרשומה? אי אפשר לשחזר.')) return; put('r/'+id,null); T.ed=null; edRender(); };
-window.tikView=function(id){ const r=T.r[id]; if(!r||!canSee(Object.assign({id},r))) return; const t=TYPES[r.t];
+window.tikDel=function(id){ if(!confirm('למחוק את הרשומה? אי אפשר לשחזר.')) return; const r=T.r[id];
+  if(r&&r.conf&&r.g) run((dbm,rdb)=>dbm.remove(dbm.ref(rdb,CONF+'/'+r.g+'/'+id))); put('r/'+id,null); T.ed=null; edRender(); };
+window.tikView=function(id){ const r0=T.r[id]; if(!r0||!canSee(Object.assign({id},r0))) return; const t=TYPES[r0.t]; const r=Object.assign({},r0,{f:rf(Object.assign({id},r0)),tr:rtr(Object.assign({id},r0))});
   let m=document.getElementById('tikEd'); if(!m){ m=document.createElement('div'); m.id='tikEd'; m.className='tik-modal'; document.body.appendChild(m); }
   m.innerHTML=`<div class="tk-dlg"><div class="tk-dlh"><b>${t.i} ${t.l}${r.stu?' — '+E(r.stu):''}</b><button onclick="document.getElementById('tikEd').remove()">✕</button></div>
     <div class="tk-sub">${fmtD(r.d)} · ${E(uName(r.by))}${r.cat?' · '+E(r.cat):''}${r.t==='events'&&EV_SEV[r.sev]?' · '+EV_SEV[r.sev].l:''}</div>
@@ -262,7 +332,7 @@ function docHtml(t,r){ const ty=TYPES[t], s=r&&stuBy(r.stu);
   ${ty.ev?`<tr><td class="l">סוג האירוע</td><td>${r?E(r.cat):''}</td></tr><tr><td class="l">חומרה</td><td>${r&&EV_SEV[r.sev]?EV_SEV[r.sev].l:''}</td></tr>`:''}
   ${ty.f.map(k=>`<tr><td class="l">${E(k)}</td><td class="v">${fld(k)}</td></tr>`).join('')}</table>
   ${t==='contracts'?'<div class="sig"><div>חתימת החניך/ה</div><div>חתימת המדריך/ה</div><div>חתימת הרכז</div></div>':''}</body></html>`; }
-window.tikDoc=function(t,id,mode){ const r=id?Object.assign({id},T.r[id]):null; const h=docHtml(t,r);
+window.tikDoc=function(t,id,mode){ let r=id?Object.assign({id},T.r[id]):null; if(r) r.f=rf(r); const h=docHtml(t,r);
   if(mode==='word'){ const b=new Blob(['﻿'+h],{type:'application/msword'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`${TYPES[t].l}${r&&r.stu?' - '+r.stu:''}.doc`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); return; }
   const w=window.open('','_blank'); if(!w){ toast('הדפדפן חסם חלון חדש — אפשרו חלונות קופצים'); return; } w.document.open(); w.document.write(h); w.document.close(); };
 /* פורמט משלי: קובץ Word (‎.docx) עם תגיות בסוגריים מסולסלים */
@@ -275,7 +345,7 @@ window.tikFmtUp=function(t){ if(!confirm(`צירוף פורמט משלי ל"${TY
 window.tikFmtDel=function(id){ if(confirm('להסיר את הפורמט?')) put('fmt/'+id,null); };
 let LIBS=null; function loadLibs(){ if(LIBS) return LIBS; const ld=src=>new Promise((ok,no)=>{ const s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=no; document.head.appendChild(s); });
   LIBS=ld('https://cdn.jsdelivr.net/npm/pizzip@3.1.7/dist/pizzip.min.js').then(()=>ld('https://cdn.jsdelivr.net/npm/docxtemplater@3.47.1/build/docxtemplater.js')); LIBS.catch(()=>{ LIBS=null; }); return LIBS; }
-window.tikFill=async function(fid,id){ const f=T.fmt[fid], r=T.r[id]; if(!f||!r) return;
+window.tikFill=async function(fid,id){ const f=T.fmt[fid], r0=T.r[id]; if(!f||!r0) return; const r=Object.assign({},r0,{f:rf(Object.assign({id},r0))});
   try{ await loadLibs(); const bin=atob(f.b64); const zip=new PizZip(bin);
     const d=new window.docxtemplater(zip,{paragraphLoop:true,linebreaks:true,nullGetter:()=>''});
     const s=stuBy(r.stu)||{}, data={'שם_החניך':r.stu||'','קבוצה':s.g||'','תאריך':fmtD(r.d),'כותב':uName(r.by),'סוג_האירוע':r.cat||'','חומרה':EV_SEV[r.sev]?EV_SEV[r.sev].l:''};
@@ -355,6 +425,8 @@ const css=document.createElement('style'); css.textContent=`
 .tk-tblw{overflow-x:auto}.tk-tbl{width:100%;border-collapse:collapse;font-size:14px}.tk-tbl th{background:#8E033C;color:#fff;padding:7px;text-align:right;font:700 13px Heebo,sans-serif}.tk-tbl td{padding:6px 8px;border-bottom:1px solid #FFF1EB}.tk-tbl a{color:#0f1e2e}
 .tk-wr{position:relative}.tk-who{display:inline-block;font:700 13px Heebo,sans-serif;color:#0e7490;text-decoration:none;margin:2px 4px 3px}
 .tk-leg{background:#FBF6F3}
+.tk-lvl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}.tk-lvl small{color:#8496ab}
+.tk-tt td,.tk-tt th{text-align:center;font-size:13px;min-width:70px}.tk-tt td small{color:#7A6A66}
 .tk-fmtd{background:#fff;border:1px solid #F3C2B0;border-radius:12px;padding:7px 12px;margin-bottom:10px}.tk-fmtd summary{cursor:pointer;font:700 14px Heebo,sans-serif;color:#8E033C}
 .tk-fmtr{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 0;border-top:1px solid #FFF1EB}.tk-fmtr>b{font:700 13.5px Heebo,sans-serif;min-width:120px}
 .tik-modal{position:fixed;inset:0;background:rgba(15,30,46,.45);z-index:9100;display:flex;align-items:flex-start;justify-content:center;padding:30px 10px;overflow:auto}
