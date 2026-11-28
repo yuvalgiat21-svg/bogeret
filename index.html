@@ -1806,6 +1806,19 @@ const LIM_ORDER={'אדום':0,'כתום':1,'צהוב':2,'ירוק':3};
 /* הרשאות: רכז רואה הכול; כל מדריך רואה רק את הקבוצה שלו; עו"סיות ושינשינים לא רואים */
 const LIM_OWN={eili:['שחף'], arbel:['שיר'], udi:['שלדג'], sharon:['yb'], eran:['yb'], itai:['yb'], ami:['academy']};
 function limCan(g){ if(!ME) return false; if(ME.mode==='admin') return true; if(ME.mode!=='edit') return false; return (LIM_OWN[ME.id]||[]).includes(g); }
+/* ניהול קבוצה — סדר הלשוניות (בקשת יובל 28.11.2026): יומן קבוצה · חניכי הקבוצה · בית ספר · תוכנית חינוכית · רמזור · מרכז למידה · הורים · ואחריהם השאר */
+const GRP_NEW={cal:'📅 יומן קבוצה',school:'🏫 בית ספר',lc:'📖 מרכז למידה',parents:'👪 הורים'};
+function grpOrder(items,subs,key,famG){
+  const lbl=Object.fromEntries(items.map(x=>[x.k,x]));
+  const order=['cal','roster','school','edu','ramzor','lc','parents'];
+  const rest=items.map(x=>x.k).filter(k=>!order.includes(k)&&k!=='limudi');
+  const ks=order.concat(rest);
+  const it=ks.map(k=>lbl[k]||{k,label:GRP_NEW[k],hl:k==='school'});
+  const box=(kind)=>`<div data-grpx="${kind}" data-key="${String(key).replace(/"/g,'&quot;')}"><div style="color:var(--text3);padding:14px">טוען…</div></div>`;
+  const add={cal:box('cal'),school:box('school'),lc:box('lc'),parents:`<div data-famgrp="${String(famG).replace(/"/g,'&quot;')}"></div>`};
+  const sb={}; ks.forEach(k=>{ sb[k]=add[k]!==undefined?add[k]:subs[k]; });
+  return {items:it,subs:sb};
+}
 function limItem(g){ return limCan(g)?[{k:'limudi',label:'📚 מצב לימודי',hl:true}]:[]; }
 function limTok(n){ return String(n||'').replace(/[׳'`"״\-]/g,' ').split(/\s+/).filter(Boolean).map(t=>t.replace(/[וי]/g,'')); }
 function limFind(name){
@@ -5672,13 +5685,14 @@ function reorganize(){
                  {k:'kn',label:'📋 סיכומי פגישות'}].concat(limItem(g));
     sec.innerHTML = info('👥',`קבוצת ${g} — יא'`,
       `${names.length} חניכים. כאן המדריך מזין את הנתונים של הקבוצה, והם מתגלגלים אוטומטית לסקירה השכבתית.`);
-    const nav=mkNav('gr'+g,items,pickIn(inner,'gr'+g),{grid:true}); sec.appendChild(nav);
     window.aggViews['gr'+g+'-ramzor']={names:names,title:g};
-    const subs={roster:viewRoster(names,GRP_CLR[g]),ramzor:viewRamzor(names,g),
+    const subs0={roster:viewRoster(names,GRP_CLR[g]),ramzor:viewRamzor(names,g),
                 rooms:viewRoomsGroup(g),edu:viewEdu(eduItems(g).length? g : "יא'",g,g),visits:viewVisits(names,'vis-'+g,VIS_PHASES_YA),pocket:viewPocket(names,'pm-'+g),
                 hug:viewHugim(names,'hug-'+g),aft:viewAfter(names,'aft-'+g),
                 med:viewMed(names,'med-'+g),diet:viewDiet(names,'diet-'+g),
-                kn:viewKnowledge(g,g),limudi:limCan(g)?viewLimudi(names,g):''};
+                kn:viewKnowledge(g,g)};
+    const {items:items2,subs}=grpOrder(items,subs0,g,g);
+    const nav=mkNav('gr'+g,items2,pickIn(inner,'gr'+g),{grid:true}); sec.appendChild(nav);
     Object.entries(subs).forEach(([k,html],n)=>{ const d=mkSub('gr'+g+'-'+k,n===0); d.innerHTML=html; inner.appendChild(d); });
     sec.appendChild(inner); gr.appendChild(sec); knWire(g);
   });
@@ -5693,15 +5707,16 @@ function reorganize(){
                  {k:'diet',label:'🥗 תזונה'},{k:'kn',label:'📋 סיכומי פגישות'},
                  {k:'kb',label:'🗂️ שימור ידע'},
                  {k:'siyum',label:'🎓 מכלול סיום',hl:true}].concat(limItem('yb'));
-  secYB.innerHTML = info('🌊',"קהילת יב' — חוף וצוק",
-    `${yb.length} חניכים בשתי הקבוצות. כאן מנוהלים הנתונים של הקהילה כולה, כולל מכלול הסיום.`);
-  secYB.appendChild(mkNav('gryb',ybItems,pickIn(innerYB,'gryb'),{grid:true}));
+  secYB.innerHTML = info('🌊',"קהילת יב'",
+    `${yb.length} חניכים. כאן מנוהלים הנתונים של הקהילה כולה, כולל מכלול הסיום.`);
   window.aggViews['gryb-ramzor']={names:yb,title:"קהילת יב'"};
-  const ybSubs={roster:viewRoster(yb,'#0891b2'),ramzor:viewRamzor(yb,"קהילת יב'"),
+  const ybSubs0={roster:viewRoster(yb,'#0891b2'),ramzor:viewRamzor(yb,"קהילת יב'"),
                 rooms:viewRoomsYB(),edu:viewEdu("יב'","קהילת יב'",'קהילת יב'),visits:viewVisits(yb,'vis-yb',VIS_PHASES_YB),pocket:viewPocket(yb,'pm-yb'),
                 hug:viewHugim(yb,'hug-yb'),aft:viewAfter(yb,'aft-yb'),
                 med:viewMed(yb,'med-yb'),diet:viewDiet(yb,'diet-yb'),
-                kn:viewKnowledge('yb',"קהילת יב'"),kb:viewKB('yb',"קהילת יב'"),limudi:limCan('yb')?viewLimudi(yb,"קהילת יב'"):''};
+                kn:viewKnowledge('yb',"קהילת יב'"),kb:viewKB('yb',"קהילת יב'")};
+  const {items:ybItems2,subs:ybSubs}=grpOrder(ybItems.filter(x=>x.k!=='siyum'),ybSubs0,'yb','קהילת יב');
+  secYB.appendChild(mkNav('gryb',ybItems2.concat(ybItems.filter(x=>x.k==='siyum')),pickIn(innerYB,'gryb'),{grid:true}));
   Object.entries(ybSubs).forEach(([k,html],n)=>{ const d=mkSub('gryb-'+k,n===0); d.innerHTML=html; innerYB.appendChild(d); });
   const dSiyum=mkSub('gryb-siyum'); while(old.siyum.firstChild) dSiyum.appendChild(old.siyum.firstChild);
   innerYB.appendChild(dSiyum);
@@ -5718,14 +5733,15 @@ function reorganize(){
     {k:'hug',label:'🎨 חוגים'},{k:'aft',label:'📖 לימודי אחה"צ'},
     {k:'med',label:'🏥 רפואי'},{k:'diet',label:'🥗 תזונה'},
     {k:'kn',label:'📋 סיכומי פגישות'}].concat(limItem('academy'));
-  secAc.appendChild(mkNav('grac',acItems,pickIn(innerAc,'grac'),{grid:true}));
-  const acSubs={roster:viewAcademyRoster(), rooms:viewAcademyRooms(),
+  const acSubs0={roster:viewAcademyRoster(), rooms:viewAcademyRooms(),
     ramzor:viewRamzor(acN,'אקדמיה לכדורסל'), edu:viewEdu("יא'",'אקדמיה לכדורסל','אקדמיה'),
     visits:viewVisits(acN,'vis-acad',VIS_PHASES_YB),
     pocket:viewPocket(acN,'pm-acad'),
     hug:viewHugim(acN,'hug-acad'), aft:viewAfter(acN,'aft-acad'),
     med:viewMed(acN,'med-acad'), diet:viewDiet(acN,'diet-acad'),
-    kn:viewKnowledge('acad','אקדמיה לכדורסל'), limudi:limCan('academy')?viewLimudi(acN,'אקדמיה לכדורסל'):''};
+    kn:viewKnowledge('acad','אקדמיה לכדורסל')};
+  const {items:acItems2,subs:acSubs}=grpOrder(acItems,acSubs0,'academy','אקדמיה');
+  secAc.appendChild(mkNav('grac',acItems2,pickIn(innerAc,'grac'),{grid:true}));
   Object.entries(acSubs).forEach(([k,html],n)=>{
     const d=mkSub('grac-'+k,n===0); d.innerHTML=html; innerAc.appendChild(d); });
   window.aggViews['grac-ramzor']={names:acN,title:'אקדמיה לכדורסל'};
@@ -5733,6 +5749,7 @@ function reorganize(){
 
 
   main.appendChild(gr);
+  setTimeout(()=>{ if(window.grpRefresh) grpRefresh(); if(window.famRender) famRender(); },0);
 
   /* ---------- 3.5 גופי מנהיגות ---------- */
   /* גופי המנהיגות עברו לתוכנית מלווה (ראו למטה) */
@@ -8128,10 +8145,10 @@ window.syncRamzorFromSheet = async function() {
 };
 </script>
 <script src="msg.js?v=7"></script>
-<script src="tik.js?v=10"></script>
+<script src="tik.js?v=11"></script>
 <script src="home.js?v=4"></script>
 <script src="chk.js?v=1"></script>
-<script src="fam.js?v=2"></script>
+<script src="fam.js?v=3"></script>
 <script src="rooms.js?v=1"></script>
 <script src="push.js?v=2"></script>
 </body>

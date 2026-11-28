@@ -108,10 +108,10 @@ async function migrate(dbm,rdb){ if(MIGR||!isAdmin()) return; MIGR=true;
     try{ await dbm.set(dbm.ref(rdb,CONF+'/'+r.g+'/'+r.id),{f:r.f||{},tr:r.tr||'',bm:'',at:r.at||Date.now()});
       await dbm.update(dbm.ref(rdb,ROOT+'/r/'+r.id),{f:null,tr:null,conf:1}); }catch(e){ console.warn('tik migrate',e); } } }
 function start(){ if(T.started||!me()) return; T.started=true;
-  db().then(({dbm,rdb})=>{ confListen(dbm,rdb); lcListen(dbm,rdb); return dbm.onValue(dbm.ref(rdb,ROOT),snap=>{ const v=snap.val()||{}; T.r=v.r||{}; T.fmt=v.fmt||{}; T.cal=v.cal||{}; T.ok=true; mineFetch(dbm,rdb); migrate(dbm,rdb); refresh(); },
+  db().then(({dbm,rdb})=>{ confListen(dbm,rdb); lcListen(dbm,rdb); return dbm.onValue(dbm.ref(rdb,ROOT),snap=>{ const v=snap.val()||{}; T.r=v.r||{}; T.fmt=v.fmt||{}; T.cal=v.cal||{}; T.tch=v.tch||{}; T.ok=true; mineFetch(dbm,rdb); migrate(dbm,rdb); refresh(); },
     e=>{ console.warn('tik listen',e); T.started=false; DB=null; setTimeout(start,3000); }); }).catch(()=>{ T.started=false; DB=null; setTimeout(start,3000); }); }
 function refresh(){ const ae=document.activeElement; if(T.ed||T.rec) return; if(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)&&ae.closest('#sec-tik,.tik-modal')) return;
-  if(active()) render(); document.querySelectorAll('[data-tikgrp]').forEach(el=>{ el.innerHTML=grpHtml(el.dataset.tikgrp,el.dataset.tikt); }); }
+  if(active()) render(); if(window.grpRefresh) grpRefresh(); document.querySelectorAll('[data-tikgrp]').forEach(el=>{ el.innerHTML=grpHtml(el.dataset.tikgrp,el.dataset.tikt); }); }
 const active=()=>{ const s=document.getElementById('sec-tik'); return s&&s.classList.contains('active'); };
 
 /* חדר + מבנה (ורד / זית / ג׳נטילי) — מתוך שיבוץ החדרים בפועל */
@@ -516,6 +516,134 @@ window.tikLegacy=function(scope,kt,i){ const it=(knGet(scope,kt)||[])[i]; if(!it
   T.ed.f[TYPES[t].f[0]]=it.title||''; T.ed.f[TYPES[t].f[1]]=it.content||''; T.ed.legacy={scope,kt,i,title:it.title}; edRender(); };
 function knLegacyDone(l){ const a=knGet(l.scope,l.kt); const j=a.findIndex((x,ix)=>ix===l.i&&x.title===l.title); if(j>=0){ a.splice(j,1); knSet(l.scope,l.kt,a); } }
 
+/* ═══════════ ניהול קבוצה — לשוניות חדשות (בקשת יובל 28.11.2026) ═══════════
+   📅 יומן קבוצה · 🏫 בית ספר (מבחנים, אירועי השכבה, ציונים, תובנות ונושאים לטיפול, קשר עם מורים) · 📖 מרכז למידה
+   בדף: <div data-grpx="cal|school|lc" data-key="שלדג|yb|academy"></div> — נצבע מחדש כשהנתונים מגיעים.
+   פרטי קשר של מורים: secure/tik/tch/<מפתח> = {n, ph, em, note}  (בהמשך: צ'אט מורה–מדריך) */
+const GK=key=>key==='yb'?{names:students().filter(s=>sGrade(s)==='יב'&&s.g!=='אקדמיה'),title:'קהילת יב',lay:['sch_yb'],lim:'yb'}
+  :key==='academy'?{names:(typeof ACAD_STUDENTS!=='undefined'?ACAD_STUDENTS:[]),title:'אקדמיה',lay:['sch_ya','sch_yb'],lim:'academy'}
+  :{names:students().filter(s=>s.g===key),title:key,lay:['sch_ya'],lim:key};
+let SC=null, SC_LOADING=false;
+function schCal(){ if(SC||SC_LOADING) return SC; SC_LOADING=true;
+  fetch('school_cal.json',{cache:'no-cache'}).then(r=>r.json()).then(j=>{ SC=j; grpRefresh(); }).catch(()=>{ SC={ev:[]}; }); return null; }
+const EXRX=/מבחן|בחינ|בגרות|בוחן|מתכונ|מבדק|מועד [אב]/;
+const GST={};   /* מצב פנימי לכל קבוצה: לשונית בתוך "בית ספר", חודש ביומן וכו' */
+const gst=key=>GST[key]=GST[key]||{sch:'exams',m:null,sel:null};
+window.grpSet=function(key,k,v){ const g=gst(key);
+  if(k==='m'){ const d=new Date((g.m||todayIso().slice(0,7))+'-01T12:00:00'); d.setMonth(d.getMonth()+v); g.m=isoD(d).slice(0,7); g.sel=null; }
+  else if(k==='today'){ g.m=todayIso().slice(0,7); g.sel=todayIso(); } else g[k]=v; grpRefresh(); };
+let GR_T=null;
+function grpRefresh(){ clearTimeout(GR_T); GR_T=setTimeout(()=>{ document.querySelectorAll('[data-grpx]').forEach(el=>{ try{ el.innerHTML=grpHtml2(el.dataset.grpx,el.dataset.key); }catch(e){ console.warn('grpx',e); } }); },40); }
+window.grpRefresh=grpRefresh;
+document.addEventListener('click',e=>{ if(e.target.closest('.subnav,.nav-grid,[data-k]')) setTimeout(grpRefresh,30); });
+function grpHtml2(kind,key){ return kind==='cal'?grpCal(key):kind==='school'?grpSchool(key):kind==='lc'?grpLc(key):''; }
+
+/* 📅 יומן קבוצה */
+function grpCal(key){
+  const G=GK(key), g=gst(key), m=g.m||todayIso().slice(0,7), first=new Date(m+'-01T12:00:00'), y=first.getFullYear(), mo=first.getMonth();
+  const start=new Date(first); start.setDate(1-first.getDay()); const last=new Date(y,mo+1,0,12), end=new Date(last); end.setDate(last.getDate()+(6-last.getDay()));
+  const from=isoD(start), to=isoD(end), inR=d=>d&&d>=from&&d<=to, items=[], NM=new Set(G.names.map(s=>s.n));
+  const sc=schCal(); (sc&&sc.ev||[]).forEach(x=>{ if(!(G.lay.includes(x.l)||x.l==='sch_all')) return; const dt=new Date(x.s+'T12:00:00'), e=new Date((x.e||x.s)+'T12:00:00');
+    while(dt<=e){ const d=isoD(dt); if(inR(d)) items.push({d,t:(EXRX.test(x.t)?'📝 ':'🏫 ')+x.t,k:EXRX.test(x.t)?'task':'visit'}); dt.setDate(dt.getDate()+1); } });
+  if(typeof PC!=='undefined'&&PC.custom) PC.custom.forEach(x=>{ if(x&&(x.grp===G.title||x.grp===key||(key==='yb'&&/יב/.test(x.grp||'')))&&inR(x.s)) items.push({d:x.s,tm:x.tm||'',t:'📌 '+(x.t||''),k:'me'}); });
+  const per={}; const add=(d,k,t)=>{ (per[d+'|'+k]=per[d+'|'+k]||{d,k,t,n:[]}); };
+  Object.entries(LC.ses||{}).forEach(([k2,v])=>{ if(!v) return; const who=(v.students||[]).filter(n=>NM.has(n)); if(!who.length) return; const [w,d,h]=k2.split('|'); const dt=new Date(w+'T12:00:00'); dt.setDate(dt.getDate()+(+d||0)); const di=isoD(dt);
+    if(inR(di)) items.push({d:di,tm:String(h).padStart(2,'0')+':00',t:'📖 תגבור '+(v.subject||'')+' · '+who.join(', '),k:'lc'}); });
+  (LC.exits||[]).forEach(x=>{ if(!x||!NM.has(x.sid)||!x.date) return; const dt=new Date(x.date+'T12:00:00'), e=new Date((x.rdate||x.retDate||x.date)+'T12:00:00');
+    while(dt<=e){ const di=isoD(dt); if(inR(di)) items.push({d:di,tm:di===x.date&&x.from!=null?String(x.from).padStart(2,'0')+':00':'',t:'🚪 '+x.sid+(di===x.date?' יוצא/ת':' מחוץ לכפר')+(x.status==='approved'?' ✓':' ⏳'),k:'exit'}); dt.setDate(dt.getDate()+1); } });
+  Object.values(T.cal||{}).forEach(x=>{ if(x&&NM.has(x.stu)&&inR(x.d)) items.push({d:x.d,tm:x.tm||'',t:'👤 '+x.stu+': '+x.t,k:'me'}); });
+  items.sort((a,b)=>a.d.localeCompare(b.d)||String(a.tm||'').localeCompare(String(b.tm||'')));
+  const by={}; items.forEach(x=>(by[x.d]=by[x.d]||[]).push(x));
+  const today=todayIso(), sel=g.sel, jk=jq(key);
+  const LG={visit:['#b45309','אירוע בית ספר'],task:['#c2410c','מבחן'],me:['#8E033C','אירוע קבוצה / אישי'],lc:['#0369a1','תגבור'],exit:['#047857','יציאה']};
+  let cells=''; const dt=new Date(start);
+  while(dt<=end){ const d=isoD(dt), L=by[d]||[];
+    cells+=`<div class="tk-cal-c${dt.getMonth()!==mo?' out':''}${d===today?' now':''}${d===sel?' sel':''}" onclick="grpSet('${jk}','sel','${d}')"><span class="tk-cal-n">${dt.getDate()}</span>
+      ${L.slice(0,3).map(x=>`<div class="tk-cal-e" style="--c:${LG[x.k][0]}">${E(x.t.replace(/^\S+\s/,''))}</div>`).join('')}${L.length>3?`<div class="tk-cal-more">+${L.length-3}</div>`:''}
+      <div class="tk-cal-dots">${L.slice(0,4).map(x=>`<i style="background:${LG[x.k][0]}"></i>`).join('')}</div></div>`; dt.setDate(dt.getDate()+1); }
+  const selL=sel?(by[sel]||[]):[];
+  return `<div class="tk-cal-h"><button onclick="grpSet('${jk}','m',1)">‹</button><b>${HEB_M[mo]} ${y}</b><button onclick="grpSet('${jk}','m',-1)">›</button><button class="tk-btn2 sm" onclick="grpSet('${jk}','today')">היום</button>
+      <span style="flex:1"></span>${canEdit()?`<button class="tk-btn sm" onclick="show('calendar');setTimeout(()=>{ if(window.homeNewGroupEvent) homeNewGroupEvent(); },60)">➕ אירוע קבוצה</button>`:''}</div>
+    <div class="tk-cal-lg">${Object.values(LG).map(([c,l])=>`<span><i style="background:${c}"></i>${l}</span>`).join('')}</div>
+    <div class="tk-cal"><div class="tk-cal-wd">${['א','ב','ג','ד','ה','ו','ש'].map(x=>`<span>${x}</span>`).join('')}</div><div class="tk-cal-g">${cells}</div></div>
+    ${sel?`<div class="tk-cal-day"><div class="tk-cal-dh">${LDAYS[new Date(sel+'T12:00:00').getDay()]||'שבת'} ${fmtD(sel)}</div>${selL.length?selL.map(x=>`<div class="tk-cal-it" style="--c:${LG[x.k][0]}">${x.tm?`<b>${E(x.tm)}</b> `:''}${E(x.t)}</div>`).join(''):'<div class="tk-empty">אין אירועים ביום הזה</div>'}</div>`:'<div class="tk-note">לחיצה על יום מציגה את כל מה שקורה בו בקבוצה.</div>'}`;
+}
+
+/* 🏫 בית ספר */
+function grpSchool(key){
+  const G=GK(key), g=gst(key), jk=jq(key), may=isAdmin()||(typeof limCan==='function'&&limCan(G.lim));
+  const tabs=[['exams','📝 לוח מבחנים'],['events','🏫 אירועי השכבה'],['grades','📊 ציונים'],['insights','💡 תובנות ונושאים לטיפול'],['teachers','👩‍🏫 קשר עם מורים']];
+  let body='';
+  if(g.sch==='exams'||g.sch==='events'){ const sc=schCal(); if(!sc) body='<div class="tk-empty">טוען את לוחות בית הספר…</div>'; else {
+      const today=todayIso(), ex=g.sch==='exams';
+      const L=(sc.ev||[]).filter(x=>(G.lay.includes(x.l)||(!ex&&x.l==='sch_all'))&&(x.e||x.s)>=today&&(ex?EXRX.test(x.t):!EXRX.test(x.t))).sort((a,b)=>a.s.localeCompare(b.s)).slice(0,ex?80:60);
+      const wk=d=>{ const x=new Date(d+'T12:00:00'); x.setDate(x.getDate()-x.getDay()); return isoD(x); }, byW={}; L.forEach(x=>(byW[wk(x.s)]=byW[wk(x.s)]||[]).push(x));
+      body=Object.keys(byW).sort().map(w=>`<div class="tk-cal-day"><div class="tk-cal-dh">שבוע ${fmtD(w)}${w<=today?' · השבוע':''}</div>${byW[w].map(x=>`<div class="tk-cal-it" style="--c:${ex?'#c2410c':'#b45309'}"><b>${LDAYS[new Date(x.s+'T12:00:00').getDay()]||'שבת'} ${fmtD(x.s)}${x.e&&x.e!==x.s?'–'+fmtD(x.e):''}</b> ${E(x.t)}</div>`).join('')}</div>`).join('')
+        ||`<div class="tk-empty">${ex?'אין מבחנים קרובים בלוח':'אין אירועים קרובים'}</div>`;
+      body+=`<div class="tk-note">מקור: יומני בית הספר רמות ים${sc.updated?' · עודכן '+new Date(sc.updated).toLocaleDateString('he-IL'):''}</div>`; } }
+  else if(g.sch==='grades'){ body=!may?'<div class="tk-empty">🔒 הציונים גלויים לרכז ולמדריך/ה של הקבוצה</div>':(typeof viewLimudi==='function'?viewLimudi(G.names,G.title):''); }
+  else if(g.sch==='insights') body=!may?'<div class="tk-empty">🔒 גלוי לרכז ולמדריך/ה של הקבוצה</div>':grpInsights(G);
+  else body=grpTeachers(G,may);
+  return `<div class="tk-sub2">${tabs.map(([k,l])=>`<button class="${g.sch===k?'on':''}" onclick="grpSet('${jk}','sch','${k}')">${l}</button>`).join('')}</div>${body}`;
+}
+function grpInsights(G){
+  const rows=G.names.map(s=>({s,r:typeof limFind==='function'?limFind(s.n):null})).filter(x=>x.r);
+  if(!rows.length) return '<div class="tk-empty">אין נתונים מסמרט סקול לקבוצה</div>';
+  const lv=k=>rows.filter(x=>x.r['רמה']===k), red=lv('אדום'), orange=lv('כתום');
+  const weakBy={}, absBy={}; rows.forEach(({s,r})=>{ (r['מקצועות']||[]).forEach(x=>{ if(x[2]!==''&&x[2]!=null&&+x[2]<55)(weakBy[x[0]]=weakBy[x[0]]||[]).push(s.n); if(+x[3]>=8&&+x[4]/+x[3]>=0.4)(absBy[x[0]]=absBy[x[0]]||[]).push(s.n); }); });
+  const gaps=rows.filter(x=>{ const g=tutorGap(x.s.n); return g&&g.missing.length; });
+  const zero=rows.filter(x=>+x.r['ציוני_אפס']>0), dis=rows.filter(x=>+x.r['הפרעות']>=5), cel=rows.filter(x=>+x.r['סלולרי']>=3), absHi=rows.filter(x=>+x.r['אחוז_חיסור']>=20);
+  const lnk=n=>`<a href="#" onclick="tikOpen('${jq(n)}','study');return false">${E(n)}</a>`;
+  const item=(ic,cls,title,names,tip)=>names.length?`<div class="tk-ins ${cls}"><div><b>${ic} ${title}</b> <span class="tk-pill" style="--c:#8E033C">${names.length}</span></div><div class="tk-ins-n">${names.map(lnk).join(' · ')}</div>${tip?`<div class="tk-note">💡 ${tip}</div>`:''}</div>`:'';
+  const top=Object.entries(weakBy).sort((a,b)=>b[1].length-a[1].length).slice(0,5), topA=Object.entries(absBy).sort((a,b)=>b[1].length-a[1].length).slice(0,4);
+  return `<div class="tk-tiles"><div class="tk-tile" style="--c:#dc2626"><b>${red.length}</b><small>באדום</small></div><div class="tk-tile" style="--c:#ea580c"><b>${orange.length}</b><small>בכתום</small></div><div class="tk-tile" style="--c:#eab308"><b>${lv('צהוב').length}</b><small>בצהוב</small></div><div class="tk-tile" style="--c:#059669"><b>${lv('ירוק').length}</b><small>בירוק</small></div></div>
+    <h3 class="tk-h3">📌 נושאים לטיפול</h3>
+    ${item('📚⚠️','bad','חלשים במקצוע ואין תגבור',gaps.map(x=>x.s.n),'לפתוח בקשות תגבור במרכז הלמידה (הלשונית "מרכז למידה" כאן)')}
+    ${item('🔴','bad','ברמת סיכון אדומה',red.map(x=>x.s.n),'לתאם שיחה עם המחנך/ת ולבנות תוכנית אישית')}
+    ${item('0️⃣','','עבודות שלא הוגשו (ציון 0)',zero.map(x=>x.s.n),'ציון 0 הוא בדרך כלל עבודה שלא הוגשה — שווה לבדוק עם המורה אם אפשר להשלים')}
+    ${item('🏫','','חיסורים מעל 20%',absHi.map(x=>x.s.n),'לבדוק סיבות להיעדרות ולשלב בשיחה האישית')}
+    ${item('🗣️','','5+ הפרעות בשיעור',dis.map(x=>x.s.n),'')}
+    ${item('📱','','3+ אירועי סלולרי',cel.map(x=>x.s.n),'')}
+    <h3 class="tk-h3">💡 תובנות</h3>
+    ${top.length?`<div class="tk-ins"><b>המקצועות הקשים בקבוצה</b><div class="tk-cnt" style="margin-top:6px">${top.map(([k,a])=>`<span>${E(k)} <b>${a.length}</b> חניכים מתחת ל-55</span>`).join('')}</div>${top[0][1].length>=3?`<div class="tk-note">💡 ב${E(top[0][0])} יש ${top[0][1].length} חלשים — אפשר לבקש קבוצת תגבור קבועה במקום תגבורים אישיים.</div>`:''}</div>`:'<div class="tk-ins ok">אין מקצועות עם ציונים מתחת ל-55 👏</div>'}
+    ${topA.length?`<div class="tk-ins"><b>מקצועות עם היעדרות גבוהה</b><div class="tk-cnt" style="margin-top:6px">${topA.map(([k,a])=>`<span>${E(k)} <b>${a.length}</b></span>`).join('')}</div></div>`:''}
+    <div class="tk-note">מבוסס על העדכון האחרון מסמרט סקול${window.LIMUDI&&LIMUDI.date?' ('+E(LIMUDI.date)+')':''}.</div>`;
+}
+function grpTeachers(G,may){
+  const tm={}; G.names.forEach(s=>{ const r=typeof limFind==='function'?limFind(s.n):null; (r&&r['מערכת']||[]).forEach(x=>{ const t=String(x[3]||'').trim(), sub=String(x[2]||'').trim(); if(!t||/שחרית|שהייה/.test(sub)) return;
+    const o=tm[t]=tm[t]||{subs:new Set(),stu:new Set(),home:false}; o.subs.add(sub); o.stu.add(s.n); if(/^חינוך$/.test(sub)) o.home=true; }); });
+  const L=Object.entries(tm).sort((a,b)=>(b[1].home-a[1].home)||(b[1].stu.size-a[1].stu.size));
+  const C=T.tch||{}, key=n=>'t'+Array.from(n).reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7).toString(36);
+  if(!may&&!L.length) return '<div class="tk-empty">🔒 רשימת המורים נבנית מנתוני סמרט סקול — גלויה לרכז ולמדריך/ה של הקבוצה</div>';
+  if(!L.length) return '<div class="tk-empty">עוד אין מערכת שעות מסמרט סקול לקבוצה</div>';
+  return `<div class="tk-note">המורים של חניכי הקבוצה, לפי מערכת השעות. אפשר להוסיף טלפון ומייל לכל מורה (נשמר לכל הצוות). בהמשך: צ'אט ישיר בין המורה למדריך/ה.</div>
+    <div class="tk-tblw"><table class="tk-tbl"><tr><th>מורה</th><th>מקצועות</th><th>חניכים</th><th>קשר</th></tr>
+    ${L.map(([n,o])=>{ const c=C[key(n)]||{}, ph=String(c.ph||'').replace(/[^\d+]/g,''), wa=ph?ph.replace(/^0/,'972'):'';
+      return `<tr><td><b>${E(n)}</b>${o.home?' <span class="tk-pill" style="--c:#8E033C">מחנך/ת</span>':''}</td><td>${[...o.subs].map(E).join(', ')}</td><td>${o.stu.size}</td>
+        <td style="white-space:nowrap">${ph?`<a class="tk-tel" dir="ltr" href="tel:${E(ph)}">📞 ${E(c.ph)}</a> <a href="https://wa.me/${E(wa)}" target="_blank" rel="noopener">💬</a>`:''}${c.em?` <a href="mailto:${E(c.em)}">✉️</a>`:''}
+          ${canEdit()?` <button class="tk-btn2 sm" onclick="tikTch('${jq(n)}','${key(n)}')">${ph||c.em?'✏️':'➕ פרטי קשר'}</button>`:''}</td></tr>`; }).join('')}</table></div>`;
+}
+window.tikTch=function(n,k){ const c=(T.tch||{})[k]||{}; const ph=prompt(`טלפון של ${n}:`,c.ph||''); if(ph==null) return; const em=prompt(`מייל של ${n} (לא חובה):`,c.em||''); if(em==null) return;
+  put('tch/'+k,{n,ph:ph.trim().slice(0,20),em:em.trim().slice(0,80),by:me().id,at:Date.now()}).then(ok=>ok&&toast('✓ נשמר')); };
+
+/* 📖 מרכז למידה — כל התגבורים של הקבוצה */
+function grpLc(key){
+  const G=GK(key), NM=new Set(G.names.map(s=>s.n)), tch=id=>((LC.tch||[]).find(t=>t.id===id)||{}).name||'', today=todayIso();
+  const ses=Object.entries(LC.ses||{}).map(([k,v])=>{ if(!v) return null; const who=(v.students||[]).filter(n=>NM.has(n)); if(!who.length) return null; const [w,d,h,t]=k.split('|'); const dt=new Date(w+'T12:00:00'); dt.setDate(dt.getDate()+(+d||0));
+    return {iso:isoD(dt),d:+d,h:+h,t,v,who}; }).filter(Boolean);
+  const up=ses.filter(x=>x.iso>=today).sort((a,b)=>a.iso.localeCompare(b.iso)||a.h-b.h);
+  const grps=(LC.grp||[]).filter(g=>g&&(g.sids||[]).some(n=>NM.has(n)));
+  const reqs=(LC.req||[]).filter(r=>r&&NM.has(r.sid)&&r.status==='pending').sort((a,b)=>(a.created||0)-(b.created||0));
+  const gaps=G.names.filter(s=>{ const g=tutorGap(s.n); return g&&g.missing.length; });
+  const lnk=n=>`<a href="#" onclick="tikOpen('${jq(n)}','lc');return false">${E(n)}</a>`;
+  return `<div class="tk-tiles"><div class="tk-tile" style="--c:#0369a1"><b>${up.length}</b><small>תגבורים קרובים</small></div><div class="tk-tile" style="--c:#7c3aed"><b>${grps.length}</b><small>קבוצות קבועות</small></div><div class="tk-tile" style="--c:#b45309"><b>${reqs.length}</b><small>בקשות ממתינות</small></div><div class="tk-tile" style="--c:#dc2626"><b>${gaps.length}</b><small>חלשים בלי תגבור</small></div></div>
+    ${gaps.length?`<div class="tk-ins bad"><b>📚⚠️ חלשים במקצוע ואין תגבור</b>${gaps.map(s=>`<div>${lnk(s.n)} — ${tutorGap(s.n).missing.map(w=>E(w.s)+' ('+w.g+')').join(', ')}</div>`).join('')}</div>`:''}
+    <h3 class="tk-h3">📅 תגבורים קרובים</h3>${up.length?`<div class="tk-tblw"><table class="tk-tbl"><tr><th>מתי</th><th>מקצוע</th><th>מורה</th><th>חניכים</th></tr>${up.slice(0,40).map(x=>`<tr><td style="white-space:nowrap">${LDAYS[x.d]||''} ${fmtD(x.iso)} · ${String(x.h).padStart(2,'0')}:00</td><td>${E(x.v.subject||'')}</td><td>${E(tch(x.t))}</td><td>${x.who.map(lnk).join(', ')}</td></tr>`).join('')}</table></div>`:'<div class="tk-empty">אין תגבורים מתוכננים</div>'}
+    <h3 class="tk-h3">👥 קבוצות קבועות</h3>${grps.length?`<div class="tk-tblw"><table class="tk-tbl"><tr><th>מתי</th><th>מקצוע</th><th>מורה</th><th>מהקבוצה</th></tr>${grps.map(g=>`<tr><td>${LDAYS[g.d]||''} · ${String(g.h||'').padStart(2,'0')}:00</td><td>${E(g.subject||'')}${g.level?' · '+E(g.level)+' יח"ל':''}</td><td>${E(tch(g.tid))}</td><td>${(g.sids||[]).filter(n=>NM.has(n)).map(lnk).join(', ')}</td></tr>`).join('')}</table></div>`:'<div class="tk-empty">אין קבוצות קבועות לחניכי הקבוצה</div>'}
+    <h3 class="tk-h3">🙋 בקשות שממתינות לשיבוץ</h3>${reqs.length?`<div class="tk-tblw"><table class="tk-tbl"><tr><th>חניך/ה</th><th>מקצוע</th><th>נפתחה</th><th>מבחן</th></tr>${reqs.map(r=>`<tr><td>${lnk(r.sid)}</td><td>${E(r.subject||'')}</td><td>${r.created?fmtD(isoD(new Date(r.created))):''}</td><td>${r.exam?fmtD(r.exam):''}</td></tr>`).join('')}</table></div>`:'<div class="tk-empty">אין בקשות ממתינות</div>'}
+    ${canEdit()?`<div class="tk-note"><a href="#" onclick="show('lc');return false">פתיחת מרכז הלמידה ←</a></div>`:''}`;
+}
+
 /* ═══════════ חיבור לפורטל ═══════════ */
 function render(){ const el=document.getElementById('tikBody'); if(!el||!me()) return; el.innerHTML=T.stu?fileView():listView(); }
 window.tikRender=render;
@@ -569,6 +697,10 @@ const css=document.createElement('style'); css.textContent=`
 .tk-tblw{overflow-x:auto}.tk-tbl{width:100%;border-collapse:collapse;font-size:14px}.tk-tbl th{background:#8E033C;color:#fff;padding:7px;text-align:right;font:700 13px Heebo,sans-serif}.tk-tbl td{padding:6px 8px;border-bottom:1px solid #FFF1EB}.tk-tbl a{color:#0f1e2e}
 .tk-wr{position:relative}.tk-who{display:inline-block;font:700 13px Heebo,sans-serif;color:#0e7490;text-decoration:none;margin:2px 4px 3px}
 .tk-leg{background:#FBF6F3}
+.tk-sub2{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 12px}.tk-sub2 button{border:1px solid #F3C2B0;background:#fff;border-radius:10px;padding:6px 11px;font:700 13px Heebo,sans-serif;color:#7A6A66;cursor:pointer}
+.tk-sub2 button.on{background:#8E033C;border-color:#8E033C;color:#fff}
+.tk-ins{background:#fff;border:1px solid #F3C2B0;border-radius:12px;padding:9px 12px;margin-bottom:8px;font-size:14px;line-height:1.55}.tk-ins.bad{background:#fff7f7;border-color:#fecaca}.tk-ins.ok{background:#ecfdf5;border-color:#bbf7d0}
+.tk-ins a,.tk-tbl a{color:#0369a1;text-decoration:none}.tk-ins-n{margin-top:4px}
 .tk-h3{font:800 16px Heebo,sans-serif;color:#8E033C;margin:16px 0 8px}
 .tk-cal-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}.tk-cal-h>b{font:800 18px Heebo,sans-serif;color:#0f1e2e;min-width:120px;text-align:center}
 .tk-cal-h>button:not(.tk-btn2):not(.tk-btn){border:1px solid #F3C2B0;background:#fff;border-radius:9px;width:32px;height:32px;font-size:18px;cursor:pointer;color:#8E033C}

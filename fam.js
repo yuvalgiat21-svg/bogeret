@@ -20,7 +20,7 @@ const rnd=n=>{const A='abcdefghijkmnpqrstuvwxyz23456789',a=new Uint32Array(n);cr
 const BASEURL=()=>location.origin+location.pathname.replace(/[^/]*$/,'');
 const famLink=t=>BASEURL()+'parent.html?f='+t;
 
-const F={ix:null, items:null, fam:null, grp:'', view:'list', open:{}, unsub:[]};
+const F={ix:null, items:null, fam:null, st:{}, unsub:[]};   /* st = מצב תצוגה לכל מקום שבו האזור מוצג (לשונית הורים / הורי הקבוצה בניהול קבוצה) */
 function students(){ return [...(typeof STUDENTS_DATA!=='undefined'?STUDENTS_DATA:[]), ...(typeof ACAD_STUDENTS!=='undefined'?ACAD_STUDENTS:[])].filter(s=>s&&s.n); }
 const grade=s=>String(s.l||'').replace(/['׳"]/g,'');
 function allGroups(){ return [...new Set(students().map(s=>s.g).filter(Boolean))].sort(); }
@@ -42,27 +42,32 @@ async function listen(){
 }
 
 /* ── תצוגה ── */
-function paint(){
-  const el=document.getElementById('famdash'); if(!el||!ME) return;
-  const gs=myGroups();
+/* האזור מוצג בלשונית "הורים" (כל הקבוצות שלי) וגם בניהול קבוצה ← הורים (רק הקבוצה הזו): <div data-famgrp="שם הקבוצה"> */
+function paint(){ if(!ME) return;
+  const main=document.getElementById('famdash'); if(main) paintOne(main,'main',myGroups());
+  document.querySelectorAll('[data-famgrp]').forEach(el=>{ const g=el.dataset.famgrp; paintOne(el,'g:'+g,myGroups().includes(g)?[g]:[]); });
+}
+function paintOne(el,key,gs){
+  const st=F.st[key]=F.st[key]||{view:'list',open:{},grp:''};
+  if(!gs.length){ el.innerHTML='<div class="panel"><div class="panel-b ad-mut">אין לך גישה להורי הקבוצה הזו.</div></div>'; return; }
   if(F.ix==null||F.items==null||F.fam==null){ el.innerHTML='<div class="panel"><div class="panel-b ad-mut">טוען את אזור ההורים…</div></div>'; return; }
   const head=`<div class="info-box" style="border-right:5px solid #8E033C"><div class="icon">👪</div><div style="flex:1"><b>אזור ההורים</b><br>
     <span style="font-size:13px">לכל משפחה קישור אישי קבוע (בלי סיסמה). מה שמפרסמים כאן מופיע אצל ההורים של הקבוצות שבחרתם, וההורים עונים בלחיצה.
     כשמפרסמים משהו חדש — שולחים לקבוצת ההורים בוואטסאפ הודעה קצרה (יש כפתור שמכין אותה).</span></div>
     <div class="ad-btns">${canEdit()?`<button class="btn" data-v="new" style="background:#FC5028;color:#fff;border-color:#FC5028">➕ פרסום חדש</button>`:''}<button class="btn" data-v="list">📬 הפרסומים</button><button class="btn" data-v="links">🔗 קישורי הורים</button></div></div>`;
-  el.innerHTML=head+(F.view==='new'?newHtml(gs):F.view==='links'?linksHtml(gs):listHtml(gs));
-  bind(el);
+  el.innerHTML=head+(st.view==='new'?newHtml(gs):st.view==='links'?linksHtml(gs,st):listHtml(gs,st));
+  bind(el,st);
 }
 /* הפרסומים */
 function famsOf(g){ return students().filter(s=>s.g===g).map(s=>({s,ix:F.ix[kOf(s.n)]})); }
-function listHtml(gs){
+function listHtml(gs,st){
   const its=Object.entries(F.items).filter(([,it])=>it&&(it.groups||[]).some(g=>gs.includes(g))).sort((a,b)=>b[1].at-a[1].at);
   if(!its.length) return `<div class="panel"><div class="panel-b ad-mut">עוד לא פורסם כלום להורים${canEdit()?' — לחצו "פרסום חדש".':'.'}</div></div>`;
   return its.map(([id,it])=>{
     const targets=students().filter(s=>(it.groups||[]).includes(s.g)&&gs.includes(s.g));
     const rows=targets.map(s=>{const ix=F.ix[kOf(s.n)],f=ix&&F.fam[ix.t],a=f&&f.ans&&f.ans[id],got=f&&f.in&&f.in[id];return {s,ix,a,got}});
     const ans=rows.filter(r=>r.a), yes=ans.filter(r=>r.a.ok===true).length, no=ans.filter(r=>r.a.ok===false).length, need=it.type!=='week';
-    const open=F.open[id];
+    const open=st.open[id];
     return `<div class="panel" style="margin-bottom:12px"><div class="panel-h" style="cursor:pointer" data-open="${id}"><h2>${TYPES[it.type][0]} ${esc(it.title)}</h2>
       <span class="ad-mut" style="font-size:12.5px">${esc((it.groups||[]).join(', '))} · ${dt(it.at)} · ${esc(it.by||'')}${need?` · <b>ענו ${ans.length}/${rows.length}</b>${it.type==='trip'?` (✓${yes} ✕${no})`:''}`:` · נשלח ל-${rows.filter(r=>r.got).length} משפחות`} ${open?'▾':'◂'}</span></div>
       ${open?`<div class="panel-b">${it.date?`<div><b>מתי:</b> ${fmtD(it.date)}${it.place?' · '+esc(it.place):''}</div>`:''}${it.due?`<div><b>לאשר עד:</b> ${fmtD(it.due)}</div>`:''}
@@ -98,12 +103,12 @@ function newHtml(gs){
   </div></div>`;
 }
 /* קישורי הורים */
-function linksHtml(gs){
-  if(!F.grp||!gs.includes(F.grp)) F.grp=gs[0]||'';
-  const list=famsOf(F.grp), miss=list.filter(r=>!r.ix).length, admin=ME.mode==='admin';
+function linksHtml(gs,st){
+  if(!st.grp||!gs.includes(st.grp)) st.grp=gs[0]||'';
+  const list=famsOf(st.grp), miss=list.filter(r=>!r.ix).length, admin=ME.mode==='admin';
   return `<div class="panel"><div class="panel-h"><h2>🔗 קישורי הורים</h2></div><div class="panel-b">
    <div class="ad-mut" style="font-size:12.5px;margin-bottom:8px">כל קישור אישי למשפחה אחת: מי שמחזיק/ה בו רואה את הפרסומים של הקבוצה ואת שם החניך/ה בלבד. שולחים אותו להורה פעם אחת בוואטסאפ פרטי.</div>
-   <div class="ad-filt"><select class="ad-sel" data-lg>${gs.map(g=>`<option ${F.grp===g?'selected':''}>${esc(g)}</option>`).join('')}</select>
+   <div class="ad-filt"><select class="ad-sel" data-lg>${gs.map(g=>`<option ${st.grp===g?'selected':''}>${esc(g)}</option>`).join('')}</select>
     ${admin&&miss?`<button class="btn" data-gen>➕ יצירת קישורים ל-${miss} משפחות</button>`:''}<button class="btn" data-cp>📋 העתקת כל הקישורים של הקבוצה</button></div>
    <table class="tbl"><thead><tr><th>חניך/ה</th><th>קישור</th><th></th></tr></thead><tbody>
    ${list.map(r=>`<tr><td>${esc(r.s.n)}</td><td>${r.ix?`<span dir="ltr" style="font-size:12px">…${esc(r.ix.t.slice(-6))}</span>`:'<span class="ad-mut">אין עדיין</span>'}</td>
@@ -126,7 +131,7 @@ async function genLinks(list){
   await dbm.update(dbm.ref(rdb,ROOT),up);
 }
 function copyOf(it){ const c={type:it.type,title:it.title,body:it.body||'',at:it.at,by:it.by||''}; ['date','place','due'].forEach(x=>{if(it[x])c[x]=it[x]}); if(it.qs)c.qs=it.qs; return c; }
-async function publish(el){
+async function publish(el,st){
   const type=el.querySelector('input[name=fty]:checked').value, groups=[...el.querySelectorAll('[data-g]:checked')].map(x=>x.value);
   const title=el.querySelector('#f_title').value.trim(), body=el.querySelector('#f_body').value.trim();
   if(!groups.length) return alert('בחרו לפחות קבוצה אחת');
@@ -139,27 +144,28 @@ async function publish(el){
   const id=Date.now().toString(36)+rnd(4), up={[`famit/${id}`]:it}, c=copyOf(it);
   targets.forEach(s=>{const ix=F.ix[kOf(s.n)]; if(ix) up[`fam/${ix.t}/in/${id}`]=c;});
   const {dbm,rdb}=await secureDb();
-  try{ await dbm.update(dbm.ref(rdb,ROOT),up); F.view='list'; F.open={[id]:1}; toast(`📤 פורסם ל-${targets.length-noLink.length} משפחות`); paint(); }
+  try{ await dbm.update(dbm.ref(rdb,ROOT),up); st.view='list'; st.open={[id]:1}; toast(`📤 פורסם ל-${targets.length-noLink.length} משפחות`); paint(); }
   catch(e){ alert('הפרסום נכשל: '+(e.message||e)); }
 }
-function bind(el){
+function bind(el,st){
   const q=s=>el.querySelector(s), qa=s=>el.querySelectorAll(s);
-  qa('[data-v]').forEach(b=>b.onclick=()=>{F.view=b.dataset.v;paint();});
-  qa('[data-open]').forEach(b=>b.onclick=()=>{const id=b.dataset.open;F.open[id]=!F.open[id];paint();});
+  qa('[data-v]').forEach(b=>b.onclick=()=>{st.view=b.dataset.v;paint();});
+  qa('[data-open]').forEach(b=>b.onclick=()=>{const id=b.dataset.open;st.open[id]=!st.open[id];paint();});
   qa('input[name=fty]').forEach(r=>r.onchange=()=>{const v=q('input[name=fty]:checked').value;q('#f_trip').style.display=v==='trip'?'flex':'none';q('#f_survey').style.display=v==='survey'?'block':'none';});
-  const pb=q('[data-pub]'); if(pb) pb.onclick=()=>publish(el);
+  const pb=q('[data-pub]'); if(pb) pb.onclick=()=>publish(el,st);
   qa('[data-wa]').forEach(b=>b.onclick=()=>{const it=F.items[b.dataset.wa];
     const txt=`הורים יקרים, ${it.type==='week'?'פורסם סיכום השבוע':it.type==='trip'?'מחכה לאישורכם: '+it.title:'נשמח שתענו על סקר קצר'} באזור ההורים${it.type==='week'?': '+it.title:''}.\nנכנסים דרך הקישור האישי שקיבלתם מאיתנו 🙏`;
     window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');});
   qa('[data-del]').forEach(b=>b.onclick=async()=>{const id=b.dataset.del;if(!confirm('למחוק את הפרסום? הוא ייעלם גם אצל ההורים, יחד עם התשובות.'))return;
     const up={[`famit/${id}`]:null}; Object.entries(F.fam).forEach(([t,f])=>{if(f&&f.in&&f.in[id])up[`fam/${t}/in/${id}`]=null;if(f&&f.ans&&f.ans[id])up[`fam/${t}/ans/${id}`]=null;});
     const {dbm,rdb}=await secureDb(); await dbm.update(dbm.ref(rdb,ROOT),up); toast('נמחק');});
-  const lg=q('[data-lg]'); if(lg) lg.onchange=()=>{F.grp=lg.value;paint();};
-  const gn=q('[data-gen]'); if(gn) gn.onclick=async()=>{const list=famsOf(F.grp).filter(r=>!r.ix).map(r=>r.s);if(!confirm(`ליצור קישורי הורים ל-${list.length} משפחות ב${F.grp}?`))return;
+  const lg=q('[data-lg]'); if(lg) lg.onchange=()=>{st.grp=lg.value;paint();};
+  const gn=q('[data-gen]'); if(gn) gn.onclick=async()=>{const list=famsOf(st.grp).filter(r=>!r.ix).map(r=>r.s);if(!confirm(`ליצור קישורי הורים ל-${list.length} משפחות ב${st.grp}?`))return;
     try{await genLinks(list);toast('🔗 הקישורים נוצרו');}catch(e){alert('נכשל: '+(e.message||e));}};
   qa('[data-reset]').forEach(b=>b.onclick=async()=>{const s=students().find(x=>kOf(x.n)===b.dataset.reset);if(!confirm(`ליצור ל${s.n} קישור הורים חדש? הקישור הקודם יפסיק לעבוד.`))return;await genLinks([s]);toast('נוצר קישור חדש');});
-  const cp=q('[data-cp]'); if(cp) cp.onclick=()=>{const L=famsOf(F.grp).filter(r=>r.ix);if(!L.length)return toast('אין עדיין קישורים בקבוצה');
+  const cp=q('[data-cp]'); if(cp) cp.onclick=()=>{const L=famsOf(st.grp).filter(r=>r.ix);if(!L.length)return toast('אין עדיין קישורים בקבוצה');
     const txt=L.map(r=>`${r.s.n}: ${famLink(r.ix.t)}`).join('\n');navigator.clipboard.writeText(txt).then(()=>toast(`📋 הועתקו ${L.length} קישורים`),()=>prompt('העתיקו:',txt));};
 }
-window.famRender=function(){ if(!ME) return; if(!document.getElementById('famdash')) return; paint(); listen().catch(e=>console.warn('fam listen',e)); };
+let LISTENING=false;
+window.famRender=function(){ if(!ME) return; paint(); if(!LISTENING){ LISTENING=true; listen().catch(e=>{ LISTENING=false; console.warn('fam listen',e); }); } };
 })();
