@@ -132,7 +132,7 @@ function listView(){
   <div class="tk-grid">${L.map(s=>{ const R=ofStu(s.n), ev=R.filter(r=>r.t==='events').length, al=Object.values(cm).some(l=>l&&l.stu===s.n&&l.k==='alert'&&!l.res);
     return `<div class="tk-card" style="--g:${GC(s.g)}" onclick="tikOpen('${jq(s.n)}')">${typeof avatar==='function'?avatar(s,46,GC(s.g)):''}
       <div style="min-width:0;flex:1"><b>${E(s.n)}</b><small>${E(s.g||'')}${s.cls?' · '+E(s.cls):''}${roomTxt(s)?' · '+E(roomTxt(s)):''}</small>
-      ${s.ph?`<small>📱 ${E(s.ph)}</small>`:''}</div>
+      ${s.ph?`<small><span class="tk-tel" dir="ltr">📱 ${E(s.ph)}</span></small>`:''}</div>
       <div class="tk-tags">${canLim&&gapAlert(s.n)?'<span title="חלש/ה במקצוע ואין תגבור">📚⚠️</span>':''}${al?'<span title="התרעת דאגה פתוחה">⚠️</span>':''}${ev?`<span title="אירועים">📊${ev}</span>`:''}${R.filter(r=>TYPES[r.t].priv).length?`<span title="שיחות">💬${R.filter(r=>TYPES[r.t].priv).length}</span>`:''}</div></div>`; }).join('')||'<div class="tk-empty">לא נמצאו חניכים</div>'}</div>`;
 }
 window.tikQ=function(v){ T.q=v; const el=document.getElementById('tikBody'); const pos=document.activeElement&&document.activeElement.selectionStart; render(); const i=document.querySelector('#tikBody .tk-q'); if(i){ i.focus(); try{ i.setSelectionRange(pos,pos); }catch(e){} } };
@@ -159,10 +159,11 @@ function fileView(){
     <div class="tk-body">${body}</div>`;
 }
 const row=(l,v)=>v?`<div class="tk-f"><span>${l}</span><b>${v}</b></div>`:'';
-const tel=p=>p?`<a href="tel:${E(String(p).replace(/[^\d+]/g,''))}">${E(p)}</a>`:'';
+/* מספר טלפון לא נשבר בין שורות, ונכתב משמאל לימין */
+const tel=p=>p?`<a class="tk-tel" dir="ltr" href="tel:${E(String(p).replace(/[^\d+]/g,''))}">📞 ${E(p)}</a>`:'';
 function infoTab(s){
   return `<div class="tk-cols"><div class="tk-box"><h3>פרטים</h3>${row('קבוצה',E(s.g))}${row('כיתה',E(s.cls))}${row('חדר',E(roomTxt(s).replace(/^חדר /,'')))}${row('📱 נייד',tel(s.ph))}${row('תאריך לידה',E(s.bd))}${row('כתובת',E([s.addr,s.city].filter(Boolean).join(', ')))}</div>
-    <div class="tk-box"><h3>👨‍👩‍👦 הורים</h3>${row('אבא',E(s.fa)+(s.fp?' · '+tel(s.fp):''))}${row('אמא',E(s.mo)+(s.mp?' · '+tel(s.mp):''))}${s.ps?`<div class="tk-note">${E(s.ps)}</div>`:''}${!s.fa&&!s.mo?'<div class="tk-empty">אין פרטי הורים</div>':''}</div></div>`;
+    <div class="tk-box"><h3>👨‍👩‍👦 הורים</h3>${row('אבא',E(s.fa)+(s.fp?'<br>'+tel(s.fp):''))}${row('אמא',E(s.mo)+(s.mp?'<br>'+tel(s.mp):''))}${s.ps?`<div class="tk-note">${E(s.ps)}</div>`:''}${!s.fa&&!s.mo?'<div class="tk-empty">אין פרטי הורים</div>':''}</div></div>`;
 }
 function quick(s){ if(!canEdit()) return '';
   return `<div class="tk-quick">${['personal','discipline','parents','events','contracts'].map(t=>`<button onclick="tikNew('${t}','${jq(s.n)}')">➕ ${TYPES[t].i} ${TYPES[t].l}</button>`).join('')}
@@ -545,7 +546,7 @@ const css=document.createElement('style'); css.textContent=`
 .tk-box>*:not(.tk-f){grid-column:1/-1}.tk-box h3{margin:0 0 2px;font:800 16px Heebo,sans-serif;color:#8E033C}
 .tk-f{background:#FBF6F3;border:1px solid #F6DDD3;border-radius:11px;padding:8px 11px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .tk-f>span{font-size:12px;color:#7A6A66;font-weight:600}.tk-f>b{font:700 15px Heebo,sans-serif;color:#0f1e2e;overflow-wrap:anywhere}.tk-f>small{font-size:12px;color:#7A6A66}
-.tk-f a{color:#0369a1;text-decoration:none}.tk-f.ok{background:#ecfdf5;border-color:#bbf7d0}.tk-f.ok>b{color:#047857}.tk-f.bad{background:#fff1f1;border-color:#fecaca}.tk-f.bad>b{color:#b91c1c}
+.tk-f a{color:#0369a1;text-decoration:none}.tk-tel{white-space:nowrap;unicode-bidi:isolate;display:inline-block;font-weight:600}.tk-f.ok{background:#ecfdf5;border-color:#bbf7d0}.tk-f.ok>b{color:#047857}.tk-f.bad{background:#fff1f1;border-color:#fecaca}.tk-f.bad>b{color:#b91c1c}
 .tk-warn{border-color:#F3C2B0}.tk-mut{color:#a8a29e!important;font-weight:400}.tk-wide{grid-column:1/-1}
 .tk-chip{border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:999px;padding:7px 13px;font:700 13.5px Heebo,sans-serif;cursor:pointer}.tk-chip.on{background:#b91c1c;color:#fff}
 .tk-row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #FFF1EB;font-size:14px}.tk-row span{color:#7A6A66}.tk-row b{text-align:left;font-weight:600}
