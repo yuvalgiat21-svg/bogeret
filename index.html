@@ -721,6 +721,9 @@ table.luz .tc{font-family:'Heebo';font-weight:600;font-size:12px;color:var(--tex
 .edt-ic{font-size:24px;} .edt-card b{font:800 15px Heebo,sans-serif;color:#2b2220;} .edt-card small{color:#7A6A66;font-size:12px;line-height:1.4;} .edt-card em{font-style:normal;color:#FC5028;font-weight:700;font-size:12px;}
 .edt-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 10px;} .edt-head h3{margin:0;font:800 18px Heebo,sans-serif;color:#8E033C;}
 .edt-q{flex:1;min-width:180px;border:1px solid #F3C2B0;border-radius:999px;padding:6px 12px;font:14px Assistant,sans-serif;}
+.edt-adm{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;padding:8px 12px;background:#FFF1EB;border:1px dashed #F3C2B0;border-radius:12px;font:700 14px Heebo,sans-serif}
+.edt-row{display:flex;align-items:center;gap:4px}.edt-row .lb-row{flex:1;min-width:0}
+.edt-acts{display:flex;gap:2px;flex-shrink:0}.edt-acts button{border:1px solid #F3C2B0;background:#fff;border-radius:8px;padding:3px 6px;cursor:pointer;font-size:14px}.edt-acts button:hover{background:#FFF1EB;border-color:#FC5028}
 .edt-g{border:1px solid #f6dcd2;border-radius:10px;margin-bottom:6px;background:#fff;} .edt-g summary{cursor:pointer;padding:8px 12px;font:700 14px Heebo,sans-serif;} .edt-g summary small{color:#7A6A66;font-weight:400;}
 .fam-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0;}
 .fam-tile{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:1.5px solid #F3C2B0;border-top:5px solid var(--c);border-radius:14px;padding:12px 8px;cursor:pointer;font-family:Assistant,sans-serif;}
@@ -4300,25 +4303,64 @@ function adBind(el){
 }
 
 
-/* ═══════════ מאגר נושאים לתוכנית החינוכית (edu_topics.json — קטלוג מהדרייב, נבנה ע"י Claude) ═══════════ */
-let EDT=null; const EDT_ST={k:null,q:''};
+/* ═══════════ מאגר חינוך (edu_topics.json — קטלוג מהדרייב, נבנה ע"י Claude) ═══════════
+   עריכות הרכז (שינוי שם, הסרה מהפורטל, העברה לנושא/תיקייה אחרים) נשמרות באזור המוגן:
+   portal/bogeret/secure/edu_ov/<מזהה קובץ> = {t:שם חדש, d:1 הוסר, k:נושא, g:תיקייה}. הקבצים בדרייב עצמם לא משתנים. */
+let EDT=null, EDT_OV=null; const EDT_ST={k:null,q:'',edit:false,bin:false};
+const EDT_OV_PATH='portal/bogeret/secure/edu_ov';
 const edtIc=x=>({pdf:'📕',doc:'📘',docx:'📘',ppt:'📙',pptx:'📙',pps:'📙',ppsx:'📙',xls:'📗',xlsx:'📗',mp4:'🎬',mov:'🎬',avi:'🎬',mkv:'🎬',mp3:'🎵',jpg:'🖼️',jpeg:'🖼️',png:'🖼️'}[x]||'📄');
+const edtAdmin=()=>typeof ME!=='undefined'&&ME&&ME.mode==='admin';
+function edtView(){ /* הקטלוג אחרי העריכות */
+  const T=EDT.topics.map(t=>({...t,files:[]})), byT={}; T.forEach((t,i)=>byT[t.t]=i); const bin=[];
+  EDT.topics.forEach((t,i)=>t.files.forEach(f0=>{ const o=(EDT_OV||{})[f0.id]||{};
+    const f={...f0,t:o.t||f0.t,f:o.g!=null?o.g:f0.f,orig:f0.t,of:f0.f||'',ti:i};
+    if(o.d){ bin.push(f); return; }
+    const k=o.k!=null&&byT[o.k]!=null?byT[o.k]:i; T[k].files.push(f); }));
+  return {T,bin};
+}
+async function edtSave(id,patch){
+  const cur={...((EDT_OV||{})[id]||{}),...patch}; Object.keys(cur).forEach(k=>{ if(cur[k]==null) delete cur[k]; });
+  try{ const {dbm,rdb}=await secureDb(); await dbm.set(dbm.ref(rdb,EDT_OV_PATH+'/'+id),Object.keys(cur).length?cur:null);
+    EDT_OV=EDT_OV||{}; if(Object.keys(cur).length) EDT_OV[id]=cur; else delete EDT_OV[id]; renderEduTopics(); }
+  catch(e){ alert('השמירה נכשלה: '+(e.message||e)); }
+}
+window.edtAct=function(act,id){ const {T,bin}=edtView(); const f=T.flatMap(t=>t.files).concat(bin).find(x=>x.id===id); if(!f) return;
+  if(act==='ren'){ const v=prompt('שם חדש לקובץ (בפורטל בלבד — בדרייב השם לא משתנה):',f.t); if(v==null) return; const n=v.trim(); if(!n) return; edtSave(id,{t:n===f.orig?null:n}); }
+  else if(act==='del'){ if(confirm(`להסיר את "${f.t}" מהמאגר בפורטל?\nהקובץ נשאר בדרייב, ואפשר להחזיר אותו מ"קבצים שהוסרו".`)) edtSave(id,{d:1}); }
+  else if(act==='undel'){ edtSave(id,{d:null}); }
+  else if(act==='mv'){ const names=EDT.topics.map((t,i)=>`${i+1}. ${t.t}`).join('\n');
+    const v=prompt(`לאיזה נושא להעביר? (כותבים את המספר)\n${names}`,''); if(v==null) return; const i=parseInt(v,10)-1; if(!(i>=0&&i<EDT.topics.length)) return alert('מספר לא תקין');
+    const g=prompt('באיזו תיקייה בתוך הנושא? (ריק = כללי)',f.f||''); if(g==null) return; const gg=g.trim();
+    edtSave(id,{k:i===f.ti?null:EDT.topics[i].t, g:gg===f.of?null:gg}); }
+  else if(act==='reset'){ if(confirm('להחזיר את הקובץ למצבו המקורי (שם ומיקום)?')) edtSave(id,{t:null,k:null,g:null}); }
+};
 window.renderEduTopics=async function(){
   const el=document.getElementById('eduTopicsBody'); if(!el) return;
   if(!EDT){ try{ EDT=await (await fetch('edu_topics.json',{cache:'no-cache'})).json(); }catch(e){ el.textContent='טעינת המאגר נכשלה'; return; } }
-  const E=lbEsc, T=EDT.topics;
-  const cards=`<div class="edt-grid">${T.map((t,i)=>`<button class="edt-card${EDT_ST.k===i?' on':''}" data-t="${i}"><span class="edt-ic">${t.ic}</span><b>${E(t.t)}</b><small>${E(t.d)}</small><em>${t.files.length} קבצים</em></button>`).join('')}</div>`;
+  if(EDT_OV==null){ EDT_OV={}; try{ const {dbm,rdb}=await secureDb(); const s=await dbm.get(dbm.ref(rdb,EDT_OV_PATH)); EDT_OV=s.val()||{}; }catch(e){} }
+  const E=lbEsc, {T,bin}=edtView(), adm=edtAdmin(), ed=adm&&EDT_ST.edit;
+  const tools=adm?`<div class="edt-adm"><label><input type="checkbox" id="edtEdit" ${ed?'checked':''}> ✏️ מצב עריכה (רכז)</label>
+    ${ed?`<button class="btn" id="edtBin">🗑️ קבצים שהוסרו (${bin.length})</button><span style="font-weight:400;font-size:12px;color:#7A6A66">השינויים חלים על הפורטל בלבד — הקבצים בדרייב לא משתנים.</span>`:''}</div>`:'';
+  const cards=`<div class="edt-grid">${T.map((t,i)=>`<button class="edt-card${EDT_ST.k===i&&!EDT_ST.bin?' on':''}" data-t="${i}"><span class="edt-ic">${t.ic}</span><b>${E(t.t)}</b><small>${E(t.d)}</small><em>${t.files.length} קבצים</em></button>`).join('')}</div>`;
+  const changed=id=>{ const o=EDT_OV[id]; return o&&(o.t||o.k||o.g!=null); };
+  const row=(f,isBin)=>`<div class="edt-row"><a class="lb-row" target="_blank" rel="noopener" href="https://drive.google.com/file/d/${E(f.id)}/view"><span class="lb-ic">${edtIc(f.x)}</span><span class="lb-t">${E(f.t)}${ed&&f.t!==f.orig?`<small class="lb-d">במקור: ${E(f.orig)}</small>`:''}</span><span class="lb-m">${f.x.toUpperCase()}</span></a>
+    ${ed?`<span class="edt-acts">${isBin?`<button title="החזרה למאגר" onclick="edtAct('undel','${f.id}')">↩️ החזרה</button>`
+      :`<button title="שינוי שם" onclick="edtAct('ren','${f.id}')">✏️</button><button title="העברה לנושא או לתיקייה אחרים" onclick="edtAct('mv','${f.id}')">📦</button>${changed(f.id)?`<button title="החזרה למצב המקורי" onclick="edtAct('reset','${f.id}')">⟲</button>`:''}<button title="הסרה מהפורטל" onclick="edtAct('del','${f.id}')">🗑️</button>`}</span>`:''}</div>`;
   let list='';
-  if(EDT_ST.k!=null){ const t=T[EDT_ST.k], q=EDT_ST.q.trim();
-    const fl=t.files.filter(f=>!q||f.t.includes(q)||f.f.includes(q)); const by={};
+  if(ed&&EDT_ST.bin){ list=`<div class="edt-head"><h3>🗑️ קבצים שהוסרו מהמאגר</h3><button class="btn" id="edtBinX">חזרה</button></div>${bin.map(f=>row(f,true)).join('')||'<div class="ad-mut">אין קבצים שהוסרו</div>'}`; }
+  else if(EDT_ST.k!=null){ const t=T[EDT_ST.k], q=EDT_ST.q.trim();
+    const fl=t.files.filter(f=>!q||f.t.includes(q)||(f.f||'').includes(q)); const by={};
     fl.forEach(f=>{ (by[f.f||'כללי']=by[f.f||'כללי']||[]).push(f); });
     list=`<div class="edt-head"><h3>${t.ic} ${E(t.t)}</h3><input class="edt-q" placeholder="🔍 חיפוש בנושא" value="${E(EDT_ST.q)}">
       ${t.folder?`<a class="btn" target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/${E(t.folder)}">📂 התיקייה בדרייב</a>`:''}</div>
-      ${Object.keys(by).sort((a,b)=>a==='כללי'?-1:b==='כללי'?1:a.localeCompare(b,'he')).map(g=>`<details class="edt-g" ${q||Object.keys(by).length<=3?'open':''}><summary>${E(g)} <small>(${by[g].length})</small></summary>
-        ${by[g].map(f=>`<a class="lb-row" target="_blank" rel="noopener" href="https://drive.google.com/file/d/${E(f.id)}/view"><span class="lb-ic">${edtIc(f.x)}</span><span class="lb-t">${E(f.t)}</span><span class="lb-m">${f.x.toUpperCase()}</span></a>`).join('')}</details>`).join('')||'<div class="ad-mut">לא נמצאו קבצים</div>'}`;
+      ${Object.keys(by).sort((a,b)=>a==='כללי'?-1:b==='כללי'?1:a.localeCompare(b,'he')).map(g=>`<details class="edt-g" ${q||ed||Object.keys(by).length<=3?'open':''}><summary>${E(g)} <small>(${by[g].length})</small></summary>
+        ${by[g].map(f=>row(f,false)).join('')}</details>`).join('')||'<div class="ad-mut">לא נמצאו קבצים</div>'}`;
   }
-  el.innerHTML=cards+list+`<div style="font-size:12px;color:var(--text3);margin-top:10px">הקבצים נמצאים בדרייב של יובל (תיקיית "מבואות ים ← תוכנית חינוכית"). מי שאין לו גישה לתיקייה יתבקש לבקש הרשאה.</div>`;
-  el.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.t; EDT_ST.k=EDT_ST.k===i?null:i; EDT_ST.q=''; renderEduTopics(); });
+  el.innerHTML=tools+cards+list+`<div style="font-size:12px;color:var(--text3);margin-top:10px">הקבצים נמצאים בדרייב של יובל (תיקיית "מבואות ים ← תוכנית חינוכית"). מי שאין לו גישה לתיקייה יתבקש לבקש הרשאה.</div>`;
+  el.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{ const i=+b.dataset.t; EDT_ST.k=EDT_ST.k===i&&!EDT_ST.bin?null:i; EDT_ST.q=''; EDT_ST.bin=false; renderEduTopics(); });
+  const ce=el.querySelector('#edtEdit'); if(ce) ce.onchange=()=>{ EDT_ST.edit=ce.checked; EDT_ST.bin=false; renderEduTopics(); };
+  const bb=el.querySelector('#edtBin'); if(bb) bb.onclick=()=>{ EDT_ST.bin=true; renderEduTopics(); };
+  const bx=el.querySelector('#edtBinX'); if(bx) bx.onclick=()=>{ EDT_ST.bin=false; renderEduTopics(); };
   const q=el.querySelector('.edt-q'); if(q) q.oninput=()=>{ EDT_ST.q=q.value; const p=q.selectionStart; renderEduTopics().then(()=>{ const n=el.querySelector('.edt-q'); if(n){ n.focus(); n.setSelectionRange(p,p);} }); };
 };
 
@@ -4473,7 +4515,7 @@ const LINKS=[
 /* סרגל צדי — נבנה אחרי הכניסה מאותה רשימת LINKS */
 const TOOLS=[
   {ic:'🏘️',t:'שריון מתחמים',d:'לוח המתחמים — מחובר לגיליון של פז',go:"show('rooms')"},
-  {ic:'📚',t:'מאגר נושאים',d:'חומרים מוכנים לפעולות מהדרייב',go:"show('edutopics');renderEduTopics()"},
+  {ic:'📚',t:'מאגר חינוך',d:'חומרים מוכנים לפעולות מהדרייב',go:"show('edutopics');renderEduTopics()"},
   {ic:'📌',t:'גאנט שנתי',d:'כל אירועי השנה על ציר הזמן',go:"calTool('gantt')"},
   {ic:'🗓️',t:'לוח שבתות ואירועים',d:'שבתות, חופשות ואירועי תשפ"ז',go:"calTool('events')"},
 ];
@@ -5713,7 +5755,7 @@ function reorganize(){
   setTimeout(()=>{ try{ cmpRender(); }catch(e){ console.warn('cmp',e); } },0);
   const ep=mkSec('eduplan');
   const epPlan=mkSub('ep-plan',true), epTopics=mkSec('edutopics');
-  epTopics.innerHTML=info('📚','מאגר נושאים לפעולות','חומרים מוכנים מהדרייב לפי נושא: חגים ומועדים, אישים, מיניות בריאה, מורשת קרב, השכלה פיננסית ועוד. בוחרים נושא, מחפשים ופותחים.')
+  epTopics.innerHTML=info('📚','מאגר חינוך','חומרים מוכנים מהדרייב לפי נושא: חגים ומועדים, אישים, מיניות בריאה, מורשת קרב, השכלה פיננסית ועוד. בוחרים נושא, מחפשים ופותחים.')
     +`<div class="panel"><div class="panel-b" id="eduTopicsBody">טוען…</div></div>`;
   const epTop=document.createElement('div');
   epTop.innerHTML = info('📊','תכנון מול ביצוע — מבט שכבתי',
